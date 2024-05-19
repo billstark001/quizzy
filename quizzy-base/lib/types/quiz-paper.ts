@@ -1,4 +1,5 @@
 
+import { WithOptional } from "#/utils";
 import { ID, MarkdownString, Question } from "./question";
 
 export type QuizPaper = {
@@ -6,4 +7,11 @@ export type QuizPaper = {
   title: MarkdownString;
   questions: Question[];
   duration?: number; // in milliseconds
+};
+
+export type IncompleteQuizPaper = WithOptional<
+  Omit<QuizPaper, 'questions'>,
+  'id'
+> & {
+  questions: WithOptional<Question, 'id'>[];
 };

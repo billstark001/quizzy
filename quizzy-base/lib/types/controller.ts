@@ -1,5 +1,5 @@
 import { ID } from "./question";
-import { QuizPaper } from "./quiz-paper";
+import { IncompleteQuizPaper, QuizPaper } from "./quiz-paper";
 import { QuizRecord } from "./quiz-record";
 
 export type StartQuizOptions = {
@@ -13,7 +13,7 @@ export type UpdateQuizOptions = {
 
 export interface QuizzyController {
 
-  importQuizPapers(...papers: QuizPaper[]): Promise<ID[]>;
+  importQuizPapers(...papers: IncompleteQuizPaper[]): Promise<ID[]>;
   getQuizPaper(id: ID): Promise<QuizPaper | undefined>;
 
   listQuizPapers(): Promise<QuizPaper[]>;
@@ -22,8 +22,8 @@ export interface QuizzyController {
   importQuizRecords(...records: QuizRecord[]): Promise<ID[]>;
   getQuizRecord(id: ID): Promise<QuizRecord | undefined>;
 
-  listQuizRecords(): Promise<QuizRecord[]>;
-  listQuizRecordIds(): Promise<ID[]>;
+  listQuizRecords(quizPaperID?: ID): Promise<QuizRecord[]>;
+  listQuizRecordIds(quizPaperID?: ID): Promise<ID[]>;
 
   startQuiz(id: ID, options?: StartQuizOptions): Promise<ID>;
   updateQuiz(
@@ -31,5 +31,5 @@ export interface QuizzyController {
     record: Partial<QuizRecord>,
     options?: UpdateQuizOptions,
   ): Promise<QuizRecord>;
-  
+
 }

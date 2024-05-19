@@ -1,6 +1,7 @@
 export type ID = string;
 export type MarkdownString = string;
 
+
 export type ChoiceQuestionOption = {
   id: ID;
   seq?: number;
