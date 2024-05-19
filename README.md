@@ -1,1 +1,1 @@
-# quizzy
+# Quizzy
