@@ -9,6 +9,7 @@ export type StartQuizOptions = {
 
 export type UpdateQuizOptions = {
   timestamp?: number;
+  ignoreTimeUsed?: boolean;
 }
 
 export interface QuizzyController {
@@ -25,7 +26,7 @@ export interface QuizzyController {
   listQuizRecords(quizPaperID?: ID): Promise<QuizRecord[]>;
   listQuizRecordIds(quizPaperID?: ID): Promise<ID[]>;
 
-  startQuiz(id: ID, options?: StartQuizOptions): Promise<ID>;
+  startQuiz(id: ID, options?: StartQuizOptions): Promise<QuizRecord>;
   updateQuiz(
     id: ID,
     record: Partial<QuizRecord>,

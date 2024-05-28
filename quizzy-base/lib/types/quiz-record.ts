@@ -8,6 +8,7 @@ export type QuizRecord = {
   quizPaperId: ID;
   status: QuizRecordStatus;
   startTime: number;
+  updateTime: number;
   timeUsed: number;
   answers: Answer[];
 };
