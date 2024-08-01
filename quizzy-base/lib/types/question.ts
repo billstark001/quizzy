@@ -6,7 +6,7 @@ export type ChoiceQuestionOption = {
   id: ID;
   seq?: number;
   shouldChoose?: boolean;
-  label: MarkdownString;
+  content: MarkdownString;
 };
 
 export type BlankQuestionBlank = {
@@ -20,8 +20,9 @@ export type QuestionType = 'choice' | 'blank' | 'text';
 export type BaseQuestion = {
   id: ID;
   seq?: number;
-  name: string;
+  name?: string;
   weight?: number;
+  title?: MarkdownString;
   content: MarkdownString;
   solution?: MarkdownString;
   type: QuestionType;
