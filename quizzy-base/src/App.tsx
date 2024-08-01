@@ -1,13 +1,18 @@
-import { ChoiceQuestionPanel } from '#/components/QuestionPanel';
-import { sampleQuestion1 } from './test-data';
+import { BlankQuestionPanel, ChoiceQuestionPanel } from '#/components/QuestionPanel';
+import { useState } from 'react';
+import { sampleQuestion2 } from './test-data';
 
 function App() {
+
+  const [v, sV] = useState('');
+
   return <>
-    <ChoiceQuestionPanel 
-      question={sampleQuestion1} 
-      get={(id) => id == '2009'} 
+    <BlankQuestionPanel
+      question={sampleQuestion2} 
       state='display'
       displaySolution
+      get={() => v}
+      set={(_, s) => sV(s)}
     />
 
   </>;

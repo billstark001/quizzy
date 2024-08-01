@@ -38,6 +38,8 @@ export type BlankQuestion = BaseQuestion & {
   blanks: BlankQuestionBlank[];
 };
 
+export const BLANK_PREFIX = '@blank:';
+
 export type TextQuestion = BaseQuestion & {
   type: 'text';
   answer?: MarkdownString;

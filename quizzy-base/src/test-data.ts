@@ -1,4 +1,6 @@
-import { ChoiceQuestion } from "#/types";
+import { BlankQuestion, ChoiceQuestion } from "#/types";
+
+
 
 export const sampleQuestion1: ChoiceQuestion = {
   id: "c13/u5/17",
@@ -56,6 +58,33 @@ code.block('sample');
       seq: 5,
       shouldChoose: false,
       content: "Web Storage",
+    },
+  ],
+};
+
+export const sampleQuestion2: BlankQuestion = {
+  id: "c13/u5/17",
+  seq: 421,
+  type: 'blank',
+  content:
+    `次のうちブラウザでビデオ会議やボイスチャットを実現するために必要な主要な仕組みはどれでしょう。
+
+\`code sample\`
+
+Answer Sample: Fill the blank \`@blank:answer\` with correct answer.
+
+\`\`\`javascript
+code.block('sample');
+\`\`\`
+
+`,
+  solution:
+    "WebRTC(Web Real-Time Communication)は、ブラウザでリアルタイムコミュニケーションを実現できる仕組みです。\nブラウザ間でビデオチャットやボイスチャットで主に利用される他、P2Pでのファイル転送などにも利用できます。サーバとクライアント間ではなく、ブラウザ間での通信となる点がポイントです。\n\nその他の選択肢については以下のとおりです。\n\nA. JavaScriptをバックグラウンドのスレッドで実行するための仕組みです。\nB. Webサーバからクライアントへの単方向リアルタイムプッシュ通信を行う仕組みです。\nD. Webサーバとクライアント間の双方向通信を実現するAPIです。\nE. ブラウザにデータを保存・利用するAPIです。Web Storageにはセッションストレージとローカルストレージがあります。",
+  blanks: [
+    {
+      id: '114514',
+      key: 'answer',
+      answer: 'WebRTC',
     },
   ],
 };
