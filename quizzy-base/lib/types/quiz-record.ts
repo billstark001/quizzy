@@ -10,5 +10,5 @@ export type QuizRecord = {
   startTime: number;
   updateTime: number;
   timeUsed: number;
-  answers: Answer[];
+  answers: Record<ID, Answer>;
 };

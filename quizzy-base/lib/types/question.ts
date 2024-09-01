@@ -21,7 +21,7 @@ export type BaseQuestion = {
   id: ID;
   seq?: number;
   name?: string;
-  weight?: number;
+  tag?: string[];
   title?: MarkdownString;
   content: MarkdownString;
   solution?: MarkdownString;

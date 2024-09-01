@@ -1,7 +1,6 @@
 import { ID, MarkdownString, QuestionType } from "./question";
 
 export type BaseAnswer = {
-  id: ID;
   type: QuestionType;
 };
 

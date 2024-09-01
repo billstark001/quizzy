@@ -1,39 +1,69 @@
-import { ID, IncompleteQuizPaper, QuizPaper, QuizRecord, QuizzyController, StartQuizOptions, UpdateQuizOptions } from "#/types";
+import { ID, CompleteQuizPaperDraft, Question, QuizPaper, QuizRecord, QuizzyController, StartQuizOptions, UpdateQuizOptions } from "#/types";
 import { uuidV4B64 } from "#/utils";
-import { toCompleted } from "./paper-id";
+import { separatePaperAndQuestions, toCompleted } from "./paper-id";
 
 const _c = <T>(x: T) => x === undefined ? undefined : JSON.parse(JSON.stringify(x));
 
 export class MemoryController implements QuizzyController {
 
   private readonly papers: Map<ID, QuizPaper>;
+  private readonly questions: Map<ID, Question>;
   private readonly records: Map<ID, QuizRecord>;
 
   constructor() {
     this.papers = new Map();
     this.records = new Map();
+    this.questions = new Map();
   }
 
-  async importQuizPapers(...papers: IncompleteQuizPaper[]): Promise<string[]> {
-    const ids: string[] = [];
-    for (const _paper of papers) {
-      const paper = await toCompleted(_paper, (id) => this.papers.has(id));
-      this.papers.set(paper.id!, paper as QuizPaper);
-      ids.push(paper.id!);
+  async importQuestions(...questions: Question[]): Promise<ID[]> {
+    const ids: ID[] = [];
+    for (const question of questions) {
+      this.questions.set(question.id, question);
+      ids.push(question.id);
     }
     return ids;
+  }
+
+  async importQuizPapers(...papers: QuizPaper[]): Promise<ID[]> {
+    const ids: ID[] = [];
+    for (const paper of papers) {
+      this.papers.set(paper.id, paper);
+      ids.push(paper.id);
+    }
+    return ids;
+  }
+
+  async importCompleteQuizPapers(...papers: CompleteQuizPaperDraft[]): Promise<string[]> {
+    const purePapers: QuizPaper[] = [];
+    for (const _paper of papers) {
+      const paper = await toCompleted(_paper, (id) => this.papers.has(id));
+      const [purePaper, questions] = separatePaperAndQuestions(paper);
+      this.papers.set(purePaper.id, purePaper);
+      purePapers.push(purePaper);
+      await this.importQuestions(...questions);
+    }
+    return await this.importQuizPapers(...purePapers);
   }
 
   async getQuizPaper(id: ID): Promise<QuizPaper | undefined> {
     return _c(this.papers.get(id));
   }
 
-  async listQuizPapers(): Promise<QuizPaper[]> {
-    return [...this.papers.entries()].map(([, x]) => _c(x));
+  async getQuestions(ids: ID[]): Promise<(Question | undefined)[]> {
+    return ids.map((id) => _c(this.questions.get(id)));
   }
 
-  async listQuizPaperIds(): Promise<string[]> {
+  async listQuizPapers(ids: ID[]): Promise<QuizPaper[]> {
+    return ids.map((x) => _c(this.papers.get(x)));
+  }
+
+  async listQuizPaperIds(): Promise<ID[]> {
     return [...this.papers.entries()].map(([x]) => x);
+  }
+
+  async listQuestionsIds(): Promise<ID[]> {
+    return [...this.questions.entries()].map(([x]) => x);
   }
 
   async importQuizRecords(...records: QuizRecord[]): Promise<ID[]> {
@@ -79,7 +109,7 @@ export class MemoryController implements QuizzyController {
       startTime: t,
       updateTime: t,
       timeUsed: 0,
-      answers: [],
+      answers: {},
       ...(options?.record ?? {}),
     };
     do {
@@ -98,6 +128,10 @@ export class MemoryController implements QuizzyController {
     const newRecord = {
       ...oldRecord,
       ...record,
+      answers: {
+        ...oldRecord.answers,
+        ...record.answers,
+      },
       id: oldRecord.id,
       updateTime: t,
     };
