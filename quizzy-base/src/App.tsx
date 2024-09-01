@@ -1,21 +1,38 @@
-import { BlankQuestionPanel, ChoiceQuestionPanel } from '#/components/QuestionPanel';
-import { useState } from 'react';
-import { sampleQuestion2 } from './test-data';
+// src/components/Layout.js
+import React from 'react';
+import { Box, Button, Container } from '@chakra-ui/react';
+import { HashRouter, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
+import EntryPage from './pages/EntryPage';
 
-function App() {
+export const AppLayout = ({ children }: React.PropsWithChildren<object>) => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  if (location.pathname.startsWith('/w/') || location.pathname == '/w') {
+    return <>{children}</>;
+  }
 
-  const [v, sV] = useState('');
+  return (
+    <>
+      <Box minHeight="100vh" w='100vw'>
+        <Box bg='blue.500' p={4}>
+          <Button onClick={() => navigate('/')}> root </Button>
+        </Box>
+        <Container maxW="container.xl" pt={8}>
+          {children}
+        </Container>
+      </Box>
+    </>
+  );
+};
 
-  return <>
-    <BlankQuestionPanel
-      question={sampleQuestion2} 
-      state='display'
-      displaySolution
-      get={() => v}
-      set={(_, s) => sV(s)}
-    />
-
-  </>;
+export const App = () => {
+  return <HashRouter basename='/'>
+    <AppLayout>
+      <Routes>
+        <Route path='/' element={<EntryPage />} />
+      </Routes>
+    </AppLayout>
+  </HashRouter>;
 }
 
-export default App
+export default App;
