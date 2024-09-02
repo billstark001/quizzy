@@ -1,6 +1,6 @@
 // src/components/Layout.js
 import React from 'react';
-import { Box, Button, Container } from '@chakra-ui/react';
+import { Box, Button, Container, useColorMode, VStack } from '@chakra-ui/react';
 import { HashRouter, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import EntryPage from './pages/EntryPage';
 
@@ -11,16 +11,19 @@ export const AppLayout = ({ children }: React.PropsWithChildren<object>) => {
     return <>{children}</>;
   }
 
+  const { toggleColorMode} = useColorMode();
+
   return (
     <>
-      <Box minHeight="100vh" w='100vw'>
-        <Box bg='blue.500' p={4}>
+      <VStack minHeight="100vh" w='100vw' alignItems='stretch' gap={0}>
+        <Box bg='blue.500' p={4} pos='sticky'>
           <Button onClick={() => navigate('/')}> root </Button>
+          <Button onClick={toggleColorMode}> toggle color mode </Button>
         </Box>
-        <Container maxW="container.xl" pt={8}>
+        <Container maxW="container.xl" py={8} flex={1}>
           {children}
         </Container>
-      </Box>
+      </VStack>
     </>
   );
 };

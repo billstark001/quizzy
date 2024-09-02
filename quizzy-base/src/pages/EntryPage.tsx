@@ -1,12 +1,13 @@
+import { TestPageTestBlank, TestPageTestChoice } from "@/test-pages";
 import { Button } from "@chakra-ui/react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 export const EntryPage = () => {
 
+  return <TestPageTestBlank />;
+  return <TestPageTestChoice />;
   const [count, setCount] = useState(0);
-
-  const [ret, setRet] = useState('[NONE]');
 
   const { t } = useTranslation();
 
@@ -16,9 +17,6 @@ export const EntryPage = () => {
       <Button onClick={() => setCount((count) => count + 1)}>
         count is {count}
       </Button>
-      <p>
-        API Entry Return: <code>{ret}</code>
-      </p>
       <p >
         I18n test: {t('test')}
       </p>

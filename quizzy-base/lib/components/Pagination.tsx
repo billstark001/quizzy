@@ -14,7 +14,7 @@ export type PaginationProps = HTMLChakraProps<'div'> & {
   currentPage: number;
   totalPages: number;
   nearPages?: number;
-  setPage: (page: number) => void;
+  setPage?: (page: number) => void;
 };
 
 export const Pagination: React.FC<PaginationProps> = (props) => {
@@ -47,7 +47,7 @@ export const Pagination: React.FC<PaginationProps> = (props) => {
       page = totalPages;
     }
     if (page !== currentPageRaw) {
-      setPage(page);
+      setPage?.(page);
     }
   };
 
@@ -75,14 +75,14 @@ export const Pagination: React.FC<PaginationProps> = (props) => {
     }
     if (startPageEllipsis) {
       pages.push(_btn(1, currentPageRaw == 1));
-      pages.push(<Box>...</Box>);
+      pages.push(<Box key='start_ellipsis'>...</Box>);
     }
     for (let i = startPage; i <= endPage; i++) {
       pages.push(_btn(i, currentPageRaw == i));
     }
     if (endPageEllipsis) {
+      pages.push(<Box key='end_ellipsis'>...</Box>);
       pages.push(_btn(totalPages, currentPageRaw == totalPages));
-      pages.push(<Box>...</Box>);
     }
     if (pageOutRange == 1) {
       pages.push(_btn(currentPageRaw, currentPageRaw == currentPageRaw));
@@ -91,7 +91,7 @@ export const Pagination: React.FC<PaginationProps> = (props) => {
   };
 
   return (
-    <HStack spacing={2} {...divProps}>
+    <HStack spacing={2} justifyContent='center' {...divProps}>
       <IconButton
         aria-label="first"
         icon={<ArrowLeftIcon />}
@@ -127,7 +127,10 @@ export const Pagination: React.FC<PaginationProps> = (props) => {
           value={gotoPage}
           onChange={(valueString) => setGotoPage(valueString)}
         >
-          <NumberInputField />
+          <NumberInputField
+            border='1px solid'
+            borderColor='gray.400'
+            borderRadius={6} />
         </NumberInput>
       </Box>
       <IconButton

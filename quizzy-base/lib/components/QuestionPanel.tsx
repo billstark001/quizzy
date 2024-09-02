@@ -1,4 +1,4 @@
-import { BaseQuestion, BLANK_PREFIX, BlankQuestion, ChoiceQuestion, ID } from "#/types";
+import { BaseQuestion, BLANK_PREFIX, BlankQuestion, ChoiceQuestion, ID, Question, TextQuestion } from "#/types";
 import { AddIcon, MinusIcon } from "@chakra-ui/icons";
 import { 
   Box, 
@@ -6,24 +6,27 @@ import {
   Code, 
   HStack, 
   VStack,
-  Input
+  Input,
+  useColorMode,
+  HTMLChakraProps
 } from "@chakra-ui/react";
 import ChakraUIRenderer from "chakra-ui-markdown-renderer";
-import { createContext, Dispatch, PropsWithChildren, SetStateAction, useCallback, useContext, useMemo, useState } from "react";
+import { createContext, Dispatch, SetStateAction, useCallback, useContext, useMemo, useState } from "react";
 import ReactMarkdown from "react-markdown";
 
 
 type _S = {
+  state?: 'select' | 'display';
   displaySolution?: boolean;
   expandSolution?: boolean;
   setExpandSolution?: Dispatch<SetStateAction<boolean>>;
-  solutionText?: React.ReactNode;
+  solutionTitle?: React.ReactNode;
 };
 
-export type BaseQuestionPanelProps = PropsWithChildren<{
+export type BaseQuestionPanelProps = {
   components?: ReturnType<typeof ChakraUIRenderer>;
   question: BaseQuestion;
-} & _S>;
+} & _S & HTMLChakraProps<'div'>;
 
 const r = ChakraUIRenderer();
 const rs = ChakraUIRenderer({
@@ -36,7 +39,8 @@ const rs = ChakraUIRenderer({
 export const BaseQuestionPanel = (props: BaseQuestionPanelProps) => {
   const { components, question, children, 
     displaySolution, expandSolution, setExpandSolution,
-    solutionText,
+    solutionTitle,
+    ...divProps
   } = props;
   const { solution } = question;
   const isSolutionExpansionControlled = !!setExpandSolution || expandSolution != null;
@@ -47,6 +51,7 @@ export const BaseQuestionPanel = (props: BaseQuestionPanelProps) => {
 
   const { title, content } = question;
 
+  console.log(divProps);
   return <VStack 
     alignItems='flex-start' 
     backgroundColor='gray.  '
@@ -54,9 +59,12 @@ export const BaseQuestionPanel = (props: BaseQuestionPanelProps) => {
     border='1px solid'
     borderColor='gray.500'
     borderRadius='2em'
+    {...divProps}
   >
     {title && <ReactMarkdown components={r} children={title} />}
-    <ReactMarkdown components={components ?? r} children={content} /> 
+    <Box w='100%' flex={1}>
+      <ReactMarkdown components={components ?? r} children={content} /> 
+    </Box>
     {children}
     {solution == null || !displaySolution ? null : <VStack
       padding='1em'
@@ -66,7 +74,7 @@ export const BaseQuestionPanel = (props: BaseQuestionPanelProps) => {
       borderRadius='1em'
     >
       <HStack justifyContent='space-between' w='100%'>
-        <Box>{solutionText ?? 'Solution'}</Box>
+        <Box>{solutionTitle ?? 'Solution'}</Box>
         <Box 
           display='flex' justifyContent='center' alignItems='center'
           w='32px' h='32px'
@@ -78,7 +86,7 @@ export const BaseQuestionPanel = (props: BaseQuestionPanelProps) => {
           {expandState ? <MinusIcon /> : <AddIcon />}
         </Box>
       </HStack>
-      {expandState && <Box w='100%'>
+      {expandState && <Box w='100%' flex={1}>
         <ReactMarkdown components={r} children={solution ?? ''} />
       </Box>}
     </VStack>}
@@ -87,21 +95,24 @@ export const BaseQuestionPanel = (props: BaseQuestionPanelProps) => {
 
 export type ChoiceQuestionPanelProps = {
   question: ChoiceQuestion;
-  state?: 'select' | 'display';
-  set?(id: ID, set: SetStateAction<boolean>): void;
+  set?(id: ID, set: boolean): void;
   get?(id: ID): boolean;
-} & _S;
+} & _S & HTMLChakraProps<'div'>;
 
-const getOptionColor = (selected: boolean, correct?: boolean | null | undefined): [string, string] => {
+const getOptionColor = (selected: boolean, correct?: boolean | null | undefined, isDark?: boolean): [string, string, string, string] => {
   const isSelect = correct == null;
+  const normalConc = isDark ? 700 : 100;
+  const activeConc = isDark ? 600 : 300;
+  const hoverConc = isDark ? 500 : 200;
+  const hoverActiveConc = isDark ? 800 : 400;
+  const _t = (c: string) => [`${c}.${normalConc}`, `${c}.${activeConc}`, 
+    `${c}.${hoverConc}`, `${c}.${hoverActiveConc}`] as [string, string, string, string];
   if (isSelect) {
-    return selected
-      ? ['cyan.100', 'cyan.300']
-      : ['gray.100', 'gray.300'];
+    return _t(selected ? 'cyan' : 'gray');
   } else {
-    return selected
-      ? (correct ? ['green.100', 'green.300'] : ['red.100', 'red.300'])
-      : (correct ? ['teal.100', 'teal.300'] : ['gray.100', 'gray.300']);
+    return _t(selected
+      ? (correct ? 'green' : 'red')
+      : (correct ? 'teal' : 'gray'));
   }
 };
 
@@ -114,6 +125,9 @@ export const ChoiceQuestionPanel = (props: ChoiceQuestionPanelProps) => {
   } = props;
 
   const { options } = question;
+  const { colorMode } = useColorMode();
+  const isDark = colorMode === 'dark';
+  const isDisplay = state === 'display';
 
   return <BaseQuestionPanel question={question} {...sol}>
     <VStack 
@@ -122,11 +136,18 @@ export const ChoiceQuestionPanel = (props: ChoiceQuestionPanelProps) => {
       p='0.5em 1em'
     >
       {options.map((o, i) => {
-        const [c1, c2] = getOptionColor(!!get?.(o.id), state === 'display' ? o.shouldChoose : undefined);
+        const selected = !!get?.(o.id);
+        const [c1, c2, c3, c4] = getOptionColor(selected, isDisplay ? o.shouldChoose : undefined, isDark);
         return <HStack key={`${o.id}+${i}`}
           w='100%' p='0.5em'
           backgroundColor={c1}
-          border='1px solid' borderColor='gray.400' borderRadius='1em'>
+          border='1px solid' borderColor='gray.400' borderRadius='1em'
+          onClick={() => set?.(o.id, !selected)}
+          cursor={isDisplay ? undefined : 'pointer'}
+          transition="background-color 0.3s ease"
+          _hover={{ backgroundColor: c3 }}
+          _active={{ backgroundColor: c4 }}
+        >
           <Box 
             minH='3em' minW='3em' borderRadius='0.7em' 
             display='flex' justifyContent='center' alignItems='center'
@@ -145,7 +166,7 @@ export const ChoiceQuestionPanel = (props: ChoiceQuestionPanelProps) => {
 
 type _FBP = {
   get(key: string): string;
-  set(key: string, value: SetStateAction<string>): void;
+  set(key: string, value: string): void;
 }
 
 const fillBlankContext = createContext<_FBP>({
@@ -189,10 +210,9 @@ const rc = ChakraUIRenderer({
 
 export type BlankQuestionPanelProps = {
   question: BlankQuestion;
-  state?: 'select' | 'display';
-  set?(id: ID, set: SetStateAction<string>): void;
+  set?(id: ID, set: string): void;
   get?(id: ID): string;
-} & _S;
+} & _S & HTMLChakraProps<'div'>;
 
 export const BlankQuestionPanel = (props: BlankQuestionPanelProps) => {
   const { 
@@ -217,7 +237,7 @@ export const BlankQuestionPanel = (props: BlankQuestionPanelProps) => {
   );
 
   const fbpSet = useCallback(
-    (key: string, value: SetStateAction<string>) => KeyIdMap[key] != null ? set?.(KeyIdMap[key], value) : undefined,
+    (key: string, value: string) => KeyIdMap[key] != null ? set?.(KeyIdMap[key], value) : undefined,
     [set, KeyIdMap]
   );
 
@@ -227,4 +247,25 @@ export const BlankQuestionPanel = (props: BlankQuestionPanelProps) => {
   }}>
     <BaseQuestionPanel question={question} components={rc} {...sol} />
   </fillBlankContext.Provider>;
-}
+};
+
+
+export type TextQuestionPanelProps = {
+  question: TextQuestion;
+  set?(set: string): void;
+  get?(): string;
+} & _S & HTMLChakraProps<'div'>;
+
+
+export type QuestionPanelProps = BlankQuestionPanelProps | ChoiceQuestionPanelProps | TextQuestionPanelProps;
+
+export const QuestionPanel = (props: QuestionPanelProps) => {
+  const question = props.question as Question;
+  if (question.type === 'choice') {
+    return <ChoiceQuestionPanel {...props as ChoiceQuestionPanelProps} />;
+  }
+  if (question.type === 'blank') {
+    return <BlankQuestionPanel {...props as BlankQuestionPanelProps} />;
+  }
+  return <>Unsupported</>;
+};
