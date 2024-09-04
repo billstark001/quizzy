@@ -143,13 +143,14 @@ export const ChoiceQuestionPanel = (props: ChoiceQuestionPanelProps) => {
       p='0.5em 1em'
     >
       {options.map((o, i) => {
-        const selected = !!get?.(o.id);
+        const id = o.id ?? `${question.id}-${i}`;
+        const selected = !!get?.(o.id ?? `${question.id}-${i}`);
         const [c1, c2, c3, c4] = getOptionColor(selected, isDisplay ? o.shouldChoose : undefined, isDark);
         return <HStack key={`${o.id}+${i}`}
           w='100%' p='0.5em'
           backgroundColor={c1}
           border='1px solid' borderColor='gray.400' borderRadius='1em'
-          onClick={isDisplay ? undefined : () => set?.(o.id, !selected)}
+          onClick={isDisplay ? undefined : () => set?.(id, !selected)}
           cursor={isDisplay ? undefined : 'pointer'}
           transition="background-color 0.3s ease"
           _hover={isDisplay ? undefined : { backgroundColor: c3 }}
@@ -160,7 +161,7 @@ export const ChoiceQuestionPanel = (props: ChoiceQuestionPanelProps) => {
             display='flex' justifyContent='center' alignItems='center'
             backgroundColor={c2}
             mr='0.5em'
-          ><Code m='auto' background='transparent' fontSize='xl'>{o.seq}</Code></Box>
+          ><Code m='auto' background='transparent' fontSize='xl'>{i}</Code></Box>
           <ReactMarkdown components={rs} children={o.content} />
         </HStack>;
       })}
@@ -199,9 +200,8 @@ const rc = ChakraUIRenderer({
           />
         </Box>
       }
-      return <Code p={2} children={children} />;
+      return <Code p={0.5} children={children} />;
     }
-
     return (
       <Code
         className={className}

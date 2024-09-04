@@ -5,7 +5,7 @@ export type QuizRecordStatus = 'ongoing' | 'paused' | 'finished';
 
 export type QuizRecord = {
   id: ID;
-  quizPaperId: ID;
+  paperId: ID;
   status: QuizRecordStatus;
   startTime: number;
   updateTime: number;

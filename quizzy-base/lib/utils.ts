@@ -1,7 +1,7 @@
 import { fromByteArray } from "base64-js";
 import * as uuid from 'uuid';
 
-export type WithOptional<T extends object, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
+export type WithOptional<T extends object, K extends keyof T> = Omit<T, K> & { [k in K]?: T[k] };
 
 export const uuidV4B64 = () => {
   const uuid1 = uuid.v4();

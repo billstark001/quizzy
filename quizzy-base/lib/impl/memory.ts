@@ -19,7 +19,7 @@ export class MemoryController implements QuizzyController {
   async importQuestions(...questions: Question[]): Promise<ID[]> {
     const ids: ID[] = [];
     for (const question of questions) {
-      this.questions.set(question.id, question);
+      this.questions.set(question.id, _c(question));
       ids.push(question.id);
     }
     return ids;
@@ -28,7 +28,7 @@ export class MemoryController implements QuizzyController {
   async importQuizPapers(...papers: QuizPaper[]): Promise<ID[]> {
     const ids: ID[] = [];
     for (const paper of papers) {
-      this.papers.set(paper.id, paper);
+      this.papers.set(paper.id, _c(paper));
       ids.push(paper.id);
     }
     return ids;
@@ -39,7 +39,6 @@ export class MemoryController implements QuizzyController {
     for (const _paper of papers) {
       const paper = await toCompleted(_paper, (id) => this.papers.has(id));
       const [purePaper, questions] = separatePaperAndQuestions(paper);
-      this.papers.set(purePaper.id, purePaper);
       purePapers.push(purePaper);
       await this.importQuestions(...questions);
     }
@@ -83,7 +82,7 @@ export class MemoryController implements QuizzyController {
   async listQuizRecords(quizPaperID?: string | undefined): Promise<QuizRecord[]> {
     const records: QuizRecord[] = [];
     for (const [, quizRecord] of this.records.entries()) {
-      if (quizRecord.quizPaperId === quizPaperID) {
+      if (quizRecord.paperId === quizPaperID) {
         records.push(_c(quizRecord));
       }
     }
@@ -104,7 +103,7 @@ export class MemoryController implements QuizzyController {
     const t = options?.timestamp ?? Date.now();
     const record: QuizRecord = {
       id: '',
-      quizPaperId: id,
+      paperId: id,
       status: 'ongoing',
       startTime: t,
       updateTime: t,
