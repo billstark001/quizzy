@@ -8,17 +8,27 @@ import { useTranslation } from "react-i18next";
 
 export type QuestionSelectionModalProps = Omit<ModalProps, "children"> & {
   index: number;
+  current?: number;
   total: number;
   setIndex?: (index: number) => void;
+  onSelect?: (index: number) => void;
   question?: ReactNode;
   header?: ReactNode
 };
 
 
 export const QuestionSelectionModal = (props: QuestionSelectionModalProps) => {
-  const { index, total, question, header, setIndex, ...modalProps } = props;
+  const { 
+    index, current, total, question, header, 
+    setIndex, onSelect,
+    ...modalProps 
+  } = props;
 
   const { t } = useTranslation();
+  const onSelectClick = () => {
+    onSelect?.(index);
+    modalProps.onClose();
+  }
 
 
   return <Modal
@@ -27,28 +37,32 @@ export const QuestionSelectionModal = (props: QuestionSelectionModalProps) => {
     {...modalProps}
   >
     <ModalOverlay />
-    <ModalContent maxH='80vh'>
+    <ModalContent>
       <ModalHeader>
         {header ?? t('modal.select.header')}
       </ModalHeader>
       <ModalCloseButton />
-      <ModalBody as={HStack} alignItems='flex-start'>
-        <Wrap>
-          {Array(total).fill(0).map((_, i) => <Button
-            w={10}
-            colorScheme={index === i + 1 ? 'blue' : undefined}
-            onClick={() => setIndex?.(i + 1)}
-          >
-            {i + 1}
-          </Button>)}
-        </Wrap>
-        <Box w={80} h='100%'>
-          {question}
-        </Box>
+      <ModalBody>
+        <HStack alignItems='flex-start' maxH='75vh'>
+          <Wrap flex={2.4} overflowY='scroll' maxH='75vh' p={1}>
+            {Array(total).fill(0).map((_, i) => <Button
+              w={12}
+              colorScheme={index === i + 1 ? 'blue' : undefined}
+              onClick={() => setIndex?.(i + 1)}
+              border={current === i + 1 ? '1px solid' : 'none'}
+              borderColor='gray.500'
+            >
+              {i + 1}
+            </Button>)}
+          </Wrap>
+          <Box flex={1} overflowY='scroll' maxH='75vh'>
+            {question}
+          </Box>
+        </HStack>
       </ModalBody>
       <ModalFooter as={HStack} justifyContent='space-between'>
         <Button onClick={modalProps.onClose}>{t('modal.general.btn.close')}</Button>
-        <Button>{t('modal.select.btn.select')}</Button>
+        <Button onClick={onSelectClick}>{t('modal.select.btn.select')}</Button>
       </ModalFooter>
     </ModalContent>
 

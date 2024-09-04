@@ -119,8 +119,8 @@ export const Pagination: React.FC<PaginationProps> = (props) => {
       />
       <Box>
         <NumberInput
-          size="sm"
-          maxW={16}
+          minW={16}
+          maxW={64}
           defaultValue={currentPage}
           min={1}
           max={totalPages}

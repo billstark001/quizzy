@@ -6,6 +6,7 @@ export const TestPageTestChoice = () => {
   return <QuestionPage question={sampleQuestion1} 
   totalQuestions={80} currentQuestion={20}
   currentTime={114514} totalTime={1919810}
+  isResult
   />
 }
 export const TestPageTestBlank = () => {

@@ -19,6 +19,7 @@ export type QuestionPageProps = {
   examTitle?: ReactNode,
   currentTime?: number, // in milliseconds
   totalTime?: number, // in milliseconds
+  isResult?: boolean,
 }
 
 export const TextQuestionSymbol = Symbol('TextQuestion');
@@ -33,7 +34,10 @@ export const QuestionPage = (props: QuestionPageProps) => {
     examTitle,
     currentTime,
     totalTime,
+    isResult,
   } = props;
+
+  const [questionSelect, setQuestionSelect] = useState(currentQuestion);
 
   const [expandSolution, setExpandSolution] = useState(false);
   const [answers, setAnswers] = useState<Record<ID | symbol, string>>({});
@@ -97,7 +101,8 @@ export const QuestionPage = (props: QuestionPageProps) => {
     </HStack>
     <QuestionPanel
       flex={1}
-      question={question as ChoiceQuestion} state='select'
+      displaySolution={!!isResult}
+      question={question as ChoiceQuestion} state={isResult ? 'display' : 'select'}
       expandSolution={expandSolution} setExpandSolution={setExpandSolution}
       {...getterAndSetter as object}
     />
@@ -109,11 +114,18 @@ export const QuestionPage = (props: QuestionPageProps) => {
       <Button colorScheme='blue'>{t('page.question.prev')}</Button>
       <Box flex={1} minWidth={0}></Box>
       <IconButton colorScheme='blue' aria-label={t('page.question.questions')} icon={<DragHandleIcon />} 
-        onClick={q.onOpen} />
+        onClick={() => {
+          setQuestionSelect(currentQuestion);
+          q.onOpen();
+        }} />
       <Button colorScheme='blue'>{t('page.question.next')}</Button>
       <Button colorScheme='teal'>{t('page.question.stop')}</Button>
     </HStack>
-    <QuestionSelectionModal index={currentQuestion} total={totalQuestions} setIndex={onQuestionChanged} {...q}
+    <QuestionSelectionModal 
+      index={questionSelect} total={totalQuestions} 
+      current={currentQuestion}
+      setIndex={setQuestionSelect} onSelect={onQuestionChanged}
+      {...q}
       question={<BaseQuestionPanel w='100%' question={question} />}
     />
   </VStack>;

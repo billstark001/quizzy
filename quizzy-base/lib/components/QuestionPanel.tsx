@@ -50,6 +50,7 @@ export const BaseQuestionPanel = (props: BaseQuestionPanelProps) => {
   const setExpandState = isSolutionExpansionControlled ? setExpandSolution : setExpand;
 
   const { title, content } = question;
+  const { colorMode } = useColorMode();
 
   console.log(divProps);
   return <VStack 
@@ -78,10 +79,17 @@ export const BaseQuestionPanel = (props: BaseQuestionPanelProps) => {
         <Box 
           display='flex' justifyContent='center' alignItems='center'
           w='32px' h='32px'
-          backgroundColor='gray.300'
+          backgroundColor={colorMode == 'dark' ? 'gray.500' : 'gray.300'}
           borderRadius='114514'
           cursor='pointer'
+          transition="background-color 0.3s ease"
           onClick={() => setExpandState?.((s) => !s)}
+          _hover={{
+            backgroundColor: 'gray.400',
+          }}
+          _active={{
+            backgroundColor: 'gray.600',
+          }}
         >
           {expandState ? <MinusIcon /> : <AddIcon />}
         </Box>
@@ -108,7 +116,7 @@ const getOptionColor = (selected: boolean, correct?: boolean | null | undefined,
   const _t = (c: string) => [`${c}.${normalConc}`, `${c}.${activeConc}`, 
     `${c}.${hoverConc}`, `${c}.${hoverActiveConc}`] as [string, string, string, string];
   if (isSelect) {
-    return _t(selected ? 'cyan' : 'gray');
+    return _t(selected ? 'blue' : 'gray');
   } else {
     return _t(selected
       ? (correct ? 'green' : 'red')
@@ -142,11 +150,11 @@ export const ChoiceQuestionPanel = (props: ChoiceQuestionPanelProps) => {
           w='100%' p='0.5em'
           backgroundColor={c1}
           border='1px solid' borderColor='gray.400' borderRadius='1em'
-          onClick={() => set?.(o.id, !selected)}
+          onClick={isDisplay ? undefined : () => set?.(o.id, !selected)}
           cursor={isDisplay ? undefined : 'pointer'}
           transition="background-color 0.3s ease"
-          _hover={{ backgroundColor: c3 }}
-          _active={{ backgroundColor: c4 }}
+          _hover={isDisplay ? undefined : { backgroundColor: c3 }}
+          _active={isDisplay ? undefined : { backgroundColor: c4 }}
         >
           <Box 
             minH='3em' minW='3em' borderRadius='0.7em' 
