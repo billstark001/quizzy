@@ -5,6 +5,8 @@ import { ID, MarkdownString, Question } from "./question";
 type QuizPaperBase = {
   id: ID;
   title: MarkdownString;
+  img?: string;
+  desc?: MarkdownString;
   weights?: Record<ID, number>;
   duration?: number; // in milliseconds
 };

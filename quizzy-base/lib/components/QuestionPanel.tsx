@@ -52,7 +52,6 @@ export const BaseQuestionPanel = (props: BaseQuestionPanelProps) => {
   const { title, content } = question;
   const { colorMode } = useColorMode();
 
-  console.log(divProps);
   return <VStack 
     alignItems='flex-start' 
     backgroundColor='gray.  '
