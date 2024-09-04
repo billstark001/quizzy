@@ -192,9 +192,9 @@ const rc = ChakraUIRenderer({
       const blankKey = isBlank ? _c.value.substring(BLANK_PREFIX.length) : '';
 
       if (isBlank) {
-        return <Box display='inline-table'>
+        return <Box as='span' display='inline-table'>
           <Input p={1} borderColor='gray.300' display='table-cell'
-            value={get(blankKey)} 
+            value={get(blankKey)} size='sm' borderRadius='lg' fontSize='md'
             onChange={(e) => set(blankKey, e.target.value)}
           />
         </Box>

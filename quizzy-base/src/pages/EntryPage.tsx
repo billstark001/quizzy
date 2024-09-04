@@ -5,8 +5,8 @@ import { useTranslation } from "react-i18next";
 
 export const EntryPage = () => {
 
-  // return <TestPage TestBlank />;
-  return <TestPageTestChoice />;
+  return <TestPageTestBlank />;
+  // return <TestPageTestChoice />;
   const [count, setCount] = useState(0);
 
   const { t } = useTranslation();

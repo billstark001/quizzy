@@ -46,7 +46,7 @@ export const QuestionSelectionModal = (props: QuestionSelectionModalProps) => {
         <HStack alignItems='flex-start' maxH='75vh'>
           <Wrap flex={2.4} overflowY='scroll' maxH='75vh' p={1}>
             {Array(total).fill(0).map((_, i) => <Button
-              w={12}
+              w={12} key={i}
               colorScheme={index === i + 1 ? 'blue' : undefined}
               onClick={() => setIndex?.(i + 1)}
               border={current === i + 1 ? '1px solid' : 'none'}
