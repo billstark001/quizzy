@@ -1,9 +1,10 @@
 import Pagination from "#/components/Pagination";
-import { BlankQuestionPanelProps, ChoiceQuestionPanelProps, QuestionPanel, QuestionPanelProps, TextQuestionPanelProps } from "#/components/QuestionPanel";
+import { BaseQuestionPanel, BlankQuestionPanelProps, ChoiceQuestionPanelProps, QuestionPanel, QuestionPanelProps, TextQuestionPanelProps } from "#/components/QuestionPanel";
 import { ChoiceQuestion, ID, Question } from "#/types";
 import { formatMilliseconds } from "#/utils";
+import { QuestionSelectionModal } from "@/components/QuestionSelectionModal";
 import { DragHandleIcon } from "@chakra-ui/icons";
-import { Box, Button, HStack, IconButton, Progress, VStack } from "@chakra-ui/react";
+import { Box, Button, HStack, IconButton, Progress, useDisclosure, VStack } from "@chakra-ui/react";
 import { ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -79,6 +80,7 @@ export const QuestionPage = (props: QuestionPageProps) => {
       type === 'choice' ? choice : blank;
 
   const { t } = useTranslation();
+  const q = useDisclosure();
 
   return <VStack alignItems='stretch' minH='700px'>
     <HStack w='100%' alignItems='flex-end'>
@@ -106,9 +108,13 @@ export const QuestionPage = (props: QuestionPageProps) => {
       <Button colorScheme='red'>{t('page.question.exit')}</Button>
       <Button colorScheme='blue'>{t('page.question.prev')}</Button>
       <Box flex={1} minWidth={0}></Box>
-      <IconButton colorScheme='blue' aria-label={t('page.question.questions')} icon={<DragHandleIcon />} />
+      <IconButton colorScheme='blue' aria-label={t('page.question.questions')} icon={<DragHandleIcon />} 
+        onClick={q.onOpen} />
       <Button colorScheme='blue'>{t('page.question.next')}</Button>
       <Button colorScheme='teal'>{t('page.question.stop')}</Button>
     </HStack>
+    <QuestionSelectionModal index={currentQuestion} total={totalQuestions} setIndex={onQuestionChanged} {...q}
+      question={<BaseQuestionPanel w='100%' question={question} />}
+    />
   </VStack>;
 };
