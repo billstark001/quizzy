@@ -6,18 +6,14 @@ import { AddIcon } from "@chakra-ui/icons";
 import { Box, Card, CardBody, Flex, HStack, VStack, Wrap } from "@chakra-ui/react";
 import { useAtom } from "jotai";
 import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 
 
 
-export type PaperSelectionPageProps = {
-
-};
-
-
-
-export const PaperSelectionPage = (props: PaperSelectionPageProps) => {
+export const PaperSelectionPage = () => {
 
   const [papers, setPapers] = useAtom(papersAtom);
+  const navigate = useNavigate();
 
   useEffect(() => void (async () => {
     const ids = await Quizzy.listQuizPaperIds();
@@ -31,6 +27,17 @@ export const PaperSelectionPage = (props: PaperSelectionPageProps) => {
     setPapers(paperList);
   })().catch(console.error), []);
 
+  // start a new quiz
+  const onStart = async (pid: string) => {
+    const record = await Quizzy.startQuiz(pid);
+    const p = new URLSearchParams({
+      record: record.id,
+      q: '1',
+    });
+    navigate('/quiz?' + p.toString());
+  };
+
+
   return <VStack alignItems='stretch' minH='700px'>
     <HStack>
       <Box>Title</Box>
@@ -40,6 +47,7 @@ export const PaperSelectionPage = (props: PaperSelectionPageProps) => {
         key={p.id}
         title={p.name}
         desc={p.desc}
+        onStart={(() => onStart(p.id))}
       />)}
       <Card w='sm' cursor='pointer'>
         <CardBody as={Flex} justifyContent='center' alignItems='center'

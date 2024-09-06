@@ -1,22 +1,22 @@
 import { ID, MarkdownString, QuestionType } from "./question";
 
-export type BaseAnswer = {
+export type BaseAnswers = {
   type: QuestionType;
 };
 
-export type ChoiceAnswer = BaseAnswer & {
+export type ChoiceAnswers = BaseAnswers & {
   type: 'choice';
   answer: Record<ID, boolean>;
 };
 
-export type BlankAnswer = BaseAnswer & {
+export type BlankAnswers = BaseAnswers & {
   type: 'blank';
   answer: Record<ID, string>;
 };
 
-export type TextAnswer = BaseAnswer & {
+export type TextAnswers = BaseAnswers & {
   type: 'text';
   answer: MarkdownString;
 };
 
-export type Answer = ChoiceAnswer | BlankAnswer | TextAnswer;
+export type Answers = ChoiceAnswers | BlankAnswers | TextAnswers;

@@ -85,8 +85,12 @@ export class IDBController implements QuizzyController {
     return this.db.get(STORE_KEY_PAPER, id);
   }
 
-  getQuestions(ids: ID[]): Promise<(Question | undefined)[]> {
-    return this.db.get(STORE_KEY_QUESTION, ids);
+  async getQuestions(ids: ID[]): Promise<(Question | undefined)[]> {
+    const ret: (Question | undefined)[] = [];
+    for (const id of ids) {
+      ret.push(await this.db.get(STORE_KEY_QUESTION, id));
+    }
+    return ret;
   }
 
   listQuizPaperIds(): Promise<ID[]> {

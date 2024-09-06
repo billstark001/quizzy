@@ -1,4 +1,4 @@
-import { Answer } from "./answer";
+import { Answers } from "./answer";
 import { ID } from "./question";
 
 export type QuizRecordStatus = 'ongoing' | 'paused' | 'finished';
@@ -10,5 +10,5 @@ export type QuizRecord = {
   startTime: number;
   updateTime: number;
   timeUsed: number;
-  answers: Record<ID, Answer>;
+  answers: Record<ID, Answers>;
 };

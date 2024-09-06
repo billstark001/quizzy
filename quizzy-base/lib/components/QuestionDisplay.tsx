@@ -1,19 +1,24 @@
 import Pagination from "#/components/Pagination";
 import { BaseQuestionPanel, BlankQuestionPanelProps, ChoiceQuestionPanelProps, QuestionPanel, QuestionPanelProps, TextQuestionPanelProps } from "#/components/QuestionPanel";
-import { ChoiceQuestion, ID, Question } from "#/types";
+import { Answers, BlankAnswers, ChoiceAnswers, ChoiceQuestion, Question, TextAnswers } from "#/types";
 import { formatMilliseconds } from "#/utils";
-import { QuestionSelectionModal } from "@/components/QuestionSelectionModal";
+import { QuestionSelectionModal } from "#/components/QuestionSelectionModal";
 import { DragHandleIcon } from "@chakra-ui/icons";
 import { Box, Button, HStack, IconButton, Progress, useDisclosure, VStack } from "@chakra-ui/react";
-import { ReactNode, useState } from "react";
+import { Dispatch, ReactNode, SetStateAction, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 
-export type QuestionPageProps = {
+export type QuestionDisplayProps = {
   question: Question,
+  answers: Answers,
+  setAnswers: Dispatch<SetStateAction<Answers>>,
   currentQuestion: number,
   totalQuestions: number,
   onQuestionChanged?: (num: number) => void | Promise<void>,
+
+  previewQuestion?: Question,
+  onPreviewQuestionChanged?: (num: number) => void | Promise<void>,
 
   // exam state
   examTitle?: ReactNode,
@@ -24,12 +29,18 @@ export type QuestionPageProps = {
 
 export const TextQuestionSymbol = Symbol('TextQuestion');
 
-export const QuestionPage = (props: QuestionPageProps) => {
+export const QuestionDisplay = (props: QuestionDisplayProps) => {
   const {
     question,
+    answers,
+    setAnswers,
+
     currentQuestion,
     totalQuestions,
     onQuestionChanged,
+
+    previewQuestion,
+    onPreviewQuestionChanged,
 
     examTitle,
     currentTime,
@@ -40,7 +51,6 @@ export const QuestionPage = (props: QuestionPageProps) => {
   const [questionSelect, setQuestionSelect] = useState(currentQuestion);
 
   const [expandSolution, setExpandSolution] = useState(false);
-  const [answers, setAnswers] = useState<Record<ID | symbol, string>>({});
 
   const hasCurrentTime = currentTime != null;
   const hasTotalTime = totalTime != null;
@@ -53,28 +63,34 @@ export const QuestionPage = (props: QuestionPageProps) => {
 
   const choice: Partial<ChoiceQuestionPanelProps> = {
     get(id) {
-      return !!answers[id];
+      return (answers as ChoiceAnswers).answer[id];
     },
     set(id, set) {
-      setAnswers((a) => ({ ...a, [id]: set ? '1' : '' }));
+      setAnswers((a) => ({ ...a as ChoiceAnswers, answer: {
+        ...(a as ChoiceAnswers).answer,
+        [id]: set,
+      }}));
     },
   };
 
   const blank: Partial<BlankQuestionPanelProps> = {
     get(id) {
-      return answers[id];
+      return (answers as BlankAnswers).answer[id];
     },
     set(id, set) {
-      setAnswers((a) => ({ ...a, [id]: set }));
+      setAnswers((a) => ({ ...a as BlankAnswers, answer: {
+        ...(a as BlankAnswers).answer,
+        [id]: set,
+      }}));
     },
   };
 
   const text: Partial<TextQuestionPanelProps> = {
     get() {
-      return answers[TextQuestionSymbol];
+      return (answers as TextAnswers).answer;
     },
     set(set) {
-      setAnswers((a) => ({ ...a, [TextQuestionSymbol]: set }));
+      setAnswers((a) => ({ ...a as TextAnswers, answer: set }));
     },
   };
 
@@ -124,9 +140,12 @@ export const QuestionPage = (props: QuestionPageProps) => {
     <QuestionSelectionModal 
       index={questionSelect} total={totalQuestions} 
       current={currentQuestion}
-      setIndex={setQuestionSelect} onSelect={onQuestionChanged}
+      setIndex={(i) => {
+        setQuestionSelect(i);
+        return onPreviewQuestionChanged?.(i);
+      }} onSelect={onQuestionChanged}
       {...q}
-      question={<BaseQuestionPanel w='100%' question={question} />}
+      question={<BaseQuestionPanel w='100%' question={previewQuestion ?? question} />}
     />
   </VStack>;
 };

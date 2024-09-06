@@ -1,4 +1,8 @@
-import { Card, Heading, CardBody, Stack, Text, Image, Button, ButtonGroup, CardFooter, Divider, useColorMode, CardProps, Box, Wrap } from "@chakra-ui/react";
+import {
+  Card, Heading, CardBody, Stack, Text, Image,
+  Button, ButtonGroup, CardFooter, Divider, useColorMode,
+  CardProps, Wrap
+} from "@chakra-ui/react";
 import { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
