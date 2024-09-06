@@ -3,6 +3,7 @@ import React from 'react';
 import { Box, Button, Container, useColorMode, VStack } from '@chakra-ui/react';
 import { HashRouter, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import EntryPage from './pages/EntryPage';
+import { PaperSelectionPage } from './pages/PaperSelectionPage';
 
 export const AppLayout = ({ children }: React.PropsWithChildren<object>) => {
   const navigate = useNavigate();
@@ -33,6 +34,7 @@ export const App = () => {
     <AppLayout>
       <Routes>
         <Route path='/' element={<EntryPage />} />
+        <Route path='/paper' element={<PaperSelectionPage />} />
       </Routes>
     </AppLayout>
   </HashRouter>;

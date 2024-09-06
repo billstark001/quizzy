@@ -75,7 +75,7 @@ export const p: CompleteQuizPaperDraft = {
     {
       type: "blank",
       title: "例題1.29「1.1.2 HTMLの書式」",
-      content: "レベル1の出題範囲「1.1.2 HTMLの書式」からの出題です。\nHTML文書の内容が日本語で書かれている場合に、[@blank:1] に入れるhtml要素のlang属性に指定すべき値を記述しなさい。\n\n<!DOCTYPE html>\n<html lang=\"[@blank:1]\">\n",
+      content: "レベル1の出題範囲「1.1.2 HTMLの書式」からの出題です。\nHTML文書の内容が日本語で書かれている場合に、`[    ]` に入れるhtml要素のlang属性に指定すべき値を記述しなさい。\n\n`@blank:1`\n\n```\n<!DOCTYPE html>\n<html lang=\"[    ]\">\n```",
       blanks: [
         { id: "1", key: "1", answer: "ja" }
       ],

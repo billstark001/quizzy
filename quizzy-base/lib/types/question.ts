@@ -32,6 +32,7 @@ export type BaseQuestion = _BaseQuestion & {
 
 type _ChoiceQuestion = {
   type: 'choice';
+  multiple?: boolean; // undefined means determined by question
   options: ChoiceQuestionOption[];
 };
 
