@@ -14,6 +14,10 @@ const STORE_KEY_QUESTIONS = 'questions';
 const STORE_KEY_RESULTS = 'results';
 const STORE_KEY_STATS = 'stats';
 
+// TODO implement optimistic lock
+export type VersionRecord = {
+  _version: number;
+};
 
 type DBUpdater = (db: IDBPDatabase) => void;
 const updaters: Record<number, DBUpdater> = {
