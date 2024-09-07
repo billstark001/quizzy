@@ -1,4 +1,5 @@
-import { ID, CompleteQuizPaperDraft, Question, QuizPaper, QuizRecord, QuizzyController, StartQuizOptions, UpdateQuizOptions } from "#/types";
+import { ID, CompleteQuizPaperDraft, Question, QuizPaper, QuizRecord, QuizzyController, StartQuizOptions, UpdateQuizOptions, EndQuizOptions } from "#/types";
+import { QuizResult } from "#/types/quiz-result";
 import { uuidV4B64 } from "#/utils";
 import { separatePaperAndQuestions, toCompleted } from "./paper-id";
 
@@ -47,6 +48,10 @@ export class MemoryController implements QuizzyController {
 
   async getQuizPaper(id: ID): Promise<QuizPaper | undefined> {
     return _c(this.papers.get(id));
+  }
+
+  async getQuizPaperNames(...ids: ID[]): Promise<(string | undefined)[]> {
+    return ids.map(id => this.papers.get(id)?.name);
   }
 
   async getQuestions(ids: ID[]): Promise<(Question | undefined)[]> {
@@ -139,6 +144,20 @@ export class MemoryController implements QuizzyController {
     }
     this.records.set(id, _c(newRecord));
     return _c(newRecord);
+  }
+
+
+  endQuiz(id: ID, options?: EndQuizOptions): Promise<ID | undefined> {
+    throw new Error("Method not implemented.");
+  }
+  importQuizResults(...results: QuizResult[]): Promise<ID[]> {
+    throw new Error("Method not implemented.");
+  }
+  getQuizResult(id: ID): Promise<QuizResult | undefined> {
+    throw new Error("Method not implemented.");
+  }
+  listQuizResultIds(quizPaperID?: ID): Promise<ID[]> {
+    throw new Error("Method not implemented.");
   }
 
 }

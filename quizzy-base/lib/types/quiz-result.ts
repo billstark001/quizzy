@@ -1,10 +1,5 @@
-import { Answers } from "./answer";
-import { ID } from "./question";
+import { QuizRecordBase } from "./quiz-record";
 
-export type QuizResult = {
-  id: ID;
-  paperId: ID;
-  startTime: number;
-  timeUsed: number;
-  answers: Record<ID, Answers>;
+export type QuizResult = QuizRecordBase & {
+  // TODO
 };

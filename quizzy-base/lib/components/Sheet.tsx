@@ -21,7 +21,7 @@ type _StyleRenderer<I, T> = T | ((obj: I, index: number) => T | undefined);
  */
 export type SheetProps<T> = PropsWithChildren<{
   /** The data to be displayed in the sheet. */
-  data: T[];
+  data: readonly T[];
   /** Content to display when there's no data. */
   noData?: ReactNode;
   /** Callback function when a row is selected. */
@@ -110,7 +110,7 @@ export const useSheetRow = <T,>(): SheetRow<T> => {
  * @param Component The component to wrap.
  * @returns A new component with sheet row context injected.
  */
-export const withSheetRow = <T, K>(Component: ComponentType<K>) => {
+export const withSheetRow = <T=any, K=Partial<SheetRow<T>>>(Component: ComponentType<K>) => {
   const WrappedComponent = (props: K & Partial<SheetRow<T>>) => {
     const context = useSheetRow<T>();
     return <Component {...context} {...props} />;

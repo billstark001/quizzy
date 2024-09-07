@@ -5,6 +5,7 @@ import { useAsyncEffect } from "@/utils/react";
 import { ParamsDefinition, parseSearchParams, useParsedSearchParams } from "@/utils/react-router";
 import { Box } from "@chakra-ui/react";
 import { SetStateAction, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 
 export type QuizPageParams = {
@@ -22,6 +23,8 @@ export const QuizPage = () => {
   const { record: recordId, q: _q } = searchParams;
   const qIndex = !_q || _q < 1 ? 1 : Math.round(_q);
 
+  const navigate = useNavigate();
+
   const [record, setRecord] = useState<QuizRecord | undefined>(undefined);
   useAsyncEffect(
     () => Quizzy.getQuizRecord(recordId ?? '').then(setRecord),
@@ -36,9 +39,14 @@ export const QuizPage = () => {
     [record?.paperId]
   );
   useAsyncEffect(
-    () => paper && Quizzy.getQuestions([paper.questions[qIndex - 1]]).then((q) => {
-      setQuestion(q[0]);
-    }),
+    async () => {
+      if (!paper) {
+        return;
+      }
+      const [q] = await Quizzy.getQuestions([paper.questions[qIndex - 1]]);
+      setQuestion(q);
+      Quizzy.updateQuiz(recordId, { lastQuestion: qIndex });
+    },
     [paper, qIndex]
   );
 
@@ -78,6 +86,8 @@ export const QuizPage = () => {
     previewQuestion={previewQuestion}
     onPreviewQuestionChanged={onPreviewQuestionChanged}
     onQuestionChanged={(q) => setSearchParams((p) => ({ ...parseSearchParams(p, _parser), q } as any))}
+    onExit={() => navigate('/')}
+    onSubmit={() => Quizzy.endQuiz(recordId).catch(console.error)}
   />;
 
 };

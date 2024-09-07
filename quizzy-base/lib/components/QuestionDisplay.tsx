@@ -25,6 +25,10 @@ export type QuestionDisplayProps = {
   currentTime?: number, // in milliseconds
   totalTime?: number, // in milliseconds
   isResult?: boolean,
+
+  // page shift
+  onExit?: () => void,
+  onSubmit?: () => void,
 }
 
 export const TextQuestionSymbol = Symbol('TextQuestion');
@@ -46,6 +50,9 @@ export const QuestionDisplay = (props: QuestionDisplayProps) => {
     currentTime,
     totalTime,
     isResult,
+
+    onExit,
+    onSubmit,
   } = props;
 
   const [questionSelect, setQuestionSelect] = useState(currentQuestion);
@@ -126,16 +133,20 @@ export const QuestionDisplay = (props: QuestionDisplayProps) => {
       nearPages={3}
       currentPage={currentQuestion} totalPages={totalQuestions} setPage={onQuestionChanged} />
     <HStack justifyContent='space-between' width='100%'>
-      <Button colorScheme='red'>{t('page.question.exit')}</Button>
-      <Button colorScheme='blue'>{t('page.question.prev')}</Button>
+      <Button colorScheme='red' onClick={onExit}>{t('page.question.exit')}</Button>
+      <Button colorScheme='blue' 
+        onClick={() => currentQuestion > 1 && onQuestionChanged?.(currentQuestion - 1)}
+      >{t('page.question.prev')}</Button>
       <Box flex={1} minWidth={0}></Box>
       <IconButton colorScheme='blue' aria-label={t('page.question.questions')} icon={<DragHandleIcon />} 
         onClick={() => {
           setQuestionSelect(currentQuestion);
           q.onOpen();
         }} />
-      <Button colorScheme='blue'>{t('page.question.next')}</Button>
-      <Button colorScheme='teal'>{t('page.question.stop')}</Button>
+      <Button colorScheme='blue'
+        onClick={() => currentQuestion < totalQuestions && onQuestionChanged?.(currentQuestion + 1)}
+      >{t('page.question.next')}</Button>
+      <Button colorScheme='teal' onClick={onSubmit}>{t('page.question.submit')}</Button>
     </HStack>
     <QuestionSelectionModal 
       index={questionSelect} total={totalQuestions} 

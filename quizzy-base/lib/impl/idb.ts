@@ -1,7 +1,8 @@
-import { CompleteQuizPaperDraft, ID, Question, QuizPaper, QuizRecord, QuizzyController, StartQuizOptions, UpdateQuizOptions } from "#/types";
+import { CompleteQuizPaperDraft, EndQuizOptions, ID, Question, QuizPaper, QuizRecord, QuizzyController, StartQuizOptions, UpdateQuizOptions } from "#/types";
 import { IDBPDatabase, openDB } from "idb";
 import { separatePaperAndQuestions, toCompleted } from "./paper-id";
 import { uuidV4B64 } from "#/utils";
+import { QuizResult } from "#/types/quiz-result";
 
 
 const DB_KEY = 'Quizzy';
@@ -12,10 +13,32 @@ const VERSION = 1;
 const STORE_KEY_PAPER = 'papers';
 const STORE_KEY_RECORD = 'records';
 const STORE_KEY_QUESTION = 'questions';
+const STORE_KEY_RESULT = 'results';
 
-const RECORD_INDEX_KEYS = Object.freeze<(keyof QuizRecord)[]>([
-  'paperId', 'paused', 'startTime', 'updateTime',
-])
+
+type DBUpdater = (db: IDBPDatabase) => void;
+const updaters: Record<number, DBUpdater> = {
+  [0]: (db) => {
+    const _id: IDBObjectStoreParameters = { keyPath: 'id', };
+    const paperStore = db.createObjectStore(STORE_KEY_PAPER, _id);
+    const recordStore = db.createObjectStore(STORE_KEY_RECORD, _id);
+    const questionStore = db.createObjectStore(STORE_KEY_QUESTION, _id);
+    for (const store of [paperStore, questionStore]) {
+      store.createIndex('name', 'name');
+      store.createIndex('tags', 'tags', { multiEntry: true });
+    }
+    for (const key of ['paperId', 'paused', 'startTime', 'updateTime']) {
+      recordStore.createIndex(key, key);
+    }
+  },
+  [1]: (db) => {
+    const _id: IDBObjectStoreParameters = { keyPath: 'id', };
+    const resultStore = db.createObjectStore(STORE_KEY_RESULT, _id);
+    for (const key of ['paperId', 'startTime',]) {
+      resultStore.createIndex(key, key);
+    }
+  }
+}
 
 export class IDBController implements QuizzyController {
 
@@ -26,28 +49,23 @@ export class IDBController implements QuizzyController {
 
   static async connect() {
     const db = await openDB(DB_KEY, VERSION, {
-      upgrade(db) {
-        const _id: IDBObjectStoreParameters = { keyPath: 'id', };
-        const paperStore = db.createObjectStore(STORE_KEY_PAPER, _id);
-        const recordStore = db.createObjectStore(STORE_KEY_RECORD, _id);
-        const questionStore = db.createObjectStore(STORE_KEY_QUESTION, _id);
-        for (const store of [paperStore, questionStore]) {
-          store.createIndex('name', 'name');
-          store.createIndex('tags', 'tags', { multiEntry: true });
+      upgrade(db, oldVersion, newVersion) {
+        if (newVersion == null || newVersion < oldVersion) {
+          return; // either delete or errored
         }
-        for (const key of RECORD_INDEX_KEYS) {
-          recordStore.createIndex(key, key);
+        for (let i = oldVersion; i < newVersion; ++i) {
+          updaters[i]?.(db);
         }
       },
     });
     return new IDBController(db);
   }
 
-  async importQuestions(...questions: Question[]): Promise<ID[]> {
-    const tx = this.db.transaction(STORE_KEY_QUESTION, 'readwrite');
+  private async _import<T extends { id: ID }>(store: string, items: T[]): Promise<ID[]> {
+    const tx = this.db.transaction(store, 'readwrite');
     const ids: ID[] = [];
     const promises: Promise<any>[] = [];
-    for (const q of questions) {
+    for (const q of items) {
       promises.push(tx.store.add(q));
       ids.push(q.id);
     }
@@ -56,17 +74,12 @@ export class IDBController implements QuizzyController {
     return ids;
   }
 
+  async importQuestions(...questions: Question[]): Promise<ID[]> {
+    return this._import(STORE_KEY_QUESTION, questions);
+  }
+
   async importQuizPapers(...papers: QuizPaper[]): Promise<ID[]> {
-    const tx = this.db.transaction(STORE_KEY_PAPER, 'readwrite');
-    const ids: ID[] = [];
-    const promises: Promise<any>[] = [];
-    for (const p of papers) {
-      promises.push(tx.store.add(p));
-      ids.push(p.id);
-    }
-    await Promise.all(promises);
-    await tx.done;
-    return ids;
+    return this._import(STORE_KEY_PAPER, papers);
   }
 
 
@@ -79,6 +92,14 @@ export class IDBController implements QuizzyController {
       await this.importQuestions(...questions);
     }
     return await this.importQuizPapers(...purePapers);
+  }
+
+  async getQuizPaperNames(...ids: ID[]): Promise<(string | undefined)[]> {
+    const ret: (string | undefined)[] = [];
+    for (const id of ids) {
+      ret.push((await this.db.get(STORE_KEY_PAPER, id))?.name);
+    }
+    return ret;
   }
 
   getQuizPaper(id: ID): Promise<QuizPaper | undefined> {
@@ -102,16 +123,7 @@ export class IDBController implements QuizzyController {
   }
 
   async importQuizRecords(...records: QuizRecord[]): Promise<ID[]> {
-    const tx = this.db.transaction(STORE_KEY_RECORD, 'readwrite');
-    const ids: ID[] = [];
-    const promises: Promise<any>[] = [];
-    for (const r of records) {
-      promises.push(tx.store.add(r));
-      ids.push(r.id);
-    }
-    await Promise.all(promises);
-    await tx.done;
-    return ids;
+    return this._import(STORE_KEY_RECORD, records);
   }
 
   getQuizRecord(id: ID): Promise<QuizRecord | undefined> {
@@ -119,10 +131,16 @@ export class IDBController implements QuizzyController {
   }
 
   listQuizRecords(quizPaperID?: ID): Promise<QuizRecord[]> {
+    if (!quizPaperID) {
+      return this.db.getAll(STORE_KEY_RECORD);
+    }
     return this.db.getAllFromIndex(STORE_KEY_RECORD, 'paperID', quizPaperID);
   }
 
   listQuizRecordIds(quizPaperID?: ID): Promise<ID[]> {
+    if (!quizPaperID) {
+      return this.db.getAllKeys(STORE_KEY_RECORD) as Promise<ID[]>;
+    }
     return this.db.getAllKeysFromIndex(STORE_KEY_RECORD, 'paperID', quizPaperID) as Promise<ID[]>;
   }
 
@@ -172,5 +190,20 @@ export class IDBController implements QuizzyController {
     await tx.done;
     return newRecord;
   }
+
+
+  endQuiz(id: ID, options?: EndQuizOptions): Promise<ID | undefined> {
+    throw new Error("Method not implemented.");
+  }
+  importQuizResults(...results: QuizResult[]): Promise<ID[]> {
+    throw new Error("Method not implemented.");
+  }
+  getQuizResult(id: ID): Promise<QuizResult | undefined> {
+    throw new Error("Method not implemented.");
+  }
+  listQuizResultIds(quizPaperID?: ID): Promise<ID[]> {
+    throw new Error("Method not implemented.");
+  }
+
 
 }

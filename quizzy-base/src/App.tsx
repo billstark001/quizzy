@@ -10,29 +10,35 @@ import RecordsPage from './pages/RecordsPage';
 import ResultsPage from './pages/ResultsPage';
 import ResultPage from './pages/ResultPage';
 import StatsPage from './pages/StatsPage';
+import { useTranslation } from 'react-i18next';
 
 export const AppLayout = ({ children }: React.PropsWithChildren<object>) => {
   const navigate = useNavigate();
   const location = useLocation();
+
   if (location.pathname.startsWith('/w/') || location.pathname == '/w') {
     return <>{children}</>;
   }
 
-  const { toggleColorMode} = useColorMode();
+  const { toggleColorMode } = useColorMode();
+  const { t } = useTranslation();
 
-  return (
-    <>
-      <VStack minHeight="100vh" w='100vw' alignItems='stretch' gap={0}>
-        <Box bg='blue.500' p={4} pos='sticky'>
-          <Button onClick={() => navigate('/')}> root </Button>
-          <Button onClick={toggleColorMode}> toggle color mode </Button>
-        </Box>
-        <Container maxW="container.xl" py={8} flex={1}>
-          {children}
-        </Container>
-      </VStack>
-    </>
-  );
+  return <VStack minHeight="100vh" w='100vw' alignItems='stretch' gap={0}>
+    <Box bg='blue.500' p={4} pos='sticky'>
+      <Button onClick={() => navigate('/')}> 
+        {t('btn.entry.root')}
+      </Button>
+      <Button onClick={toggleColorMode}>
+        {t('btn.colorMode.toggle')}
+      </Button>
+      <Button onClick={() => navigate('/settings')}>
+        {t('btn.entry.settings')}
+      </Button>
+    </Box>
+    <Container maxW="container.xl" py={8} flex={1}>
+      {children}
+    </Container>
+  </VStack>;
 };
 
 export const App = () => {
