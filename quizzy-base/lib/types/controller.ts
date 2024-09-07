@@ -53,6 +53,7 @@ export interface QuizzyController {
   importQuizResults(...results: QuizResult[]): Promise<ID[]>;
   getQuizResult(id: ID): Promise<QuizResult | undefined>;
   listQuizResultIds(quizPaperID?: ID): Promise<ID[]>;
+  listQuizResults(quizPaperID?: ID): Promise<QuizResult[]>;
 
 
 };

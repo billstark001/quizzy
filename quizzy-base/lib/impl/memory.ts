@@ -159,5 +159,8 @@ export class MemoryController implements QuizzyController {
   listQuizResultIds(quizPaperID?: ID): Promise<ID[]> {
     throw new Error("Method not implemented.");
   }
+  listQuizResults(quizPaperID?: ID): Promise<QuizResult[]> {
+    throw new Error("Method not implemented.");
+  }
 
 }
