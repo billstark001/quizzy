@@ -1,4 +1,5 @@
 import { BaseQuestion, BLANK_PREFIX, BlankQuestion, ChoiceQuestion, ID, Question, TextQuestion } from "#/types";
+import { numberToLetters } from "#/utils/string";
 import { AddIcon, MinusIcon } from "@chakra-ui/icons";
 import {
   Box,
@@ -164,7 +165,11 @@ export const ChoiceQuestionPanel = (props: ChoiceQuestionPanelProps) => {
             display='flex' justifyContent='center' alignItems='center'
             backgroundColor={c2}
             mr='0.5em'
-          ><Code m='auto' background='transparent' fontSize='xl'>{i}</Code></Box>
+          >
+            <Code m='auto' background='transparent' fontSize='xl'>
+              {numberToLetters(i + 1)}
+            </Code>
+          </Box>
           <ReactMarkdown components={rs} children={o.content} />
         </HStack>;
       })}
