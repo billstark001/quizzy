@@ -9,8 +9,17 @@ export const EntryPage = () => {
 
   return <VStack align='flex-start'>
     <HStack>
-      <Button onClick={() => navigate('/paper')}>
-        {t('btn.entry.paper')}
+      <Button onClick={() => navigate('/papers')}>
+        {t('btn.entry.papers')}
+      </Button>
+      <Button onClick={() => navigate('/records')}>
+        {t('btn.entry.records')}
+      </Button>
+      <Button onClick={() => navigate('/results')}>
+        {t('btn.entry.results')}
+      </Button>
+      <Button onClick={() => navigate('/stats')}>
+        {t('btn.entry.stats')}
       </Button>
     </HStack>
   </VStack>

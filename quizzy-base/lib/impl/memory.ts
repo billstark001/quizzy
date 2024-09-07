@@ -104,7 +104,7 @@ export class MemoryController implements QuizzyController {
     const record: QuizRecord = {
       id: '',
       paperId: id,
-      status: 'ongoing',
+      paused: false,
       startTime: t,
       updateTime: t,
       timeUsed: 0,

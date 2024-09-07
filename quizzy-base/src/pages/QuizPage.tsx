@@ -81,3 +81,5 @@ export const QuizPage = () => {
   />;
 
 };
+
+export default QuizPage;

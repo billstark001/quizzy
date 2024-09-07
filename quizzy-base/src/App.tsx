@@ -3,8 +3,13 @@ import React from 'react';
 import { Box, Button, Container, useColorMode, VStack } from '@chakra-ui/react';
 import { HashRouter, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import EntryPage from './pages/EntryPage';
-import { PaperSelectionPage } from './pages/PaperSelectionPage';
-import { QuizPage } from './pages/QuizPage';
+import PaperSelectionPage from './pages/PaperSelectionPage';
+import QuizPage from './pages/QuizPage';
+import SettingsPage from './pages/SettingsPage';
+import RecordsPage from './pages/RecordsPage';
+import ResultsPage from './pages/ResultsPage';
+import ResultPage from './pages/ResultPage';
+import StatsPage from './pages/StatsPage';
 
 export const AppLayout = ({ children }: React.PropsWithChildren<object>) => {
   const navigate = useNavigate();
@@ -35,8 +40,15 @@ export const App = () => {
     <AppLayout>
       <Routes>
         <Route path='/' element={<EntryPage />} />
-        <Route path='/paper' element={<PaperSelectionPage />} />
+        <Route path='/settings' element={<SettingsPage />} />
+
+        <Route path='/papers' element={<PaperSelectionPage />} />
+        <Route path='/records' element={<RecordsPage />} />
+        <Route path='/results' element={<ResultsPage />} />
+
         <Route path='/quiz' element={<QuizPage />} />
+        <Route path='/result/:rid' element={<ResultPage />} />
+        <Route path='/stats' element={<StatsPage />} />
       </Routes>
     </AppLayout>
   </HashRouter>;

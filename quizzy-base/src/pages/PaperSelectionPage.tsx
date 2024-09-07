@@ -62,3 +62,5 @@ export const PaperSelectionPage = () => {
     </Wrap>
   </VStack>;
 };
+
+export default PaperSelectionPage;

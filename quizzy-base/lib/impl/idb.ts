@@ -14,7 +14,7 @@ const STORE_KEY_RECORD = 'records';
 const STORE_KEY_QUESTION = 'questions';
 
 const RECORD_INDEX_KEYS = Object.freeze<(keyof QuizRecord)[]>([
-  'paperId', 'status', 'startTime', 'updateTime',
+  'paperId', 'paused', 'startTime', 'updateTime',
 ])
 
 export class IDBController implements QuizzyController {
@@ -131,7 +131,7 @@ export class IDBController implements QuizzyController {
     const record: QuizRecord = {
       id: '',
       paperId: id,
-      status: 'ongoing',
+      paused: false,
       startTime: t,
       updateTime: t,
       timeUsed: 0,

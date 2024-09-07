@@ -1,14 +1,6 @@
-import { Answers } from "./answer";
-import { ID } from "./question";
+import { QuizResult } from "./quiz-result";
 
-export type QuizRecordStatus = 'ongoing' | 'paused' | 'finished';
-
-export type QuizRecord = {
-  id: ID;
-  paperId: ID;
-  status: QuizRecordStatus;
-  startTime: number;
+export type QuizRecord = QuizResult & {
+  paused: boolean;
   updateTime: number;
-  timeUsed: number;
-  answers: Record<ID, Answers>;
 };
