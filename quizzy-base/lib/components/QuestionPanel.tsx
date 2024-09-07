@@ -1,10 +1,10 @@
 import { BaseQuestion, BLANK_PREFIX, BlankQuestion, ChoiceQuestion, ID, Question, TextQuestion } from "#/types";
 import { AddIcon, MinusIcon } from "@chakra-ui/icons";
-import { 
-  Box, 
+import {
+  Box,
   Text,
-  Code, 
-  HStack, 
+  Code,
+  HStack,
   VStack,
   Input,
   useColorMode,
@@ -37,7 +37,7 @@ const rs = ChakraUIRenderer({
 });
 
 export const BaseQuestionPanel = (props: BaseQuestionPanelProps) => {
-  const { components, question, children, 
+  const { components, question, children,
     displaySolution, expandSolution, setExpandSolution,
     solutionTitle,
     ...divProps
@@ -52,8 +52,8 @@ export const BaseQuestionPanel = (props: BaseQuestionPanelProps) => {
   const { title, content } = question;
   const { colorMode } = useColorMode();
 
-  return <VStack 
-    alignItems='flex-start' 
+  return <VStack
+    alignItems='flex-start'
     backgroundColor='gray.  '
     padding='1.5em'
     border='1px solid'
@@ -63,7 +63,7 @@ export const BaseQuestionPanel = (props: BaseQuestionPanelProps) => {
   >
     {title && <ReactMarkdown components={r} children={title} />}
     <Box w='100%' flex={1}>
-      <ReactMarkdown components={components ?? r} children={content} /> 
+      <ReactMarkdown components={components ?? r} children={content} />
     </Box>
     {children}
     {solution == null || !displaySolution ? null : <VStack
@@ -75,7 +75,7 @@ export const BaseQuestionPanel = (props: BaseQuestionPanelProps) => {
     >
       <HStack justifyContent='space-between' w='100%'>
         <Box>{solutionTitle ?? 'Solution'}</Box>
-        <Box 
+        <Box
           display='flex' justifyContent='center' alignItems='center'
           w='32px' h='32px'
           backgroundColor={colorMode == 'dark' ? 'gray.500' : 'gray.300'}
@@ -102,7 +102,7 @@ export const BaseQuestionPanel = (props: BaseQuestionPanelProps) => {
 
 export type ChoiceQuestionPanelProps = {
   question: ChoiceQuestion;
-  set?(id: ID, set: boolean): void;
+  set?(id: ID, set: boolean, multiple: boolean): void;
   get?(id: ID): boolean;
 } & _S & HTMLChakraProps<'div'>;
 
@@ -112,8 +112,8 @@ const getOptionColor = (selected: boolean, correct?: boolean | null | undefined,
   const activeConc = isDark ? 600 : 300;
   const hoverConc = isDark ? 500 : 200;
   const hoverActiveConc = isDark ? 800 : 400;
-  const _t = (c: string) => [`${c}.${normalConc}`, `${c}.${activeConc}`, 
-    `${c}.${hoverConc}`, `${c}.${hoverActiveConc}`] as [string, string, string, string];
+  const _t = (c: string) => [`${c}.${normalConc}`, `${c}.${activeConc}`,
+  `${c}.${hoverConc}`, `${c}.${hoverActiveConc}`] as [string, string, string, string];
   if (isSelect) {
     return _t(selected ? 'blue' : 'gray');
   } else {
@@ -124,7 +124,7 @@ const getOptionColor = (selected: boolean, correct?: boolean | null | undefined,
 };
 
 export const ChoiceQuestionPanel = (props: ChoiceQuestionPanelProps) => {
-  const { 
+  const {
     question,
     state,
     set, get,
@@ -136,8 +136,11 @@ export const ChoiceQuestionPanel = (props: ChoiceQuestionPanelProps) => {
   const isDark = colorMode === 'dark';
   const isDisplay = state === 'display';
 
+  const isMultiChoice = question.multiple
+    ?? (question.options.filter(x => x.shouldChoose).length > 1);
+
   return <BaseQuestionPanel question={question} {...sol}>
-    <VStack 
+    <VStack
       alignItems='flex-start'
       w='100%'
       p='0.5em 1em'
@@ -150,14 +153,14 @@ export const ChoiceQuestionPanel = (props: ChoiceQuestionPanelProps) => {
           w='100%' p='0.5em'
           backgroundColor={c1}
           border='1px solid' borderColor='gray.400' borderRadius='1em'
-          onClick={isDisplay ? undefined : () => set?.(id, !selected)}
+          onClick={isDisplay ? undefined : () => set?.(id, !selected, isMultiChoice)}
           cursor={isDisplay ? undefined : 'pointer'}
           transition="background-color 0.3s ease"
           _hover={isDisplay ? undefined : { backgroundColor: c3 }}
           _active={isDisplay ? undefined : { backgroundColor: c4 }}
         >
-          <Box 
-            minH='3em' minW='3em' borderRadius='0.7em' 
+          <Box
+            minH='3em' minW='3em' borderRadius='0.7em'
             display='flex' justifyContent='center' alignItems='center'
             backgroundColor={c2}
             mr='0.5em'
@@ -178,8 +181,8 @@ type _FBP = {
 }
 
 const fillBlankContext = createContext<_FBP>({
-  get() { return '';},
-  set() {},
+  get() { return ''; },
+  set() { },
 });
 
 const rc = ChakraUIRenderer({
@@ -222,7 +225,7 @@ export type BlankQuestionPanelProps = {
 } & _S & HTMLChakraProps<'div'>;
 
 export const BlankQuestionPanel = (props: BlankQuestionPanelProps) => {
-  const { 
+  const {
     question,
     state,
     set, get,

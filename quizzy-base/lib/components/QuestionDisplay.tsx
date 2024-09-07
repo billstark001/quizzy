@@ -72,9 +72,9 @@ export const QuestionDisplay = (props: QuestionDisplayProps) => {
     get(id) {
       return (answers as ChoiceAnswers).answer[id];
     },
-    set(id, set) {
+    set(id, set, multi) {
       setAnswers((a) => ({ ...a as ChoiceAnswers, answer: {
-        ...(a as ChoiceAnswers).answer,
+        ...(multi ? (a as ChoiceAnswers).answer : {}),
         [id]: set,
       }}));
     },
