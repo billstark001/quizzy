@@ -2,7 +2,7 @@ import Sheet, { Column, withSheetRow } from "#/components/Sheet";
 import { ID, QuizRecord } from "#/types";
 import { Quizzy } from "@/data";
 import { useAsyncEffect } from "@/utils/react";
-import { Button } from "@chakra-ui/react";
+import { Button, HStack } from "@chakra-ui/react";
 import { atom, useAtom } from "jotai";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
@@ -11,8 +11,11 @@ import { useNavigate } from "react-router-dom";
 const recordsAtom = atom<readonly QuizRecord[]>([]);
 const paperNamesAtom = atom<Readonly<Record<ID, string>>>({});
 
-const ResumeButton = withSheetRow<QuizRecord>((props) => {
-  const { item } = props;
+type _K = {
+  refresh: () => void | Promise<void>,
+};
+const ResumeButton = withSheetRow<QuizRecord, _K>((props) => {
+  const { item, refresh } = props;
 
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -20,15 +23,24 @@ const ResumeButton = withSheetRow<QuizRecord>((props) => {
   if (!item) {
     return <></>;
   }
-  return <Button onClick={() => {
-    const params = new URLSearchParams({
-      record: item.id,
-      q: String(item.lastQuestion || 1),
-    })
-    navigate('/quiz?' + params.toString());
-  }}>
-    {t('btn.continue')}
-  </Button>
+  
+  return <HStack>
+    <Button onClick={() => {
+      const params = new URLSearchParams({
+        record: item.id,
+        q: String(item.lastQuestion || 1),
+      })
+      navigate('/quiz?' + params.toString());
+    }} colorScheme='blue'>
+      {t('btn.continue')}
+    </Button>
+    <Button onClick={async () => {
+      await Quizzy.deleteQuizRecord(item.id);
+      await refresh();
+    }} colorScheme='red'>
+      {t('btn.delete')}
+    </Button>
+  </HStack>
 });
 
 export const RecordsPage = () => {
@@ -37,10 +49,8 @@ export const RecordsPage = () => {
   const [paperNames, setPaperNames] = useAtom(paperNamesAtom);
 
   // refresh records
-  useAsyncEffect(
-    () => Quizzy.listQuizRecords().then(setRecords),
-    []
-  );
+  const refresh = () => Quizzy.listQuizRecords().then(setRecords);
+  useAsyncEffect(refresh, []);
 
   // fetch paper names
   useAsyncEffect(async () => {
@@ -63,7 +73,7 @@ export const RecordsPage = () => {
     <Column field='timeUsed' />
     <Column field='lastQuestion' render={(x) => x || 1}/>
     <Column>
-      <ResumeButton />
+      <ResumeButton refresh={refresh}/>
     </Column>
   </Sheet>
 };

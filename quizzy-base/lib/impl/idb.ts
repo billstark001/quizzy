@@ -260,6 +260,15 @@ export class IDBController implements QuizzyController {
     return result.id;
   }
 
+  deleteQuizRecord(id: ID): Promise<void> {
+    return this.db.delete(STORE_KEY_RECORDS, id);
+  }
+
+  deleteQuizResult(id: ID): Promise<void> {
+    // TODO revert stats
+    return this.db.delete(STORE_KEY_RESULTS, id);
+  }
+
   importQuizResults(...results: QuizResult[]): Promise<ID[]> {
     return this._import(STORE_KEY_RESULTS, results);
   }

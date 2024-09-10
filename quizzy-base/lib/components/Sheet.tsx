@@ -110,7 +110,7 @@ export const useSheetRow = <T,>(): SheetRow<T> => {
  * @param Component The component to wrap.
  * @returns A new component with sheet row context injected.
  */
-export const withSheetRow = <T=any, K=Partial<SheetRow<T>>>(Component: ComponentType<K>) => {
+export const withSheetRow = <T=any, K=object>(Component: ComponentType<K & Partial<SheetRow<T>>>) => {
   const WrappedComponent = (props: K & Partial<SheetRow<T>>) => {
     const context = useSheetRow<T>();
     return <Component {...context} {...props} />;

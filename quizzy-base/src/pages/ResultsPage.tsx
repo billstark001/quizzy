@@ -1,9 +1,9 @@
 
 import Sheet, { withSheetRow, Column } from "#/components/Sheet";
-import { QuizResult, ID } from "#/types";
+import { QuizResult } from "#/types";
 import { Quizzy } from "@/data";
 import { useAsyncEffect } from "@/utils/react";
-import { Button } from "@chakra-ui/react";
+import { Button, HStack } from "@chakra-ui/react";
 import { atom, useAtom } from "jotai";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
@@ -11,8 +11,11 @@ import { useNavigate } from "react-router-dom";
 
 const resultsAtom = atom<readonly QuizResult[]>([]);
 
-const GotoButton = withSheetRow<QuizResult>((props) => {
-  const { item } = props;
+type _K = {
+  refresh: () => void | Promise<void>,
+};
+const GotoButton = withSheetRow<QuizResult, _K>((props) => {
+  const { item, refresh } = props;
 
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -20,21 +23,27 @@ const GotoButton = withSheetRow<QuizResult>((props) => {
   if (!item) {
     return <></>;
   }
-  return <Button onClick={() => {
-    navigate('/result/' + item.id);
-  }}>
-    {t('btn.goto')}
-  </Button>
+  return <HStack>
+    <Button onClick={() => {
+      navigate('/result/' + item.id);
+    }} colorScheme="blue">
+      {t('btn.goto')}
+    </Button>
+    <Button onClick={async () => {
+      await Quizzy.deleteQuizResult(item.id);
+      await refresh();
+    }} colorScheme='red'>
+      {t('btn.delete')}
+    </Button>
+  </HStack>;
 });
 
 export const ResultsPage = () => {
   const [results, setResults] = useAtom(resultsAtom);
 
   // refresh results
-  useAsyncEffect(
-    () => Quizzy.listQuizResults().then(setResults),
-    []
-  );
+  const refresh = () => Quizzy.listQuizResults().then(setResults);
+  useAsyncEffect(refresh, []);
 
   return <Sheet data={results}>
     <Column field='paperName' />
@@ -43,11 +52,10 @@ export const ResultsPage = () => {
     <Column field='score' />
     <Column field='total' />
     <Column>
-      <GotoButton />
+      <GotoButton refresh={refresh} />
     </Column>
   </Sheet>
 
-  return 'TODO';
 };
 
 export default ResultsPage;

@@ -46,6 +46,7 @@ export interface QuizzyController {
     record: Partial<QuizRecord>,
     options?: UpdateQuizOptions,
   ): Promise<QuizRecord>;
+  deleteQuizRecord(id: ID): Promise<void>;
   endQuiz(id: ID, options?: EndQuizOptions): Promise<ID | undefined>;
 
   // results
@@ -54,6 +55,7 @@ export interface QuizzyController {
   getQuizResult(id: ID): Promise<QuizResult | undefined>;
   listQuizResultIds(quizPaperID?: ID): Promise<ID[]>;
   listQuizResults(quizPaperID?: ID): Promise<QuizResult[]>;
+  deleteQuizResult(id: ID): Promise<void>;
 
 
 };
