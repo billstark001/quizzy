@@ -1,3 +1,4 @@
+import { getOptionOrBlankId } from "#/impl/question-id";
 import { BaseQuestion, BLANK_PREFIX, BlankQuestion, ChoiceQuestion, ID, Question, TextQuestion } from "#/types";
 import { numberToLetters } from "#/utils/string";
 import { AddIcon, MinusIcon } from "@chakra-ui/icons";
@@ -147,10 +148,10 @@ export const ChoiceQuestionPanel = (props: ChoiceQuestionPanelProps) => {
       p='0.5em 1em'
     >
       {options.map((o, i) => {
-        const id = o.id ?? `${question.id}-${i}`;
-        const selected = !!get?.(o.id ?? `${question.id}-${i}`);
+        const id = getOptionOrBlankId(o, i, question);
+        const selected = !!get?.(id);
         const [c1, c2, c3, c4] = getOptionColor(selected, isDisplay ? o.shouldChoose : undefined, isDark);
-        return <HStack key={`${o.id}+${i}`}
+        return <HStack key={id}
           w='100%' p='0.5em'
           backgroundColor={c1}
           border='1px solid' borderColor='gray.400' borderRadius='1em'
@@ -240,10 +241,10 @@ export const BlankQuestionPanel = (props: BlankQuestionPanelProps) => {
   const { blanks } = question;
   const KeyIdMap = useMemo(() => {
     const ret: Record<string, ID> = {};
-    for (const { id, key } of blanks) {
-      ret[key] = id;
-    }
-    return ret;
+    blanks.forEach((b, index) => {
+      ret[b.key] = getOptionOrBlankId(b, index, question);
+    });
+    return ret as Readonly<Record<string, ID>>;
   }, [blanks]);
 
   const fbpGet = useCallback(

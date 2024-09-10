@@ -1,12 +1,13 @@
-import { CompleteQuizPaperDraft, EndQuizOptions, ID, Question, QuizPaper, QuizRecord, QuizzyController, StartQuizOptions, UpdateQuizOptions } from "#/types";
+import { CompleteQuizPaperDraft, EndQuizOptions, ID, Question, QuizPaper, QuizRecord, QuizzyController, StartQuizOptions, Stat, UpdateQuizOptions } from "#/types";
 import { IDBPDatabase, openDB } from "idb";
 import { separatePaperAndQuestions, toCompleted } from "./paper-id";
 import { uuidV4B64 } from "#/utils";
 import { QuizResult } from "#/types/quiz-result";
+import { createResultAndStatPatches } from "./result";
 
 
 const DB_KEY = 'Quizzy';
-const VERSION = 1;
+const VERSION = 2;
 
 const STORE_KEY_PAPERS = 'papers';
 const STORE_KEY_RECORDS = 'records';
@@ -37,9 +38,13 @@ const updaters: Record<number, DBUpdater> = {
   [1]: (db) => {
     const _id: IDBObjectStoreParameters = { keyPath: 'id', };
     const resultStore = db.createObjectStore(STORE_KEY_RESULTS, _id);
+    const statStore = db.createObjectStore(STORE_KEY_STATS, _id);
     for (const key of ['paperId', 'startTime',]) {
       resultStore.createIndex(key, key);
     }
+    statStore.createIndex('tag', 'tag', { unique: true });
+    statStore.createIndex('alternatives', 'alternatives', { multiEntry: true });
+    statStore.createIndex('percentage', 'percentage');
   }
 };
 
@@ -195,8 +200,64 @@ export class IDBController implements QuizzyController {
   }
 
 
-  endQuiz(id: ID, options?: EndQuizOptions): Promise<ID | undefined> {
-    throw new Error("Method not implemented.");
+  async endQuiz(id: ID, _options?: EndQuizOptions): Promise<ID | undefined> {
+    
+    // read necessary data
+    const r = await this.getQuizRecord(id);
+    if (!r) {
+      return;
+    }
+    const p = await this.getQuizPaper(r.paperId);
+    if (!p) {
+      return;
+    }
+    const q: Record<ID, Question> = Object.fromEntries(
+      (await this.getQuestions(p.questions)).filter(q => !!q)
+        .map(q => [q.id, q]),
+    );
+    // create result and patches
+    const [result, patches] = createResultAndStatPatches(r, p, q);
+    
+
+    // create write transactions
+    const tx = this.db.transaction([
+      STORE_KEY_RESULTS, STORE_KEY_STATS, STORE_KEY_RECORDS,
+    ], 'readwrite');
+
+    // put the result into the store
+    const _sr = tx.objectStore(STORE_KEY_RESULTS);
+    while (!!await _sr.get(result.id)) {
+      result.id = uuidV4B64();
+    }
+    _sr.add(result);
+
+    // delete original record
+    await tx.objectStore(STORE_KEY_RECORDS).delete(id);
+
+    // patch stats
+    const _ss = tx.objectStore(STORE_KEY_STATS);
+    for (const { tag, questionId, correct } of patches) {
+      // get or create the corresponding stat object
+      const stat: Stat = await _ss.index('tag').get(tag) 
+        ?? await _ss.index('alternatives').get(tag) ?? {
+          id: '', tag, alternatives: [], correct: {}, total: {}, percentage: 0,
+        } as Stat;
+      // generate and assign ID if inexistent
+      while (!stat.id || !!await _ss.get(stat.id)) {
+        stat.id = uuidV4B64();
+      }
+      // apply patch
+      stat.total[questionId] = (stat.total[questionId] || 0) + 1;
+      stat.correct[questionId] = (stat.correct[questionId] || 0) + Number(correct ?? 0);
+      const correctCount = Object.values(stat.correct).reduce((acc, val) => acc + val, 0);
+      const totalCount = Object.values(stat.total).reduce((acc, val) => acc + val, 0);
+      stat.percentage = correctCount / totalCount;
+      // write back to store
+      await _ss.put(stat);
+    }
+
+    await tx.done;
+    return result.id;
   }
 
   importQuizResults(...results: QuizResult[]): Promise<ID[]> {

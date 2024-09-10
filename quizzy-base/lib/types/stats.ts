@@ -9,3 +9,9 @@ export type Stat = {
   total: Record<ID, number>;
   percentage: number;
 };
+
+export type StatPatch = {
+  tag: string;
+  questionId: ID;
+  correct: boolean;
+};

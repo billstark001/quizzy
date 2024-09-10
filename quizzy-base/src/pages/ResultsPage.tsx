@@ -10,7 +10,6 @@ import { useNavigate } from "react-router-dom";
 
 
 const resultsAtom = atom<readonly QuizResult[]>([]);
-const paperNamesAtom = atom<Readonly<Record<ID, string>>>({});
 
 const GotoButton = withSheetRow<QuizResult>((props) => {
   const { item } = props;
@@ -30,7 +29,6 @@ const GotoButton = withSheetRow<QuizResult>((props) => {
 
 export const ResultsPage = () => {
   const [results, setResults] = useAtom(resultsAtom);
-  const [paperNames, setPaperNames] = useAtom(paperNamesAtom);
 
   // refresh results
   useAsyncEffect(
@@ -38,25 +36,12 @@ export const ResultsPage = () => {
     []
   );
 
-  // fetch paper names
-  useAsyncEffect(async () => {
-    if (!results) {
-      return;
-    }
-    const papers = await Quizzy.getQuizPaperNames(...results.map(r => r.paperId));
-    const record: Record<ID, string> = {
-      ...paperNames,
-    };
-    for (let i = 0; i < results.length; ++i) {
-      record[results[i].paperId] = papers[i] || '<none>';
-    }
-    setPaperNames(record);
-  }, [results]);
-
   return <Sheet data={results}>
-    <Column field='paperId' render={(x) => paperNames[x]} />
+    <Column field='paperName' />
     <Column field='startTime' />
     <Column field='timeUsed' />
+    <Column field='score' />
+    <Column field='total' />
     <Column>
       <GotoButton />
     </Column>

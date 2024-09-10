@@ -9,7 +9,7 @@ export type ChoiceQuestionOption = {
 };
 
 export type BlankQuestionBlank = {
-  id: ID;
+  id?: ID;
   key: string;
   answer?: string;
 };

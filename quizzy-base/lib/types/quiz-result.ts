@@ -6,6 +6,11 @@ export type QuizResult = QuizRecordBase & {
   // TODO
 
   paperName: string;
+  
   correct: Record<ID, Answers>;
+
+  scores: Record<ID, number>;
+  weights: Record<ID, number>;
   score: number;
+  total: number;
 };

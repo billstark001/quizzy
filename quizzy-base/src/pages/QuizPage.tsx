@@ -87,7 +87,10 @@ export const QuizPage = () => {
     onPreviewQuestionChanged={onPreviewQuestionChanged}
     onQuestionChanged={(q) => setSearchParams((p) => ({ ...parseSearchParams(p, _parser), q } as any))}
     onExit={() => navigate('/')}
-    onSubmit={() => Quizzy.endQuiz(recordId).catch(console.error)}
+    onSubmit={async () => {
+      const id = await Quizzy.endQuiz(recordId);
+      navigate('/result/' + id);
+    }}
   />;
 
 };
