@@ -232,7 +232,7 @@ export class IDBController implements QuizzyController {
     _sr.add(result);
 
     // delete original record
-    await tx.objectStore(STORE_KEY_RECORDS).delete(id);
+    // await tx.objectStore(STORE_KEY_RECORDS).delete(id);
 
     // patch stats
     const _ss = tx.objectStore(STORE_KEY_STATS);

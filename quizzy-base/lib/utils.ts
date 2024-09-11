@@ -6,7 +6,7 @@ export type WithOptional<T extends object, K extends keyof T> = Omit<T, K> & { [
 export const uuidV4B64 = (digit = 16) => {
   const uuid1 = uuid.v4();
   const bytes = new Uint8Array(uuid1.match(/[\da-f]{2}/gi)!.map(h => parseInt(h, 16)));
-  const ret = fromByteArray(bytes).replace(/\+\/-=/g, '_');
+  const ret = fromByteArray(bytes).replace(/[+/\-=]/g, '_');
   return ret.substring(0, digit);
 }
 

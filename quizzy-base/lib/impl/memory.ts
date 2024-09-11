@@ -150,10 +150,19 @@ export class MemoryController implements QuizzyController {
   endQuiz(id: ID, options?: EndQuizOptions): Promise<ID | undefined> {
     throw new Error("Method not implemented.");
   }
+  
+  deleteQuizRecord(id: ID): Promise<void> {
+    throw new Error("Method not implemented.");
+  }
+
+
   importQuizResults(...results: QuizResult[]): Promise<ID[]> {
     throw new Error("Method not implemented.");
   }
   getQuizResult(id: ID): Promise<QuizResult | undefined> {
+    throw new Error("Method not implemented.");
+  }
+  deleteQuizResult(id: ID): Promise<void> {
     throw new Error("Method not implemented.");
   }
   listQuizResultIds(quizPaperID?: ID): Promise<ID[]> {

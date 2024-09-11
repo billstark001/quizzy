@@ -2,15 +2,24 @@ import { Answers } from "./answer";
 import { ID } from "./question";
 import { QuizRecordBase } from "./quiz-record";
 
+export type QuizRecordRow = {
+  id: ID;
+  name: string;
+  answer: string;
+  correct: string;
+  score: number;
+  weight: number;
+};
+
 export type QuizResult = QuizRecordBase & {
   // TODO
 
   paperName: string;
-  
+
   correct: Record<ID, Answers>;
 
-  scores: Record<ID, number>;
-  weights: Record<ID, number>;
+  // name, score, weight
+  records: QuizRecordRow[];
   score: number;
   total: number;
 };
