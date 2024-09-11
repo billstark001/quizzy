@@ -55,7 +55,7 @@ export const QuestionSelectionModal = (props: QuestionSelectionModalProps) => {
               {i + 1}
             </Button>)}
           </Wrap>
-          <Box flex={1} overflowY='scroll' maxH='75vh'>
+          <Box flex={1} overflowY='scroll' maxH='65vh'>
             {question}
           </Box>
         </HStack>

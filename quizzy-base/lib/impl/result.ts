@@ -1,4 +1,4 @@
-import { Answers, ID, Question, QuizPaper, QuizRecord, QuizRecordRow, QuizResult, StatPatch } from "#/types";
+import { Answers, ID, Question, QuizPaper, QuizRecord, QuizResultRecordRow, QuizResult, StatPatch } from "#/types";
 import { uuidV4B64 } from "#/utils";
 import { numberToLetters } from "#/utils/string";
 import { getOptionOrBlankId } from "./question-id";
@@ -21,7 +21,7 @@ export const createResultAndStatPatches = (
   let score = 0;
   let total = 0;
 
-  const records: QuizRecordRow[] = [];
+  const records: QuizResultRecordRow[] = [];
 
   // stat patch
   const patches: StatPatch[] = [];

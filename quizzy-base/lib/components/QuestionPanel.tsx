@@ -56,7 +56,6 @@ export const BaseQuestionPanel = (props: BaseQuestionPanelProps) => {
 
   return <VStack
     alignItems='flex-start'
-    backgroundColor='gray.  '
     padding='1.5em'
     border='1px solid'
     borderColor='gray.500'

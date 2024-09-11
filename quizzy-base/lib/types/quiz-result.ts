@@ -2,7 +2,7 @@ import { Answers } from "./answer";
 import { ID } from "./question";
 import { QuizRecordBase } from "./quiz-record";
 
-export type QuizRecordRow = {
+export type QuizResultRecordRow = {
   id: ID;
   name: string;
   answer: string;
@@ -19,7 +19,7 @@ export type QuizResult = QuizRecordBase & {
   correct: Record<ID, Answers>;
 
   // name, score, weight
-  records: QuizRecordRow[];
+  records: QuizResultRecordRow[];
   score: number;
   total: number;
 };

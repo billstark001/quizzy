@@ -4,15 +4,16 @@ import { Answers, BlankAnswers, ChoiceAnswers, ChoiceQuestion, Question, TextAns
 import { formatMilliseconds } from "#/utils";
 import { QuestionSelectionModal } from "#/components/QuestionSelectionModal";
 import { DragHandleIcon } from "@chakra-ui/icons";
-import { Box, Button, HStack, IconButton, Progress, useDisclosure, VStack } from "@chakra-ui/react";
-import { Dispatch, ReactNode, SetStateAction, useState } from "react";
+import { Box, Button, HStack, IconButton, Progress, StackProps, useDisclosure, VStack } from "@chakra-ui/react";
+import { Dispatch, ElementType, ReactNode, SetStateAction, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { getTagStyle } from "#/utils/react";
 
 
 export type QuestionDisplayProps = {
-  question: Question,
+  question?: Question,
   answers: Answers,
-  setAnswers: Dispatch<SetStateAction<Answers>>,
+  setAnswers?: Dispatch<SetStateAction<Answers>>,
   currentQuestion: number,
   totalQuestions: number,
   onQuestionChanged?: (num: number) => void | Promise<void>,
@@ -29,6 +30,8 @@ export type QuestionDisplayProps = {
   // page shift
   onExit?: () => void,
   onSubmit?: () => void,
+  
+  panelStyle?: ElementType<StackProps> | StackProps,
 }
 
 export const TextQuestionSymbol = Symbol('TextQuestion');
@@ -53,6 +56,8 @@ export const QuestionDisplay = (props: QuestionDisplayProps) => {
 
     onExit,
     onSubmit,
+
+    panelStyle,
   } = props;
 
   const [questionSelect, setQuestionSelect] = useState(currentQuestion);
@@ -70,10 +75,10 @@ export const QuestionDisplay = (props: QuestionDisplayProps) => {
 
   const choice: Partial<ChoiceQuestionPanelProps> = {
     get(id) {
-      return (answers as ChoiceAnswers).answer[id];
+      return !!(answers as ChoiceAnswers)?.answer[id];
     },
     set(id, set, multi) {
-      setAnswers((a) => ({ ...a as ChoiceAnswers, answer: {
+      setAnswers?.((a) => ({ ...a as ChoiceAnswers, answer: {
         ...(multi ? (a as ChoiceAnswers).answer : {}),
         [id]: set,
       }}));
@@ -82,10 +87,10 @@ export const QuestionDisplay = (props: QuestionDisplayProps) => {
 
   const blank: Partial<BlankQuestionPanelProps> = {
     get(id) {
-      return (answers as BlankAnswers).answer[id];
+      return (answers as BlankAnswers)?.answer[id] ?? '';
     },
     set(id, set) {
-      setAnswers((a) => ({ ...a as BlankAnswers, answer: {
+      setAnswers?.((a) => ({ ...a as BlankAnswers, answer: {
         ...(a as BlankAnswers).answer,
         [id]: set,
       }}));
@@ -94,14 +99,14 @@ export const QuestionDisplay = (props: QuestionDisplayProps) => {
 
   const text: Partial<TextQuestionPanelProps> = {
     get() {
-      return (answers as TextAnswers).answer;
+      return (answers as TextAnswers)?.answer ?? '';
     },
     set(set) {
-      setAnswers((a) => ({ ...a as TextAnswers, answer: set }));
+      setAnswers?.((a) => ({ ...a as TextAnswers, answer: set }));
     },
   };
 
-  const { type } = question;
+  const { type } = question ?? { type: 'choice' };
   const getterAndSetter: Partial<QuestionPanelProps> =
     type === 'text' ? text :
       type === 'choice' ? choice : blank;
@@ -122,13 +127,15 @@ export const QuestionDisplay = (props: QuestionDisplayProps) => {
         {hasTotalTime && <Box>{formatMilliseconds(totalTime)}</Box>}
       </HStack>
     </HStack>
-    <QuestionPanel
+    {question && <QuestionPanel
+      overflowY='scroll'
       flex={1}
+      {...getTagStyle(panelStyle, true, VStack) as {}}
       displaySolution={!!isResult}
       question={question as ChoiceQuestion} state={isResult ? 'display' : 'select'}
       expandSolution={expandSolution} setExpandSolution={setExpandSolution}
       {...getterAndSetter as object}
-    />
+    />}
     <Pagination
       nearPages={3}
       currentPage={currentQuestion} totalPages={totalQuestions} setPage={onQuestionChanged} />
@@ -156,7 +163,7 @@ export const QuestionDisplay = (props: QuestionDisplayProps) => {
         return onPreviewQuestionChanged?.(i);
       }} onSelect={onQuestionChanged}
       {...q}
-      question={<BaseQuestionPanel w='100%' question={previewQuestion ?? question} />}
+      question={question ? <BaseQuestionPanel w='100%' question={previewQuestion ?? question} /> : <></>}
     />
   </VStack>;
 };
