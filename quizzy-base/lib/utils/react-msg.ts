@@ -3,7 +3,6 @@ import { ReactNode } from "react";
 import { isAsync } from "./func";
 
 type N = ReactNode | UseToastOptions | null | undefined;
-type _A<R> = R extends Promise<any> ? Awaited<R> : R;
 
 export type WithHandlerOptions<
   R,
@@ -11,7 +10,7 @@ export type WithHandlerOptions<
 > = {
   setLoading?: (isLoading: boolean) => void;
   notify?: (payload: N, isSuccess: boolean) => void;
-  notifySuccess?: N | ((result: R) => N);
+  notifySuccess?: N | ((result: R extends Promise<infer RR> ? RR : R) => N);
   notifyError?: N | ((error: E) => N);
   finallySection?: () => R extends Promise<any> ? Promise<void> : void;
 };
@@ -23,7 +22,7 @@ export function withHandlerRaw<
   E = any,
 >(
   f: T,
-  options?: WithHandlerOptions<_A<R>, E>,
+  options?: WithHandlerOptions<R, E>,
 ) {
 
   const {
@@ -42,7 +41,7 @@ export function withHandlerRaw<
       try {
         const ret = await f(...args);
         needsNotify1 && notify(typeof notifySuccess === 'function'
-          ? notifySuccess(ret as _A<R>)
+          ? notifySuccess(ret)
           : notifySuccess, true);
         return ret;
       } catch (e) {
@@ -59,7 +58,7 @@ export function withHandlerRaw<
       try {
         const ret = f(...args);
         needsNotify1 && notify(typeof notifySuccess === 'function'
-          ? notifySuccess(ret as _A<R>)
+          ? notifySuccess(ret)
           : notifySuccess, true);
         return ret;
       } catch (e) {
