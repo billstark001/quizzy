@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useRef } from 'react';
 import { useCallbackRef, useDisclosure, UseDisclosureProps, UseDisclosureReturn } from '@chakra-ui/react';
 import { atom, PrimitiveAtom, useAtom } from 'jotai';
 
@@ -32,10 +32,10 @@ export type UseDisclosureWithDataProps<T> = Omit<UseDisclosureProps, 'onOpen'> &
  * @returns An object containing disclosure state and methods, along with data management.
  */
 export function useDisclosureWithData<T>(
-  defaultData: T | DataFunction<T>, 
+  defaultData: T | DataFunction<T>,
   props: UseDisclosureWithDataProps<T> = {}
 ): UseDisclosureWithDataReturn<T> {
-  const { 
+  const {
     data: dataProp,
     onOpen: onOpenProp,
   } = props;
@@ -44,10 +44,10 @@ export function useDisclosureWithData<T>(
   const handleOnOpen = useCallbackRef(onOpenProp);
 
   const d = useDisclosure({ ...props, onOpen: undefined });
-  const { onOpen: originalOnOpen } = d;
+  const { onOpen: onOpenOriginal } = d;
 
-  const _data = useMemo(() => typeof defaultData === 'function' 
-    ? (defaultData as DataFunction<T>)() 
+  const _data = useMemo(() => typeof defaultData === 'function'
+    ? (defaultData as DataFunction<T>)()
     : defaultData, [defaultData]);
 
   const [data, setData] = useState<T>(_data);
@@ -56,9 +56,9 @@ export function useDisclosureWithData<T>(
     if (!isDataControlled) {
       setData(newData !== undefined ? newData : _data);
     }
-    originalOnOpen();
+    onOpenOriginal();
     handleOnOpen?.(newData);
-  }, [isDataControlled, _data, originalOnOpen, handleOnOpen]);
+  }, [isDataControlled, _data, onOpenOriginal, handleOnOpen]);
 
   return {
     ...d,
@@ -66,7 +66,47 @@ export function useDisclosureWithData<T>(
     isDataControlled,
     onOpen,
   };
+};
+
+export type UseDisclosureWithConfirmProps<T = boolean> = Omit<UseDisclosureProps, 'onClose'> & {
+  defaultValue?: T,
+  onClose?: (confirm: T) => void,
+};
+
+export type UseDisclosureWithConfirmReturn<T = boolean> = Omit<UseDisclosureReturn, 'onClose'> & {
+  confirm: () => Promise<T>,
+  onClose: (confirm?: T) => void,
 }
+
+export const useDisclosureWithConfirm = <T = boolean>(
+  props?: UseDisclosureWithConfirmProps<T>,
+) => {
+  const { defaultValue, onClose: onCloseProp } = props ?? { defaultValue: false };
+  const handleOnClose = useCallbackRef(onCloseProp);
+
+  const resolver = useRef<((value: T) => void) | undefined>();
+  const disclosure = useDisclosure({ ...props, onClose: undefined });
+  const { onOpen, onClose: onCloseOriginal } = disclosure;
+
+  const confirm = useCallback(() => new Promise<T>((res) => {
+    resolver.current?.(defaultValue as T);
+    resolver.current = res;
+    onOpen();
+  }), [resolver.current, onOpen]);
+
+  const onClose = useCallback((confirm = defaultValue) => {
+    resolver.current?.(confirm as T);
+    resolver.current = undefined;
+    onCloseOriginal();
+    handleOnClose?.(confirm as T);
+  }, [resolver.current, onCloseOriginal, handleOnClose]) as (confirm?: T) => void;
+
+  return {
+    ...disclosure,
+    onClose,
+    confirm,
+  } as UseDisclosureWithConfirmReturn;
+};
 
 /**
  * Props for the Disclosure component.
@@ -107,7 +147,7 @@ export type DisclosureWithDataAtom<T> = PrimitiveAtom<DisclosureWithData<T>> & {
  * @returns An object containing disclosure state and methods.
  */
 export const useDisclosureAtomHooks = (
-  disclosureAtom: PrimitiveAtom<boolean>, 
+  disclosureAtom: PrimitiveAtom<boolean>,
 ): UseDisclosureReturn => {
   const [isOpen, setIsOpen] = useAtom(disclosureAtom);
 
@@ -134,12 +174,12 @@ export const useDisclosureAtomHooks = (
  * @returns An object containing disclosure state, methods, and associated data.
  */
 export const useDisclosureWithDataAtomHooks = <T>(
-  a: PrimitiveAtom<DisclosureWithData<T>>, 
+  a: PrimitiveAtom<DisclosureWithData<T>>,
   defaultData: T | (() => T),
 ) => {
   const [d, setD] = useAtom(a);
   const { isOpen, data } = d;
-  
+
   const onOpen = useCallback((data?: T) => {
     setD(() => ({ isOpen: true, data: data as T }));
   }, [setD]);
@@ -186,8 +226,8 @@ export const disclosureWithDataAtom = <T>(
   const { defaultIsOpen } = props;
   const a = atom<DisclosureWithData<T>>({
     isOpen: !!defaultIsOpen,
-    data: typeof defaultData === 'function' 
-      ? (defaultData as (() => T))() 
+    data: typeof defaultData === 'function'
+      ? (defaultData as (() => T))()
       : defaultData,
   });
   Object.defineProperty(a, 'use', {
