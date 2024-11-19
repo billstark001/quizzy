@@ -35,18 +35,18 @@ export const toWrapped = (
     notifySuccess: undefined,
   });
 
-  const ret: QuizzyController = Object.freeze({
+  const ret: QuizzyController = {
     ...Object.fromEntries(
       Object.keys(keys).map(key => [
         key, 
         withHandler(controller[key as keyof QuizzyController].bind(controller), commonOptions),
       ])
     ) as unknown as QuizzyController,
-  });
+  };
 
   Object.setPrototypeOf(ret, controller);
 
-  return ret;
+  return Object.freeze(ret);
 };
 
 export default toWrapped;
