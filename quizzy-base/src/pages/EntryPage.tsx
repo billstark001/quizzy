@@ -1,3 +1,4 @@
+import { withHandler } from "#/utils";
 import { Button, HStack, VStack } from "@chakra-ui/react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
@@ -6,6 +7,12 @@ export const EntryPage = () => {
 
   const { t } = useTranslation();
   const navigate = useNavigate();
+
+
+  const handlerTest = withHandler(async () => {
+    await fetch('https://www.baidu.com');
+    throw new Error('test error');
+  });
 
   return <VStack align='flex-start'>
     <HStack>
@@ -22,6 +29,7 @@ export const EntryPage = () => {
         {t('btn.entry.stats')}
       </Button>
     </HStack>
+    <Button onClick={handlerTest}>handler test</Button>
   </VStack>
 };
 

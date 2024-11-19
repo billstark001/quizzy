@@ -1,5 +1,6 @@
 import { fromByteArray } from "base64-js";
 import * as uuid from 'uuid';
+import { createStandaloneHandler } from "./react-msg-wrap";
 
 export type WithOptional<T extends object, K extends keyof T> = Omit<T, K> & { [k in K]?: T[k] };
 
@@ -35,3 +36,5 @@ export const formatMilliseconds = (milliseconds: number) => {
 
   return `${days}:${formattedHours}:${formattedMinutes}:${formattedSeconds}`;
 }
+
+export const withHandler = createStandaloneHandler();
