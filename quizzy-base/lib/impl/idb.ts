@@ -131,11 +131,11 @@ export class IDBController implements QuizzyController {
   }
 
   async importQuizRecords(...records: QuizRecord[]): Promise<ID[]> {
-    return this._import(STORE_KEY_RECORDS, records);
+    return await this._import(STORE_KEY_RECORDS, records);
   }
 
-  getQuizRecord(id: ID): Promise<QuizRecord | undefined> {
-    return this.db.get(STORE_KEY_RECORDS, id);
+  async getQuizRecord(id: ID): Promise<QuizRecord | undefined> {
+    return await this.db.get(STORE_KEY_RECORDS, id);
   }
 
   listQuizRecords(quizPaperID?: ID): Promise<QuizRecord[]> {

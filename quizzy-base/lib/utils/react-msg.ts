@@ -1,21 +1,24 @@
 import { UseToastOptions } from "@chakra-ui/react";
-import { ReactNode, useCallback } from "react";
+import { DependencyList, ReactNode, useCallback } from "react";
 import { isAsync } from "./func";
 
 type N = ReactNode | UseToastOptions | null | undefined;
 
-type _RET<P extends Array<any>, R> = (
+type _RET<P extends Array<any>, R, RD = undefined> = (
   R extends Promise<infer RR>
-  ? (...args: P) => Promise<RR | undefined>
-  : (...args: P) => R | undefined
+  ? (...args: P) => Promise<RR | RD>
+  : (...args: P) => R | RD
 );
 
 export type WithHandlerOptions<
   R,
+  RD = undefined,
   E = any,
 > = {
   async?: boolean;
   cache?: boolean;
+  deps?: DependencyList;
+  def?: RD;
   setLoading?: (isLoading: boolean) => void;
   notify?: (payload: N, isSuccess: boolean) => void;
   notifySuccess?: N | ((result: R extends Promise<infer RR> ? RR : R) => N);
@@ -27,15 +30,18 @@ export function withHandlerRaw<
   T extends (...args: any) => any,
   P extends Parameters<T> = Parameters<T>,
   R extends ReturnType<T> = ReturnType<T>,
+  RD = undefined,
   E = any,
 >(
   f: T,
-  options?: WithHandlerOptions<R, E>,
-): _RET<P, R> {
+  options?: WithHandlerOptions<R, RD, E>,
+): _RET<P, R, RD> {
 
   const {
     async, 
     cache,
+    deps,
+    def,
     setLoading,
     notify,
     notifySuccess, 
@@ -59,6 +65,7 @@ export function withHandlerRaw<
         needsNotify2 && notify(typeof notifyError === 'function'
           ? notifyError(e as E)
           : notifyError, false);
+        return def;
       } finally {
         await finallySection?.();
         setLoading?.(false);
@@ -76,11 +83,12 @@ export function withHandlerRaw<
         needsNotify2 && notify(typeof notifyError === 'function'
           ? notifyError(e as E)
           : notifyError, false);
+        return def;
       } finally {
         finallySection?.();
         setLoading?.(false);
       }
-    }) as _RET<P, R>;
+    }) as _RET<P, R, RD>;
 
   if (cache) {
     return useCallback(
@@ -90,6 +98,7 @@ export function withHandlerRaw<
         async, setLoading, 
         notify, notifySuccess, notifyError, 
         finallySection,
+        ...deps ?? [],
       ]
     );
   }

@@ -1,7 +1,7 @@
 import { QuestionDisplay } from "#/components/QuestionDisplay";
-import { Answers, Question, QuizPaper, QuizRecord } from "#/types";
+import { Answers, Question } from "#/types";
 import { Quizzy } from "@/data";
-import { useAsyncEffect } from "@/utils/react";
+import { useAsyncMemo } from "@/utils/react";
 import { ParamsDefinition, parseSearchParams, useParsedSearchParams } from "@/utils/react-router";
 import { Box } from "@chakra-ui/react";
 import { SetStateAction, useState } from "react";
@@ -25,30 +25,38 @@ export const QuizPage = () => {
 
   const navigate = useNavigate();
 
-  const [record, setRecord] = useState<QuizRecord | undefined>(undefined);
-  useAsyncEffect(
-    () => Quizzy.getQuizRecord(recordId ?? '').then(setRecord),
-    [recordId]
+  const { data: record, refresh: refreshRecord } = useAsyncMemo(
+    async () => {
+      return await Quizzy.getQuizRecord(recordId ?? '')
+    },
+    [recordId],
   );
 
-  const [paper, setPaper] = useState<QuizPaper | undefined>(undefined);
-  const [question, setQuestion] = useState<Question | undefined>(undefined);
-  const [previewQuestion, setPreviewQuestion] = useState<Question | undefined>(undefined);
-  useAsyncEffect(
-    () => record && Quizzy.getQuizPaper(record.paperId).then(setPaper),
+
+  const { data: paper } = useAsyncMemo(
+    async () => record ? await Quizzy.getQuizPaper(record.paperId) : undefined,
     [record?.paperId]
   );
-  useAsyncEffect(
+
+  const { data: question } = useAsyncMemo(
     async () => {
       if (!paper) {
         return;
       }
       const [q] = await Quizzy.getQuestions([paper.questions[qIndex - 1]]);
-      setQuestion(q);
-      Quizzy.updateQuiz(recordId, { lastQuestion: qIndex });
+      await Quizzy.updateQuiz(recordId ?? '', { lastQuestion: qIndex });
+      return q;
     },
     [paper, qIndex]
   );
+
+  const [previewQuestion, setPreviewQuestion] = useState<Question | undefined>(undefined);
+  const onPreviewQuestionChanged = async (qIndex: number) => {
+    setPreviewQuestion(
+      (await Quizzy.getQuestions([paper?.questions[qIndex - 1] ?? '']))[0]
+    );
+  };
+  
 
   const _A = record?.answers[question?.id ?? ''];
   const currentAnswers = (!_A || Object.keys(_A).length == 0 ? undefined : _A) ?? {
@@ -64,14 +72,9 @@ export const QuizPage = () => {
         [question?.id ?? '']: a,
       }
     });
-    setRecord(await Quizzy.getQuizRecord(record?.id ?? ''));
+    refreshRecord();
   };
 
-  const onPreviewQuestionChanged = async (qIndex: number) => {
-    setPreviewQuestion(
-      (await Quizzy.getQuestions([paper?.questions[qIndex - 1] ?? '']))[0]
-    );
-  };
 
   const _setCurrentAnswers = (a: SetStateAction<Answers>) => setCurrentAnswers(a).catch(console.error);
 
@@ -88,7 +91,7 @@ export const QuizPage = () => {
     onQuestionChanged={(q) => setSearchParams((p) => ({ ...parseSearchParams(p, _parser), q } as any))}
     onExit={() => navigate('/')}
     onSubmit={async () => {
-      const id = await Quizzy.endQuiz(recordId);
+      const id = await Quizzy.endQuiz(recordId ?? '');
       navigate('/result/' + id);
     }}
   />;

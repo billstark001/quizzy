@@ -11,7 +11,7 @@ export type ParamsDefinition<T> = {
 export const parseSearchParams = <T = Record<string, any>>(
   searchParams: URLSearchParams,
   typeDefinition: ParamsDefinition<T>,
-): T => {
+) => {
   const result: Partial<Record<keyof T, any>> = {};
 
   for (const [key, type] of Object.entries(typeDefinition)) {
@@ -37,12 +37,12 @@ export const parseSearchParams = <T = Record<string, any>>(
     }
   }
 
-  return result as T;
+  return result as Partial<T>;
 };
 
 export const useParsedSearchParams = <T = Record<string, any>>(
   typeDefinition: ParamsDefinition<T>
-): [T, SetURLSearchParams] => {
+): [Partial<T>, SetURLSearchParams] => {
   const [searchParams, setter] = useSearchParams();
 
   const parsedParams = useMemo(() => {

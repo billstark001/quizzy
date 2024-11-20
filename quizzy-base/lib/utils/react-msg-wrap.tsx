@@ -90,6 +90,7 @@ export const WrappedHandlerRoot = (props: WrappedHandlerRootProps) => {
     const options: WithHandlerOptions<any> = Object.freeze({
       async: async,
       cache: cache ?? true,
+      def: undefined,
       setLoading: setIsLoading,
       notify(payload, success) {
         if (payload == null) {

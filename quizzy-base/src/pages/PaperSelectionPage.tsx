@@ -39,6 +39,13 @@ export const PaperSelectionPage = () => {
     });
     navigate('/quiz?' + p.toString());
   };
+  const onEdit = async (pid: string) => {
+    const p = new URLSearchParams({
+      paper: pid,
+      q: '1',
+    });
+    navigate('/edit?' + p.toString());
+  };
 
   // upload
   const inputRef = useRef<HTMLInputElement>(null);
@@ -66,7 +73,8 @@ export const PaperSelectionPage = () => {
         key={p.id}
         title={p.name}
         desc={p.desc}
-        onStart={(() => onStart(p.id))}
+        onStart={() => onStart(p.id)}
+        onEdit={() => onEdit(p.id)}
       />)}
       <Card w='sm' cursor='pointer'>
         <CardBody as={Flex} justifyContent='center' alignItems='center'
