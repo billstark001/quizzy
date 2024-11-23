@@ -2,7 +2,7 @@ import { QuestionDisplay } from "#/components/QuestionDisplay";
 import { Answers, Question } from "#/types";
 import { Quizzy } from "@/data";
 import { useAsyncMemo } from "@/utils/react";
-import { ParamsDefinition, parseSearchParams, useParsedSearchParams } from "@/utils/react-router";
+import { ParamsDefinition, useParsedSearchParams } from "@/utils/react-router";
 import { Box } from "@chakra-ui/react";
 import { SetStateAction, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -88,7 +88,7 @@ export const QuizPage = () => {
     setAnswers={_setCurrentAnswers}
     previewQuestion={previewQuestion}
     onPreviewQuestionChanged={onPreviewQuestionChanged}
-    onQuestionChanged={(q) => setSearchParams((p) => ({ ...parseSearchParams(p, _parser), q } as any))}
+    onQuestionChanged={(q) => setSearchParams({ q })}
     onExit={() => navigate('/')}
     onSubmit={async () => {
       const id = await Quizzy.endQuiz(recordId ?? '');
