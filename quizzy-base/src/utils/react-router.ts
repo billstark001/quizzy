@@ -112,4 +112,4 @@ export const useParsedSearchParams = <T extends Record<string, any> = Record<str
   }, [parsedParams, typeDefinition, setter]);
 
   return [parsedParams, setParams];
-}
+};

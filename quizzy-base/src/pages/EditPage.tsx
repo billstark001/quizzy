@@ -62,5 +62,5 @@ export const EditPage = () => {
     question={question}
     onChange={() => {}}
     onSave={() => {}}
-  />
-}
+  />;
+};
