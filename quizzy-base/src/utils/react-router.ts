@@ -16,6 +16,30 @@ export type ParamsDefinition<T> = {
   | { parse: ParamParser<T, K>; serialize: ParamSerializer<T, K> };
 };
 
+type InferParamType<T extends ParamTypeDefinition> =
+  T extends 'string' ? string :
+  T extends 'number' ? number :
+  T extends 'boolean' ? boolean :
+  T extends 'json' ? JsonValue :
+  never;
+
+type InferParamDefinitionType<T> =
+  T extends ParamTypeDefinition ? InferParamType<T> :
+  T extends (value: string) => infer R ? R :
+  T extends { parse: (value: string) => infer R } ? R :
+  never;
+
+export type ParamsOf<Type> = Type extends ParamsDefinition<infer X> ? X : never
+
+export const defineParams = <const T extends Record<string, any>>(
+  definition: T
+): ParamsDefinition<{
+  [K in keyof T]: InferParamDefinitionType<T[K]>
+}> => {
+  return definition;
+};
+
+
 export const parseSearchParams = <T extends Record<string, any> = Record<string, any>>(
   searchParams: URLSearchParams,
   typeDefinition: ParamsDefinition<T>,
