@@ -19,12 +19,16 @@ export type ParamsDefinition<T> = {
 export const parseSearchParams = <T extends Record<string, any> = Record<string, any>>(
   searchParams: URLSearchParams,
   typeDefinition: ParamsDefinition<T>,
+  allowAccessoryParams: boolean = true,
 ) => {
   const result: Partial<Record<keyof T, any>> = {};
 
-  for (const [key, type] of Object.entries(typeDefinition)) {
-    const value = searchParams.get(key);
-    if (type == null || value == null) {
+  for (const [key, value] of searchParams.entries()) {
+    const type = typeDefinition[key];
+    if (type == null) {
+      if (allowAccessoryParams) {
+        (result as any)[key] = value;
+      }
       continue;
     }
 
@@ -61,13 +65,17 @@ export const parseSearchParams = <T extends Record<string, any> = Record<string,
 export const createSearchParams = <T extends Record<string, any> = Record<string, any>>(
   params: Partial<T>,
   typeDefinition: ParamsDefinition<T>,
+  allowAccessoryParams: boolean = true,
 ) => {
   const searchParams = new URLSearchParams();
 
   for (const [key, value] of Object.entries(params)) {
-    const type = typeDefinition[key as keyof T];
-    if (value == null || type == null) {
+    if (value == null) {
       continue;
+    }
+    const type = typeDefinition[key as keyof T];
+    if (type == null && allowAccessoryParams) {
+      searchParams.set(key, String(value));
     }
 
     let serializedValue: string;
@@ -95,19 +103,20 @@ export const createSearchParams = <T extends Record<string, any> = Record<string
 };
 
 export const useParsedSearchParams = <T extends Record<string, any> = Record<string, any>>(
-  typeDefinition: ParamsDefinition<T>
+  typeDefinition: ParamsDefinition<T>,
+  allowAccessoryParams: boolean = true,
 ): [Partial<T>, (value: SetStateAction<Partial<T>>) => void] => {
   const [searchParams, setter] = useSearchParams();
 
   const parsedParams = useMemo(() => {
-    return parseSearchParams(searchParams, typeDefinition);
+    return parseSearchParams(searchParams, typeDefinition, allowAccessoryParams);
   }, [searchParams, typeDefinition]);
 
   const setParams = useCallback((value: SetStateAction<Partial<T>>) => {
     const parsedValue: T = typeof value === 'function'
       ? (value as any)(parsedParams as T)
       : { ...parsedParams, ...value };
-    const newParams = createSearchParams(parsedValue, typeDefinition);
+    const newParams = createSearchParams(parsedValue, typeDefinition, allowAccessoryParams);
     setter(newParams);
   }, [parsedParams, typeDefinition, setter]);
 
