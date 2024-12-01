@@ -1,4 +1,5 @@
-import { ID, MarkdownString, QuestionType } from "./question";
+import { QuestionType } from "./question";
+import { ID, MarkdownString } from "./technical";
 
 export type BaseAnswers = {
   type: QuestionType;

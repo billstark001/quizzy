@@ -1,15 +1,14 @@
 import { Answers } from "./answer";
-import { ID } from "./question";
 import { QuizRecordBase } from "./quiz-record";
+import { DatabaseIndexed, ID } from "./technical";
 
 export type QuizResultRecordRow = {
-  id: ID;
   name: string;
   answer: string;
   correct: string;
   score: number;
   weight: number;
-};
+} & DatabaseIndexed;
 
 export type QuizResult = QuizRecordBase & {
   // TODO

@@ -1,7 +1,10 @@
-import { ID, Question } from "./question";
+import { Patch } from "#/utils/patch";
+import { Question } from "./question";
 import { CompleteQuizPaperDraft, QuizPaper } from "./quiz-paper";
 import { QuizRecord } from "./quiz-record";
 import { QuizResult } from "./quiz-result";
+import { Stat } from "./stats";
+import { ID } from "./technical";
 
 export type StartQuizOptions = {
   timestamp?: number;
@@ -17,7 +20,20 @@ export type EndQuizOptions = {
   timestamp?: number;
 }
 
+export type QuizzyData = {
+  questions: Question[];
+  papers: QuizPaper[];
+  records: QuizRecord[];
+  results: QuizResult[];
+  stats: Stat[];
+};
+
 export interface QuizzyController {
+
+  // general
+  
+  importData(data: QuizzyData): Promise<void>;
+  exportData(): Promise<QuizzyData>;
 
   // papers & questions
 
@@ -31,6 +47,14 @@ export interface QuizzyController {
 
   listQuizPaperIds(): Promise<ID[]>;
   listQuestionsIds(): Promise<ID[]>;
+
+  updateQuestion(id: ID, patch: Patch<Question>): Promise<ID>;
+  updateQuizPaper(id: ID, paper: Patch<QuizPaper>): Promise<ID>;
+
+  findQuestion(query: string, count?: number, page?: number): Promise<Question[]>;
+  findQuizPaper(query: string, count?: number, page?: number): Promise<QuizPaper[]>;
+  findQuestionByTags(query: string, count?: number, page?: number): Promise<Question[]>;
+  findQuizPaperByTags(query: string, count?: number, page?: number): Promise<QuizPaper[]>;
 
   // records
 

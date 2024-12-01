@@ -117,6 +117,7 @@ export const WrappedHandlerRoot = (props: WrappedHandlerRootProps) => {
         } as UseToastOptions;
       },
       notifyError(error) {
+        console.error(error);
         return String(error);
       },
       ...withHandlerOptions,

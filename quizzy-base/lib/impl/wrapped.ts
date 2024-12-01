@@ -23,6 +23,14 @@ const keys: Readonly<{[key in keyof QuizzyController]: undefined}> = Object.free
   'listQuizResultIds': undefined, 
   'listQuizResults': undefined, 
   'deleteQuizResult': undefined, 
+  'updateQuestion': undefined,
+  'updateQuizPaper': undefined,
+  'findQuestion': undefined,
+  'findQuizPaper': undefined,
+  'findQuestionByTags': undefined,
+  'findQuizPaperByTags': undefined,
+  'importData': undefined,
+  'exportData': undefined,
 });
 
 export const toWrapped = (

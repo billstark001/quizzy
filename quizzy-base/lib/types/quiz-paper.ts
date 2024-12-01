@@ -1,6 +1,5 @@
-
-import { WithOptional } from "#/utils";
-import { ID, MarkdownString, Question, QuestionWithOptionalID } from "./question";
+import { DatabaseIndexed, ID, KeywordIndexed, MarkdownString } from "./technical";
+import { Question, QuestionWithOptionalID } from "./question";
 
 type QuizPaperBase = {
   name: string;
@@ -12,11 +11,13 @@ type QuizPaperBase = {
 };
 
 export type QuizPaper = QuizPaperBase & {
-  id: ID;
   questions: ID[];
-};
+} & DatabaseIndexed & KeywordIndexed;
 
-export type QuizPaperDraft = WithOptional<QuizPaper, 'id'>;
+export type QuizPaperDraft = QuizPaperBase & {
+  questions: ID[];
+  id?: ID;
+};
 
 export type GenerativeQuizPaper = Omit<QuizPaper, 'questions'> & {
   questions: (currentList: ID[]) => ID | ID[] | [ID, number][];

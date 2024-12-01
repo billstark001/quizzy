@@ -1,13 +1,16 @@
-import { CompleteQuizPaperDraft, EndQuizOptions, ID, Question, QuizPaper, QuizRecord, QuizzyController, StartQuizOptions, Stat, UpdateQuizOptions } from "#/types";
-import { IDBPDatabase, openDB } from "idb";
+import { CompleteQuizPaperDraft, EndQuizOptions, Question, QuizPaper, QuizRecord, QuizzyController, QuizzyData, StartQuizOptions, Stat, UpdateQuizOptions } from "#/types";
+import { IDBPDatabase, IDBPTransaction, openDB } from "idb";
 import { separatePaperAndQuestions, toCompleted } from "./paper-id";
 import { uuidV4B64 } from "#/utils";
 import { QuizResult } from "#/types/quiz-result";
 import { createResultAndStatPatches } from "./result";
+import { DatabaseIndexed, ID, KeywordIndexed } from "#/types/technical";
+import { applyPatch, Patch } from "#/utils/patch";
+import { generateKeywords } from "./keywords";
 
 
 const DB_KEY = 'Quizzy';
-const VERSION = 2;
+const VERSION = 1;
 
 const STORE_KEY_PAPERS = 'papers';
 const STORE_KEY_RECORDS = 'records';
@@ -20,32 +23,35 @@ export type VersionRecord = {
   _version: number;
 };
 
-type DBUpdater = (db: IDBPDatabase) => void;
+type DBUpdater = (db: IDBPDatabase, tx: IDBPTransaction<unknown, string[], "versionchange">) => void;
 const updaters: Record<number, DBUpdater> = {
   [0]: (db) => {
     const _id: IDBObjectStoreParameters = { keyPath: 'id', };
     const paperStore = db.createObjectStore(STORE_KEY_PAPERS, _id);
     const recordStore = db.createObjectStore(STORE_KEY_RECORDS, _id);
     const questionStore = db.createObjectStore(STORE_KEY_QUESTIONS, _id);
+    const resultStore = db.createObjectStore(STORE_KEY_RESULTS, _id);
+    const statStore = db.createObjectStore(STORE_KEY_STATS, _id);
+    for (const store of [paperStore, recordStore, questionStore, resultStore, statStore]) {
+      store.createIndex('deleted', 'deleted');
+      store.createIndex('lastUpdate', 'lastUpdate');
+    }
     for (const store of [paperStore, questionStore]) {
       store.createIndex('name', 'name');
       store.createIndex('tags', 'tags', { multiEntry: true });
+      store.createIndex('keywords', 'keywords', { multiEntry: true });
+      store.createIndex('keywordsUpdatedTime', 'keywordsUpdatedTime', {});
     }
     for (const key of ['paperId', 'paused', 'startTime', 'updateTime']) {
       recordStore.createIndex(key, key);
     }
-  },
-  [1]: (db) => {
-    const _id: IDBObjectStoreParameters = { keyPath: 'id', };
-    const resultStore = db.createObjectStore(STORE_KEY_RESULTS, _id);
-    const statStore = db.createObjectStore(STORE_KEY_STATS, _id);
     for (const key of ['paperId', 'startTime',]) {
       resultStore.createIndex(key, key);
     }
     statStore.createIndex('tag', 'tag', { unique: true });
     statStore.createIndex('alternatives', 'alternatives', { multiEntry: true });
     statStore.createIndex('percentage', 'percentage');
-  }
+  },
 };
 
 export class IDBController implements QuizzyController {
@@ -57,19 +63,37 @@ export class IDBController implements QuizzyController {
 
   static async connect() {
     const db = await openDB(DB_KEY, VERSION, {
-      upgrade(db, oldVersion, newVersion) {
+      upgrade(db, oldVersion, newVersion, transaction) {
         if (newVersion == null || newVersion < oldVersion) {
           return; // either delete or errored
         }
         for (let i = oldVersion; i < newVersion; ++i) {
-          updaters[i]?.(db);
+          updaters[i]?.(db, transaction);
         }
       },
     });
     return new IDBController(db);
   }
 
-  private async _import<T extends { id: ID }>(store: string, items: T[]): Promise<ID[]> {
+  async importData(data: QuizzyData): Promise<void> {
+    await this._import(STORE_KEY_PAPERS, data.papers);
+    await this._import(STORE_KEY_QUESTIONS, data.questions);
+    await this._import(STORE_KEY_RECORDS, data.records);
+    await this._import(STORE_KEY_RESULTS, data.results);
+    await this._import(STORE_KEY_STATS, data.stats);
+  }
+
+  async exportData(): Promise<QuizzyData> {
+    return {
+      papers: await this._export(STORE_KEY_PAPERS),
+      questions: await this._export(STORE_KEY_QUESTIONS),
+      records: await this._export(STORE_KEY_RECORDS),
+      results: await this._export(STORE_KEY_RESULTS),
+      stats: await this._export(STORE_KEY_STATS),
+    };
+  }
+
+  private async _import<T extends DatabaseIndexed>(store: string, items: T[]): Promise<ID[]> {
     const tx = this.db.transaction(store, 'readwrite');
     const ids: ID[] = [];
     const promises: Promise<any>[] = [];
@@ -82,12 +106,114 @@ export class IDBController implements QuizzyController {
     return ids;
   }
 
+  private async _export<T extends DatabaseIndexed>(
+    store: string,
+  ): Promise<T[]> {
+    const tx = this.db.transaction(store, 'readonly');
+    const ret: T[] = await tx.store.getAll() as T[];
+    await tx.done;
+    return ret;
+  }
+
+  private async _update<T extends DatabaseIndexed>(store: string, id: ID, patch: Patch<T>): Promise<ID> {
+    const original = await this.db.get(store, id) as T;
+    if (!original) { // doesn't exist, create
+      patch.id = id;
+      await this._import(store, [patch as T]);
+      return id;
+    }
+    // apply patch
+    const modified = applyPatch(original, patch);
+    modified.id = id;
+    modified.lastUpdate = Date.now();
+    // optimistic lock
+    const tx = this.db.transaction(store, 'readwrite');
+    const another = await tx.store.get(id) as T;
+    if (another?.lastUpdate !== original.lastUpdate) {
+      throw new Error('Data modified.');
+    }
+    await tx.store.put(modified, id);
+    await tx.done;
+    return id;
+  }
+
+
+  private async _search<T extends DatabaseIndexed & KeywordIndexed>(
+    store: string, index: string, query: string[],
+    count?: number, page?: number
+  ): Promise<T[]> {
+    const tx = this.db.transaction(store, 'readonly');
+    const index2 = tx.store.index(index);
+
+
+    // let cursor = index.openCursor(IDBKeyRange.)
+    throw new Error("Method not implemented.");
+  }
+
+  private async _index<T extends DatabaseIndexed & KeywordIndexed>(
+    store: string,
+    force?: boolean,
+    excludedKeys?: (keyof T)[],
+  ): Promise<ID[]> {
+    const tx = this.db.transaction(store, 'readwrite');
+    const updated: ID[] = [];
+
+    // filter all re-indexing required
+    let cursor = await tx.store.openCursor();
+    let excludedKeysSet = new Set(excludedKeys);
+    while (cursor) {
+      const object = cursor.value as T;
+      // check if re-indexing is needed
+      if (!force && (object.deleted || (object.keywordsUpdatedTime != null &&
+        (object.lastUpdate == null || object.keywordsUpdatedTime >= object.lastUpdate)
+      ))) {
+        cursor = await cursor.continue();
+        continue;
+      }
+      // update it in-place
+      const words = generateKeywords(
+        Object.entries(object)
+          .filter(([k]) => !excludedKeysSet.has(k as any))
+          .map(([, v]) => v)
+      );
+      object.keywordsUpdatedTime = Date.now();
+      object.keywords = words;
+
+      await cursor.update(object);
+      updated.push(object.id);
+
+      cursor = await cursor.continue();
+    }
+    await tx.done;
+    return updated;
+  }
+
   async importQuestions(...questions: Question[]): Promise<ID[]> {
     return this._import(STORE_KEY_QUESTIONS, questions);
   }
 
   async importQuizPapers(...papers: QuizPaper[]): Promise<ID[]> {
     return this._import(STORE_KEY_PAPERS, papers);
+  }
+
+
+  findQuestion(query: string, count?: number, page?: number): Promise<Question[]> {
+    const queryKeywords = generateKeywords(query);
+    return this._search(STORE_KEY_QUESTIONS, 'keywords', queryKeywords, count, page);
+  }
+  async findQuizPaper(query: string, count?: number, page?: number): Promise<QuizPaper[]> {
+    const queryKeywords = generateKeywords(query);
+    return this._search(STORE_KEY_PAPERS, 'keywords', queryKeywords, count, page);
+  }
+  async findQuestionByTags(query: string, count?: number, page?: number): Promise<Question[]> {
+    const queryKeywords = query.split(' ').filter(x => !!x);
+    queryKeywords[0] !== query && queryKeywords.splice(0, 0, query);
+    return this._search(STORE_KEY_QUESTIONS, 'tags', queryKeywords, count, page);
+  }
+  async findQuizPaperByTags(query: string, count?: number, page?: number): Promise<QuizPaper[]> {
+    const queryKeywords = query.split(' ').filter(x => !!x);
+    queryKeywords[0] !== query && queryKeywords.splice(0, 0, query);
+    return this._search(STORE_KEY_PAPERS, 'tags', queryKeywords, count, page);
   }
 
 
@@ -129,6 +255,23 @@ export class IDBController implements QuizzyController {
   listQuestionsIds(): Promise<ID[]> {
     return this.db.getAllKeys(STORE_KEY_QUESTIONS) as Promise<ID[]>;
   }
+
+
+  updateQuestion(id: ID, patch: Patch<Question>): Promise<ID> {
+    return this._update(STORE_KEY_QUESTIONS, id, patch);
+  }
+  updateQuizPaper(id: ID, paper: Patch<QuizPaper>): Promise<ID> {
+    return this._update(STORE_KEY_PAPERS, id, paper);
+  }
+
+  // search
+
+  async refreshSearchIndices(force?: boolean) {
+    await this._index<Question>(STORE_KEY_QUESTIONS, force, ['id', 'keywords']);
+    await this._index<QuizPaper>(STORE_KEY_PAPERS, force, ['id', 'questions', 'keywords']);
+  }
+
+  // records
 
   async importQuizRecords(...records: QuizRecord[]): Promise<ID[]> {
     return await this._import(STORE_KEY_RECORDS, records);
@@ -201,7 +344,7 @@ export class IDBController implements QuizzyController {
 
 
   async endQuiz(id: ID, _options?: EndQuizOptions): Promise<ID | undefined> {
-    
+
     // read necessary data
     const r = await this.getQuizRecord(id);
     if (!r) {
@@ -217,7 +360,7 @@ export class IDBController implements QuizzyController {
     );
     // create result and patches
     const [result, patches] = createResultAndStatPatches(r, p, q);
-    
+
 
     // create write transactions
     const tx = this.db.transaction([
@@ -238,7 +381,7 @@ export class IDBController implements QuizzyController {
     const _ss = tx.objectStore(STORE_KEY_STATS);
     for (const { tag, questionId, correct } of patches) {
       // get or create the corresponding stat object
-      const stat: Stat = await _ss.index('tag').get(tag) 
+      const stat: Stat = await _ss.index('tag').get(tag)
         ?? await _ss.index('alternatives').get(tag) ?? {
           id: '', tag, alternatives: [], correct: {}, total: {}, percentage: 0,
         } as Stat;

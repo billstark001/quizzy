@@ -1,4 +1,5 @@
-import { Answers, ID, Question, QuizPaper, QuizRecord, QuizResultRecordRow, QuizResult, StatPatch } from "#/types";
+import { Answers, Question, QuizPaper, QuizRecord, QuizResultRecordRow, QuizResult, StatPatch } from "#/types";
+import { ID } from "#/types/technical";
 import { uuidV4B64 } from "#/utils";
 import { numberToLetters } from "#/utils/string";
 import { getOptionOrBlankId } from "./question-id";

@@ -1,5 +1,6 @@
-import { ID, CompleteQuizPaperDraft, Question, QuizPaper, QuizRecord, QuizzyController, StartQuizOptions, UpdateQuizOptions, EndQuizOptions } from "#/types";
+import { CompleteQuizPaperDraft, Question, QuizPaper, QuizRecord, QuizzyController, StartQuizOptions, UpdateQuizOptions, EndQuizOptions } from "#/types";
 import { QuizResult } from "#/types/quiz-result";
+import { ID } from "#/types/technical";
 import { uuidV4B64 } from "#/utils";
 import { separatePaperAndQuestions, toCompleted } from "./paper-id";
 

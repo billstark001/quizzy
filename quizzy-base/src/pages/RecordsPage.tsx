@@ -1,5 +1,6 @@
 import Sheet, { Column, withSheetRow } from "#/components/Sheet";
-import { ID, QuizRecord } from "#/types";
+import { QuizRecord } from "#/types";
+import { ID } from "#/types/technical";
 import { Quizzy } from "@/data";
 import { useAsyncEffect } from "@/utils/react";
 import { Button, HStack } from "@chakra-ui/react";
