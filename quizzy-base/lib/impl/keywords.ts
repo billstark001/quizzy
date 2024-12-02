@@ -19,12 +19,15 @@ export const generateKeywords = (object: any) => {
     }
   }
 
-  const filtered = new Set<string>();
+  const filtered: Record<string, number> = {};
   for (const value of str) {
-    segmentSearchWords(value.toLowerCase()).forEach(x => filtered.add(x));
+    segmentSearchWords(value.toLowerCase()).forEach(
+      x => filtered[x] = (filtered[x] || 0) + 1
+    );
   }
 
-  const filteredArray = [...filtered];
+  const filteredArray = Object.keys(filtered);
   filteredArray.sort();
-  return filteredArray;
+  return [filteredArray, filtered] as
+    [typeof filteredArray, typeof filtered];
 };

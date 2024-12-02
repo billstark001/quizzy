@@ -4,7 +4,7 @@ import { CompleteQuizPaperDraft, QuizPaper } from "./quiz-paper";
 import { QuizRecord } from "./quiz-record";
 import { QuizResult } from "./quiz-result";
 import { Stat } from "./stats";
-import { ID } from "./technical";
+import { ID, SearchResult } from "./technical";
 
 export type StartQuizOptions = {
   timestamp?: number;
@@ -26,7 +26,10 @@ export type QuizzyData = {
   records: QuizRecord[];
   results: QuizResult[];
   stats: Stat[];
+  general?: any;
 };
+
+
 
 export interface QuizzyController {
 
@@ -51,10 +54,10 @@ export interface QuizzyController {
   updateQuestion(id: ID, patch: Patch<Question>): Promise<ID>;
   updateQuizPaper(id: ID, paper: Patch<QuizPaper>): Promise<ID>;
 
-  findQuestion(query: string, count?: number, page?: number): Promise<Question[]>;
-  findQuizPaper(query: string, count?: number, page?: number): Promise<QuizPaper[]>;
-  findQuestionByTags(query: string, count?: number, page?: number): Promise<Question[]>;
-  findQuizPaperByTags(query: string, count?: number, page?: number): Promise<QuizPaper[]>;
+  findQuestion(query: string, count?: number, page?: number): Promise<SearchResult<Question>>;
+  findQuizPaper(query: string, count?: number, page?: number): Promise<SearchResult<QuizPaper>>;
+  findQuestionByTags(query: string, count?: number, page?: number): Promise<SearchResult<Question>>;
+  findQuizPaperByTags(query: string, count?: number, page?: number): Promise<SearchResult<QuizPaper>>;
 
   // records
 
