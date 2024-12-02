@@ -246,6 +246,7 @@ export class IDBController implements QuizzyController {
     const updated: ID[] = [];
 
     // build bm25 cache
+    // TODO add incremental building
     const wordAppeared: Record<string, number> = {};
     const tagAppeared: Record<string, number> = {};
     let totalLength = 0;
@@ -406,6 +407,7 @@ export class IDBController implements QuizzyController {
   async refreshSearchIndices(force?: boolean) {
     await this._index<Question>(STORE_KEY_QUESTIONS, force, ['id', 'keywords']);
     await this._index<QuizPaper>(STORE_KEY_PAPERS, force, ['id', 'questions', 'keywords']);
+    await this.cache.clear();
   }
 
   // records
