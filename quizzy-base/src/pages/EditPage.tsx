@@ -1,9 +1,12 @@
 import { QuestionEdit } from "#/components/QuestionEdit";
 import { Question } from "#/types";
 import { withHandler } from "#/utils";
+import { usePatch } from "#/utils/react-patch";
 import { QuizzyRaw } from "@/data";
 import { useAsyncMemo } from "@/utils/react";
 import { ParamsDefinition, useParsedSearchParams } from "@/utils/react-router";
+import { Button, HStack } from "@chakra-ui/react";
+import { useEffect, useState } from "react";
 
 
 export type EditParams = {
@@ -52,15 +55,34 @@ export const EditPage = () => {
   const { data: _q } = useAsyncMemo(fetchData, [paperId, questionIndex, questionIdOrig]);
   const [question, questionId, paperMode] = _q ?? [undefined, undefined, false];
 
+  const [questionEdit, setQuestionEdit] = useState<Question>({ id: '', type: 'choice', content: '', options: [] });
+  const p = usePatch({ value: questionEdit, setValue: (v) => {
+    setQuestionEdit(v);
+  }, maxLength: 16 });
+  useEffect(() => {
+    if (!question) {
+      return;
+    }
+    setQuestionEdit(question);
+    p.onClear(question);
+  }, [question]);
   // TODO paper mode
 
   if (question == undefined) {
     return 'ERROR: QUESTION NOT FOUND';
   }
 
-  return <QuestionEdit 
-    question={question}
-    onChange={() => {}}
-    onSave={() => {}}
-  />;
+  return <>
+    <HStack>
+    <Button onClick={p.onUndo}>undo</Button>
+    <Button onClick={p.onRedo}>redo</Button>
+    </HStack>
+    <QuestionEdit 
+      question={questionEdit}
+      onChange={p.onEdit}
+      onSave={() => {}}
+      onUndo={() => void p.onUndo()}
+      onRedo={() => void p.onRedo()}
+    />
+  </>;
 };

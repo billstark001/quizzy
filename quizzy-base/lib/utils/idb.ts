@@ -1,5 +1,20 @@
-import { IDBPDatabase } from "idb";
+import { IDBPDatabase, IDBPTransaction, openDB } from "idb";
 
+export type DatabaseUpdateDefinition = (db: IDBPDatabase, tx: IDBPTransaction<unknown, string[], "versionchange">) => void;
+
+export const openDatabase = async (key: string, version: number, updaters: Readonly<Record<number, DatabaseUpdateDefinition>>) => {
+  const db = await openDB(key, version, {
+    upgrade(db, oldVersion, newVersion, transaction) {
+      if (newVersion == null || newVersion < oldVersion) {
+        return; // either delete or errored
+      }
+      for (let i = oldVersion; i < newVersion; ++i) {
+        updaters[i]?.(db, transaction);
+      }
+    },
+  });
+  return db;
+}
 
 export const searchByTag = async (
   db: IDBPDatabase, store: string, 

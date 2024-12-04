@@ -9,6 +9,7 @@ import {
   Spinner,
   ChakraProvider,
   AlertDialogCloseButton,
+  Fade,
 } from "@chakra-ui/react";
 import { useDisclosureWithData, UseDisclosureWithDataProps } from "./disclosure";
 import { isValidElement, ReactNode, useEffect, useRef, useState } from "react";
@@ -16,8 +17,15 @@ import { useTranslation } from "react-i18next";
 import { WithHandlerOptions, withHandlerRaw } from "./react-msg";
 import ReactDOM from "react-dom/client";
 
-const LoadingScreen = () => {
-  return (
+const LoadingScreen = ({ isLoading }: { isLoading?: boolean }) => {
+  return <Fade
+    in={!!isLoading}
+    unmountOnExit
+    transition={{
+      enter: { duration: 0.5 },
+      exit: { duration: 0.01 }
+    }}
+  >
     <Box
       position="fixed"
       top="0"
@@ -37,7 +45,7 @@ const LoadingScreen = () => {
         />
       </Center>
     </Box>
-  )
+  </Fade>;
 };
 
 type _M = {
@@ -104,7 +112,7 @@ export const WrappedHandlerRoot = (props: WrappedHandlerRootProps) => {
         } else {
           toast(typeof payload === 'string' ? {
             title: _h(success),
-            description: payload, 
+            description: payload,
             status: success ? 'success' : 'error',
           } as UseToastOptions : payload as UseToastOptions);
         }
@@ -136,7 +144,7 @@ export const WrappedHandlerRoot = (props: WrappedHandlerRootProps) => {
 
 
   return <ChakraProvider>
-    {isLoading && <LoadingScreen />}
+    <LoadingScreen isLoading={isLoading} />
     <AlertDialog
       leastDestructiveRef={cancelRef as any}
       closeOnOverlayClick={false}

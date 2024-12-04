@@ -1,5 +1,5 @@
 import { CompleteQuizPaperDraft, EndQuizOptions, Question, QuizPaper, QuizRecord, QuizzyController, QuizzyData, StartQuizOptions, Stat, UpdateQuizOptions } from "#/types";
-import { IDBPDatabase, IDBPTransaction, openDB } from "idb";
+import { IDBPDatabase } from "idb";
 import { separatePaperAndQuestions, toCompleted } from "./paper-id";
 import { uuidV4B64 } from "#/utils";
 import { QuizResult } from "#/types/quiz-result";
@@ -8,6 +8,7 @@ import { DatabaseIndexed, ID, KeywordIndexed, sanitizeIndices, SearchResult } fr
 import { applyPatch, Patch } from "#/utils/patch";
 import { generateKeywords } from "./keywords";
 import QuickLRU from "quick-lru";
+import { DatabaseUpdateDefinition, openDatabase } from "#/utils/idb";
 
 
 const DB_KEY = 'Quizzy';
@@ -36,8 +37,7 @@ type Bm25Cache = {
   idfTag: Record<string, number>;
 };
 
-type DBUpdater = (db: IDBPDatabase, tx: IDBPTransaction<unknown, string[], "versionchange">) => void;
-const updaters: Record<number, DBUpdater> = {
+const updaters: Record<number, DatabaseUpdateDefinition> = {
   [0]: (db) => {
     const _id: IDBObjectStoreParameters = { keyPath: 'id', };
     const paperStore = db.createObjectStore(STORE_KEY_PAPERS, _id);
@@ -68,7 +68,7 @@ const updaters: Record<number, DBUpdater> = {
   [1]: (db) => {
     db.createObjectStore(STORE_KEY_GENERAL, { keyPath: 'id', });
   }
-};
+} as const;
 
 export class IDBController implements QuizzyController {
 
@@ -82,16 +82,7 @@ export class IDBController implements QuizzyController {
   }
 
   static async connect() {
-    const db = await openDB(DB_KEY, VERSION, {
-      upgrade(db, oldVersion, newVersion, transaction) {
-        if (newVersion == null || newVersion < oldVersion) {
-          return; // either delete or errored
-        }
-        for (let i = oldVersion; i < newVersion; ++i) {
-          updaters[i]?.(db, transaction);
-        }
-      },
-    });
+    const db = await openDatabase(DB_KEY, VERSION, updaters);
     return new IDBController(db);
   }
 
