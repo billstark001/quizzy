@@ -80,9 +80,6 @@ export const EditPage = () => {
     <QuestionEdit 
       question={questionEdit}
       onChange={p.onEdit}
-      onSave={() => {}}
-      onUndo={() => void p.onUndo()}
-      onRedo={() => void p.onRedo()}
     />
   </>;
 };

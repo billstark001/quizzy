@@ -2,19 +2,18 @@ import { ChoiceQuestion, ChoiceQuestionOption, Question } from "#/types";
 import { useDisclosureWithData } from "#/utils/disclosure";
 import { numberToLetters } from "#/utils/string";
 import { AddIcon, DeleteIcon, DragHandleIcon } from "@chakra-ui/icons";
-import { Box, BoxProps, Button, Code, Grid, HStack, IconButton, Input, Modal, ModalBody, ModalCloseButton, ModalContent, ModalFooter, ModalHeader, ModalOverlay, Select, Switch, Tag, Textarea, TextareaProps, useDisclosure, VStack, Wrap } from "@chakra-ui/react";
-import { KeyboardEventHandler, useCallback, useEffect, useRef, useState } from "react";
+import { Box, BoxProps, Button, Code, Grid, HStack, IconButton, Input, Modal, ModalBody, ModalCloseButton, ModalContent, ModalFooter, ModalHeader, ModalOverlay, Select, Switch, Tag, Textarea, TextareaProps, useCallbackRef, useDisclosure, VStack, Wrap } from "@chakra-ui/react";
+import { FocusEventHandler, useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { QuestionSelectionModal } from "./QuestionSelectionModal";
 import { BaseQuestionPanel } from "./QuestionPanel";
+import { debounce, DebounceProps, DebounceReturn } from "#/utils/debounce";
 
+export type QuestionUpdater = (patch: Partial<Question>) => void | Promise<void>;
 
 export type QuestionEditProps = {
   question: Question;
-  onChange?: (patch: Partial<Question>) => void | Promise<void>;
-  onSave?: () => void | Promise<void>;
-  onUndo?: () => void | Promise<void>;
-  onRedo?: () => void | Promise<void>;
+  onChange?: QuestionUpdater;
 };
 
 const getChangedArray = <T,>(arr: T[], index: number, value: T) => {
@@ -39,12 +38,13 @@ type ChoiceQuestionOptionEditProps = {
   index: number,
   move?: 'up' | 'down',
   onChange?: (index: number, value: Partial<ChoiceQuestionOption>) => void,
+  onBlur?: FocusEventHandler<HTMLDivElement>,
   onEvent?: (event: _E) => void,
 };
 
 export const ChoiceQuestionOptionEdit = (props: ChoiceQuestionOptionEditProps) => {
 
-  const { option, index, move, onChange, onEvent } = props;
+  const { option, index, move, onChange, onEvent, onBlur } = props;
   const { t } = useTranslation();
   const ref = useRef<HTMLDivElement>(null);
 
@@ -70,6 +70,7 @@ export const ChoiceQuestionOptionEdit = (props: ChoiceQuestionOptionEditProps) =
       onEvent?.({ index, type: 'drag-end', target: ref.current! });
       setDraggable(false);
     } : undefined}
+    onBlur={onBlur}
   >
     <ChoiceBox>
       <Code m='auto' background='transparent' fontSize='xl'>
@@ -94,9 +95,11 @@ export const ChoiceQuestionOptionEdit = (props: ChoiceQuestionOptionEditProps) =
 
 export const ChoiceQuestionOptionsEdit = (props: {
   question: ChoiceQuestion;
-  onChange?: (patch: Partial<Question>) => void | Promise<void>;
+  onChangeDebounced: QuestionUpdater;
+  onChangeDebouncedClear: () => void;
+  onChangeImmediate: QuestionUpdater;
 }) => {
-  const { question, onChange } = props;
+  const { question, onChangeDebounced, onChangeImmediate, onChangeDebouncedClear } = props;
   const [draggingIndex, setDraggingIndex] = useState<number>();
   const [hoverIndex, setHoverIndex] = useState(-1);
 
@@ -115,26 +118,26 @@ export const ChoiceQuestionOptionsEdit = (props: {
         const newOptionList = question.options.map(x => ({ ...x }));
         const removed = newOptionList.splice(draggingIndex, 1)[0];
         newOptionList.splice(index, 0, removed);
-        onChange?.({ options: newOptionList });
+        onChangeImmediate({ options: newOptionList });
       }
       setDraggingIndex(undefined);
       setHoverIndex(-1);
     } else if (type === 'add') {
       const newOptionList = question.options.map(x => ({ ...x }));
       newOptionList.splice(index + 1, 0, { content: '' });
-      onChange?.({ options: newOptionList });
+      onChangeImmediate({ options: newOptionList });
     } else if (type === 'delete') {
       const newOptionList = question.options.map(x => ({ ...x }));
       newOptionList.splice(index, 1);
-      onChange?.({ options: newOptionList });
+      onChangeImmediate({ options: newOptionList });
     }
-  }, [setDraggingIndex, setHoverIndex, draggingIndex, question, onChange]);
+  }, [setDraggingIndex, setHoverIndex, draggingIndex, question, onChangeImmediate]);
 
   const onChange2 = useCallback((index: number, value: Partial<ChoiceQuestionOption>) => {
     const newOptionList = question.options.map(x => ({ ...x }));
     newOptionList[index] = { ...newOptionList[index], ...value };
-    onChange?.({ options: newOptionList });
-  }, [question, onChange]);
+    onChangeDebounced({ options: newOptionList });
+  }, [question, onChangeDebounced]);
 
   return <VStack
     ref={ref}
@@ -152,6 +155,7 @@ export const ChoiceQuestionOptionsEdit = (props: {
             : undefined
         : undefined}
       option={option} index={i} onEvent={onEvent} onChange={onChange2}
+      onBlur={onChangeDebouncedClear}
     />)}
   </VStack>;
 };
@@ -159,7 +163,7 @@ export const ChoiceQuestionOptionsEdit = (props: {
 const _adjustHeight = (t: HTMLTextAreaElement) => {
   const scrollHeight = window.scrollY;
   t.style.height = '5px';
-  t.style.height = `${t.scrollHeight}px`;
+  t.style.height = `${t.scrollHeight + 10}px`;
   requestAnimationFrame(() => window.scrollTo(0, scrollHeight));
 };
 
@@ -178,14 +182,56 @@ const Textarea2 = (props: Omit<TextareaProps, 'children'>) => {
   </Textarea>;
 }
 
-const isMac = navigator.platform.indexOf("Mac") >= 0 ||
-  navigator.platform === "iPhone";
-const modifierKey = isMac ? 'metaKey' : 'ctrlKey';
-// const modifierKeyName = isMac ? 'Cmd' : 'Ctrl';
+const debounceProps: DebounceProps<QuestionUpdater> = {
+  merge(current, last) {
+    if (last == null) {
+      return current;
+    }
+    return [{ ...last[0], ...current[0] }] as [Partial<Question>];
+  },
+} as const;
+
 
 export const QuestionEdit = (props: QuestionEditProps) => {
 
-  const { question, onChange, onSave, onUndo, onRedo } = props;
+  const { question: questionProp, onChange: onChangeProp } = props;
+
+  // question displayed to debounce
+  const [questionDisplay, setQuestionDisplay] = useState<Question>();
+  const question = questionDisplay ?? questionProp;
+
+  const onChangeRef = useRef<QuestionUpdater>();
+  useEffect(() => {
+    onChangeRef.current = onChangeProp;
+  }, [onChangeProp]);
+
+  // this commits change to patch logically
+  const onChangeLogical = useCallback((patch: Partial<Question>) => {
+    console.log(patch);
+    onChangeRef.current?.(patch);
+    setQuestionDisplay(undefined);
+  }, [onChangeRef, setQuestionDisplay]);
+
+  // this debounces the logical commission
+  const onChangeDebouncedRef = useRef<DebounceReturn<QuestionUpdater>>();
+  useEffect(() => {
+    onChangeDebouncedRef.current = debounce((onChangeLogical), 5000, debounceProps);
+  }, [onChangeLogical]);
+  if (!onChangeDebouncedRef.current) {
+    onChangeDebouncedRef.current = debounce((onChangeLogical), 5000, debounceProps);
+  }
+
+  // this debounces and 'deceives' user
+  const onChangeDebounced = useCallback((patch: Partial<Question>) => {
+    setQuestionDisplay({ ...question, ...patch } as Question);
+    onChangeDebouncedRef.current!(patch);
+  }, [onChangeDebouncedRef, setQuestionDisplay, question]);
+
+  // this commits logically and removes displayed question
+  const onChangeImmediate = useCallback((patch: Partial<Question>) => {
+    onChangeDebouncedRef.current!.clear();
+    onChangeLogical(patch);
+  }, [onChangeDebouncedRef, onChangeLogical]);
 
   const { t } = useTranslation();
 
@@ -206,40 +252,16 @@ export const QuestionEdit = (props: QuestionEditProps) => {
   }, [dTag.onOpen, setCurrentTag, question]);
   const submitTag = useCallback(async () => {
     const tags = question.tags ?? [];
-    await onChange?.({
+    await onChangeImmediate({
       tags: editTag.index == null
         ? [...tags, currentTag]
         : getChangedArray(tags, editTag.index, currentTag)
     });
     dTag.onClose();
-  }, [onChange, currentTag]);
-
-  // state record
-  // TODO didn't know what happened, but this one is useless
-  const onKeyUp: KeyboardEventHandler<HTMLDivElement> = useCallback((event) => {
-    if (event[modifierKey]) {
-      event.preventDefault();
-      // redo
-      if (event.shiftKey && event.key.toLowerCase() === 'z') {
-        onRedo?.();
-      }
-      // undo
-      else if (!event.shiftKey && event.key.toLowerCase() === 'z') {
-        onUndo?.();
-      }
-      // redo
-      else if (event.key.toLowerCase() === 'y') {
-        onRedo?.();
-      }
-      // save
-      else if (event.key.toLowerCase() === 's') {
-        onSave?.();
-      }
-    }
-  }, [onRedo, onUndo, onSave]);
+  }, [onChangeImmediate, currentTag]);
 
   return <>
-    <Grid templateColumns='160px 1fr' gap={2} onKeyUp={onKeyUp}>
+    <Grid templateColumns='160px 1fr' gap={2}>
       <HStack gridColumn='1 / 3' justifyContent='space-between'>
         <Box>{t('page.edit.nowEditing')}</Box>
         <IconButton colorScheme='blue' aria-label={t('page.question.questions')} icon={<DragHandleIcon />}
@@ -252,7 +274,8 @@ export const QuestionEdit = (props: QuestionEditProps) => {
       <Box>{t('page.edit.title')}</Box>
       <Input
         value={question.title || ''}
-        onChange={async (e) => await onChange?.({ title: e.target.value })}
+        onChange={async (e) => await onChangeDebounced({ title: e.target.value })}
+        onBlur={onChangeDebouncedRef.current!.clear}
       />
       {/* <EditButton value={editingTitle} setValue={setEditingTitle} /> */}
 
@@ -262,7 +285,7 @@ export const QuestionEdit = (props: QuestionEditProps) => {
         value={question.type || ''}
         onChange={async (e) =>
           e.target.value
-          && await onChange?.({ type: e.target.value as Question['type'] })}
+          && await onChangeImmediate({ type: e.target.value as Question['type'] })}
       >
         <option value=''>{t('page.edit.typeSelect')}</option>
         {['choice', 'blank', 'text'].map(x => <option key={x}
@@ -289,7 +312,8 @@ export const QuestionEdit = (props: QuestionEditProps) => {
       <HStack alignItems='flex-end' alignSelf='flex-end'>
         <Textarea2
           value={question.content}
-          onChange={async (e) => await onChange?.({ content: e.target.value })}
+          onChange={async (e) => await onChangeDebounced({ content: e.target.value })}
+          onBlur={onChangeDebouncedRef.current!.clear}
         />
       </HStack>
 
@@ -297,14 +321,19 @@ export const QuestionEdit = (props: QuestionEditProps) => {
         <VStack alignItems='flex-start'>
           <Box>{t('page.edit.choice')}</Box>
           <Button leftIcon={<AddIcon />} onClick={() => {
-            onChange?.({ options: [{ content: '' }, ...question.options] })
+            onChangeImmediate({ options: [{ content: '' }, ...question.options] })
           }}>{t('page.edit.choice.addTop')}</Button>
           <HStack>
             <Box>{t('page.edit.choice.multiple')}</Box>
-            <Switch isChecked={!!question.multiple} onChange={(e) => onChange?.({ multiple: !!e.target.checked })} />
+            <Switch isChecked={!!question.multiple} onChange={(e) => onChangeDebounced({ multiple: !!e.target.checked })}
+              onBlur={onChangeDebouncedRef.current!.clear} />
           </HStack>
         </VStack>
-        <ChoiceQuestionOptionsEdit question={question} onChange={onChange} />
+        <ChoiceQuestionOptionsEdit question={question}
+          onChangeDebounced={onChangeDebounced}
+          onChangeImmediate={onChangeImmediate}
+          onChangeDebouncedClear={onChangeDebouncedRef.current!.clear}
+        />
       </>}
 
 
@@ -313,7 +342,8 @@ export const QuestionEdit = (props: QuestionEditProps) => {
       <HStack alignItems='flex-end' alignSelf='flex-end'>
         <Textarea2
           value={question.solution}
-          onChange={async (e) => await onChange?.({ solution: e.target.value })}
+          onChange={async (e) => await onChangeDebounced({ solution: e.target.value })}
+          onBlur={onChangeDebouncedRef.current!.clear}
         />
       </HStack>
     </Grid>
