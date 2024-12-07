@@ -29,7 +29,7 @@ const _parser: ParamsDefinition<EditParams> = {
 type _S = readonly [QuizPaper | undefined, Question | undefined, string | undefined];
 
 export const EditPage = () => {
-  const [searchParams] = useParsedSearchParams(_parser);
+  const [searchParams, setSearchParams] = useParsedSearchParams(_parser);
   const { paper: paperId, q: _questionIndex, question: questionIdOrig } = searchParams;
   const questionIndex = _questionIndex ?? 1;
 
@@ -63,7 +63,7 @@ export const EditPage = () => {
   const { t } = useTranslation();
 
   const { data: _q } = useAsyncMemo(fetchData, [paperId, questionIndex, questionIdOrig]);
-  const [paper, question, questionId] = _q ?? [undefined, undefined, undefined];
+  const [paper, question] = _q ?? [undefined, undefined, undefined];
 
   const [editState, setEditState] = useState<{
     question: Question,
@@ -87,6 +87,9 @@ export const EditPage = () => {
   });
   const ppr = useCallbackRef(pp);
   const pqr = useCallbackRef(pq);
+
+  // this executes when initialized
+  // it resets the old edit record
   useEffect(() => {
     const e = { ...editState };
     if (question) {
@@ -122,6 +125,14 @@ export const EditPage = () => {
     Quizzy.getQuestions([q ?? '']).then(([question]) => setQuestionPreview(question));
   }, [setQuestionPreviewIndex, setQuestionPreview, paper]);
 
+  // select
+
+  const selectQuestionPaperMode = useCallback((index: number) => {
+    // TODO ask user to save
+    setSearchParams({ q: index });
+  }, [setSearchParams]);
+
+
   // render
   if (question == undefined) {
     return 'ERROR: QUESTION NOT FOUND';
@@ -136,7 +147,8 @@ export const EditPage = () => {
 
     <Divider />
 
-    {paper != undefined && <>
+    {paper != undefined ? <>
+      {/* paper mode */}
       <EditorContextProvider value={editor2}>
         <PaperEdit />
       </EditorContextProvider>
@@ -150,6 +162,8 @@ export const EditPage = () => {
       </HStack>
 
       <Divider />
+    </> : <>
+      {/* question mode */}
     </>}
 
     <EditorContextProvider value={editor1}>
@@ -159,6 +173,7 @@ export const EditPage = () => {
       current={questionIndex} total={paper?.questions?.length || 1}
       index={questionPreviewIndex}
       setIndex={selectQuestionPreview}
+      onSelect={selectQuestionPaperMode}
       {...q}
       question={questionPreview ? <BaseQuestionPanel w='100%' question={questionPreview} /> : <></>}
     />
