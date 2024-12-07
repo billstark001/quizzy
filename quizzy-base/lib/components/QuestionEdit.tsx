@@ -2,21 +2,17 @@ import { ChoiceQuestion, ChoiceQuestionOption, Question } from "#/types";
 import { useDisclosureWithData } from "#/utils/disclosure";
 import { numberToLetters } from "#/utils/string";
 import { AddIcon, DeleteIcon, DragHandleIcon } from "@chakra-ui/icons";
-import { Box, BoxProps, Button, Code, Grid, HStack, IconButton, Input, Modal, ModalBody, ModalCloseButton, ModalContent, ModalFooter, ModalHeader, ModalOverlay, Select, Switch, Tag, Textarea, TextareaProps, useCallbackRef, useDisclosure, VStack, Wrap } from "@chakra-ui/react";
+import {
+  Box, BoxProps, Button, Code, Grid, HStack, IconButton,
+  Input, Modal, ModalBody, ModalCloseButton, ModalContent,
+  ModalFooter, ModalHeader, ModalOverlay, Select, Switch,
+  SwitchProps, Tag, Textarea, TextareaProps, VStack, Wrap
+} from "@chakra-ui/react";
 import { FocusEventHandler, useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { QuestionSelectionModal } from "./QuestionSelectionModal";
-import { BaseQuestionPanel } from "./QuestionPanel";
-import { debounce, DebounceProps, DebounceReturn } from "#/utils/debounce";
+import { useEditorContext } from "#/utils/react-patch";
 
-export type QuestionUpdater = (patch: Partial<Question>) => void | Promise<void>;
-
-export type QuestionEditProps = {
-  question: Question;
-  onChange?: QuestionUpdater;
-};
-
-const getChangedArray = <T,>(arr: T[], index: number, value: T) => {
+export const getChangedArray = <T,>(arr: T[], index: number, value: T) => {
   return arr.map((x, i) => i == index ? value : x);
 };
 
@@ -34,7 +30,7 @@ type _E = {
   target: HTMLDivElement,
 };
 type ChoiceQuestionOptionEditProps = {
-  option: ChoiceQuestionOption,
+  option?: ChoiceQuestionOption,
   index: number,
   move?: 'up' | 'down',
   onChange?: (index: number, value: Partial<ChoiceQuestionOption>) => void,
@@ -77,8 +73,8 @@ export const ChoiceQuestionOptionEdit = (props: ChoiceQuestionOptionEditProps) =
         {numberToLetters(index + 1)}
       </Code>
     </ChoiceBox>
-    <Input value={option.content} onChange={(e) => onChange?.(index, { content: e.target.value })} />
-    <Switch isChecked={!!option.shouldChoose} onChange={(e) => onChange?.(index, { shouldChoose: !!e.target.checked })} />
+    <Input value={option?.content} onChange={(e) => onChange?.(index, { content: e.target.value })} />
+    <Switch isChecked={option ? !!option.shouldChoose : undefined} onChange={(e) => onChange?.(index, { shouldChoose: !!e.target.checked })} />
     <IconButton aria-label={t('page.edit.editButton')}
       onMouseDown={() => setDraggable(true)}
       onMouseUp={() => setDraggable(false)}
@@ -95,11 +91,10 @@ export const ChoiceQuestionOptionEdit = (props: ChoiceQuestionOptionEditProps) =
 
 export const ChoiceQuestionOptionsEdit = (props: {
   question: ChoiceQuestion;
-  onChangeDebounced: QuestionUpdater;
-  onChangeDebouncedClear: () => void;
-  onChangeImmediate: QuestionUpdater;
 }) => {
-  const { question, onChangeDebounced, onChangeImmediate, onChangeDebouncedClear } = props;
+  const { question } = props;
+  const { onChangeDebounced, onChangeImmediate, fakeValue, clearDebouncedChanges } = useEditorContext<ChoiceQuestion>();
+
   const [draggingIndex, setDraggingIndex] = useState<number>();
   const [hoverIndex, setHoverIndex] = useState(-1);
 
@@ -148,14 +143,14 @@ export const ChoiceQuestionOptionsEdit = (props: {
     onDragOver={(e) => e.preventDefault()}
     onDrop={() => onEvent({ index: hoverIndex, type: 'drop', target: ref.current! })}
   >
-    {question.options.map((option, i) => <ChoiceQuestionOptionEdit
+    {(fakeValue ?? question).options.map((option, i) => <ChoiceQuestionOptionEdit
       key={i} move={isDragging
         ? i > draggingIndex && i <= hoverIndex ? 'up'
           : i < draggingIndex && i >= hoverIndex ? 'down'
             : undefined
         : undefined}
       option={option} index={i} onEvent={onEvent} onChange={onChange2}
-      onBlur={onChangeDebouncedClear}
+      onBlur={clearDebouncedChanges}
     />)}
   </VStack>;
 };
@@ -167,7 +162,7 @@ const _adjustHeight = (t: HTMLTextAreaElement) => {
   requestAnimationFrame(() => window.scrollTo(0, scrollHeight));
 };
 
-const Textarea2 = (props: Omit<TextareaProps, 'children'>) => {
+export const Textarea2 = (props: Omit<TextareaProps, 'children'>) => {
   const ref = useRef<HTMLTextAreaElement>(null);
   const { onInput, ...rest } = props;
   // const onInput2: FormEventHandler<HTMLTextAreaElement> = useCallback((e) => {
@@ -182,61 +177,12 @@ const Textarea2 = (props: Omit<TextareaProps, 'children'>) => {
   </Textarea>;
 }
 
-const debounceProps: DebounceProps<QuestionUpdater> = {
-  merge(current, last) {
-    if (last == null) {
-      return current;
-    }
-    return [{ ...last[0], ...current[0] }] as [Partial<Question>];
-  },
-} as const;
+export const QuestionEdit = () => {
 
-
-export const QuestionEdit = (props: QuestionEditProps) => {
-
-  const { question: questionProp, onChange: onChangeProp } = props;
-
-  // question displayed to debounce
-  const [questionDisplay, setQuestionDisplay] = useState<Question>();
-  const question = questionDisplay ?? questionProp;
-
-  const onChangeRef = useRef<QuestionUpdater>();
-  useEffect(() => {
-    onChangeRef.current = onChangeProp;
-  }, [onChangeProp]);
-
-  // this commits change to patch logically
-  const onChangeLogical = useCallback((patch: Partial<Question>) => {
-    console.log(patch);
-    onChangeRef.current?.(patch);
-    setQuestionDisplay(undefined);
-  }, [onChangeRef, setQuestionDisplay]);
-
-  // this debounces the logical commission
-  const onChangeDebouncedRef = useRef<DebounceReturn<QuestionUpdater>>();
-  useEffect(() => {
-    onChangeDebouncedRef.current = debounce((onChangeLogical), 5000, debounceProps);
-  }, [onChangeLogical]);
-  if (!onChangeDebouncedRef.current) {
-    onChangeDebouncedRef.current = debounce((onChangeLogical), 5000, debounceProps);
-  }
-
-  // this debounces and 'deceives' user
-  const onChangeDebounced = useCallback((patch: Partial<Question>) => {
-    setQuestionDisplay({ ...question, ...patch } as Question);
-    onChangeDebouncedRef.current!(patch);
-  }, [onChangeDebouncedRef, setQuestionDisplay, question]);
-
-  // this commits logically and removes displayed question
-  const onChangeImmediate = useCallback((patch: Partial<Question>) => {
-    onChangeDebouncedRef.current!.clear();
-    onChangeLogical(patch);
-  }, [onChangeDebouncedRef, onChangeLogical]);
+  const editor = useEditorContext<Question>();
+  const { value: question, onChangeImmediate, edit } = editor;
 
   const { t } = useTranslation();
-
-  // pagination
-  const q = useDisclosure();
 
   // tags
 
@@ -262,31 +208,15 @@ export const QuestionEdit = (props: QuestionEditProps) => {
 
   return <>
     <Grid templateColumns='160px 1fr' gap={2}>
-      <HStack gridColumn='1 / 3' justifyContent='space-between'>
-        <Box>{t('page.edit.nowEditing')}</Box>
-        <IconButton colorScheme='blue' aria-label={t('page.question.questions')} icon={<DragHandleIcon />}
-          onClick={() => {
-            // setQuestionSelect(currentQuestion);
-            q.onOpen();
-          }} />
-      </HStack>
+
       {/* title */}
       <Box>{t('page.edit.title')}</Box>
-      <Input
-        value={question.title || ''}
-        onChange={async (e) => await onChangeDebounced({ title: e.target.value })}
-        onBlur={onChangeDebouncedRef.current!.clear}
-      />
+      <Input {...edit('title', { debounce: true })} />
       {/* <EditButton value={editingTitle} setValue={setEditingTitle} /> */}
 
       {/* type */}
       <Box>{t('page.edit.type')}</Box>
-      <Select
-        value={question.type || ''}
-        onChange={async (e) =>
-          e.target.value
-          && await onChangeImmediate({ type: e.target.value as Question['type'] })}
-      >
+      <Select {...edit('type')}>
         <option value=''>{t('page.edit.typeSelect')}</option>
         {['choice', 'blank', 'text'].map(x => <option key={x}
           value={x}>{t('question.type.' + x)}</option>)}
@@ -310,11 +240,7 @@ export const QuestionEdit = (props: QuestionEditProps) => {
       {/* content */}
       <Box>{t('page.edit.content')}</Box>
       <HStack alignItems='flex-end' alignSelf='flex-end'>
-        <Textarea2
-          value={question.content}
-          onChange={async (e) => await onChangeDebounced({ content: e.target.value })}
-          onBlur={onChangeDebouncedRef.current!.clear}
-        />
+        <Textarea2 {...edit('content', { debounce: true })} />
       </HStack>
 
       {question.type === 'choice' && <>
@@ -325,26 +251,17 @@ export const QuestionEdit = (props: QuestionEditProps) => {
           }}>{t('page.edit.choice.addTop')}</Button>
           <HStack>
             <Box>{t('page.edit.choice.multiple')}</Box>
-            <Switch isChecked={!!question.multiple} onChange={(e) => onChangeDebounced({ multiple: !!e.target.checked })}
-              onBlur={onChangeDebouncedRef.current!.clear} />
+            <Switch {...edit<SwitchProps>('multiple', { debounce: true, key: 'isChecked' })} />
           </HStack>
         </VStack>
-        <ChoiceQuestionOptionsEdit question={question}
-          onChangeDebounced={onChangeDebounced}
-          onChangeImmediate={onChangeImmediate}
-          onChangeDebouncedClear={onChangeDebouncedRef.current!.clear}
-        />
+        <ChoiceQuestionOptionsEdit question={question} />
       </>}
 
 
       {/* solution */}
       <Box>{t('page.edit.solution')}</Box>
       <HStack alignItems='flex-end' alignSelf='flex-end'>
-        <Textarea2
-          value={question.solution}
-          onChange={async (e) => await onChangeDebounced({ solution: e.target.value })}
-          onBlur={onChangeDebouncedRef.current!.clear}
-        />
+        <Textarea2 {...edit('solution', { debounce: true })} />
       </HStack>
     </Grid>
 
@@ -364,12 +281,5 @@ export const QuestionEdit = (props: QuestionEditProps) => {
       </ModalContent>
     </Modal>
 
-    <QuestionSelectionModal
-      index={20} total={80}
-      current={25}
-
-      {...q}
-      question={question ? <BaseQuestionPanel w='100%' question={question} /> : <></>}
-    />
   </>;
 };

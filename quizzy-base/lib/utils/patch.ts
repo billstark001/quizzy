@@ -89,3 +89,11 @@ export const getPatch = <T extends object>(
   }
   return patch;
 };
+
+export const parseObjectPath = (path: string) => {
+  path = path.trim();
+  path = path.replace(/\[(\w+)\]/g, '.$1');
+  path = path.replace(/^\./, ''); // leading points
+  const ret = path.split('.').filter(Boolean);
+  return ret;
+};

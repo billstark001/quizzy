@@ -2,7 +2,7 @@ import { DatabaseIndexed, ID, KeywordIndexed, MarkdownString } from "./technical
 import { Question, QuestionWithOptionalID } from "./question";
 
 type QuizPaperBase = {
-  name: string;
+  name: string; // display
   img?: string;
   desc?: MarkdownString;
   tags?: string[];
