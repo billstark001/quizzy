@@ -1,20 +1,22 @@
 import Sheet, { Column, withSheetRow } from "#/components/Sheet";
 import { QuizRecord } from "#/types";
 import { ID } from "#/types/technical";
+import { dispDuration } from "#/utils/time";
 import { Quizzy } from "@/data";
 import { useAsyncEffect } from "@/utils/react";
 import { Button, HStack } from "@chakra-ui/react";
 import { atom, useAtom } from "jotai";
+import { DateTime } from "luxon";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-
-
-const recordsAtom = atom<readonly QuizRecord[]>([]);
-const paperNamesAtom = atom<Readonly<Record<ID, string>>>({});
 
 type _K = {
   refresh: () => void | Promise<void>,
 };
+
+const recordsAtom = atom<readonly QuizRecord[]>([]);
+const paperNamesAtom = atom<Readonly<Record<ID, string>>>({});
+
 const ResumeButton = withSheetRow<QuizRecord, _K>((props) => {
   const { item, refresh } = props;
 
@@ -24,7 +26,7 @@ const ResumeButton = withSheetRow<QuizRecord, _K>((props) => {
   if (!item) {
     return <></>;
   }
-  
+
   return <HStack>
     <Button onClick={() => {
       const params = new URLSearchParams({
@@ -45,7 +47,7 @@ const ResumeButton = withSheetRow<QuizRecord, _K>((props) => {
 });
 
 export const RecordsPage = () => {
-  
+
   const [records, setRecords] = useAtom(recordsAtom);
   const [paperNames, setPaperNames] = useAtom(paperNamesAtom);
 
@@ -70,11 +72,11 @@ export const RecordsPage = () => {
 
   return <Sheet data={records}>
     <Column field='paperId' render={(x) => paperNames[x]} />
-    <Column field='startTime' />
-    <Column field='timeUsed' />
-    <Column field='lastQuestion' render={(x) => x || 1}/>
+    <Column field='startTime' render={(x: number) => DateTime.fromMillis(x || 0).toISO()} />
+    <Column field='timeUsed' render={dispDuration} />
+    <Column field='lastQuestion' render={(x) => x || 1} />
     <Column>
-      <ResumeButton refresh={refresh}/>
+      <ResumeButton refresh={refresh} />
     </Column>
   </Sheet>
 };

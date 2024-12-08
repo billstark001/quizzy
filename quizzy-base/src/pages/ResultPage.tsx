@@ -1,6 +1,7 @@
 import { QuestionDisplay } from "#/components/QuestionDisplay";
 import Sheet, { Column, withSheetRow } from "#/components/Sheet";
-import { ID, Question, QuizResult, QuizResultRecordRow } from "#/types";
+import { Question, QuizResult, QuizResultRecordRow } from "#/types";
+import { ID } from "#/types/technical";
 import { useDisclosureWithData } from "#/utils/disclosure";
 import { Quizzy } from "@/data";
 import { useAsyncEffect } from "@/utils/react";

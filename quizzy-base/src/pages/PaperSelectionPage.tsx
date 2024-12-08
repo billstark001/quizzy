@@ -1,15 +1,38 @@
 import { PaperCard } from "#/components/PaperCard";
-import { QuizPaper } from "#/types";
+import { defaultQuizPaper, QuizPaper } from "#/types";
+import { openDialog, uuidV4B64, withHandler } from "#/utils";
+import { promiseWithResolvers } from "#/utils/func";
 import { Quizzy } from "@/data";
 import { papersAtom } from "@/data/atoms";
 import { useAsyncEffect } from "@/utils/react";
 import { AddIcon } from "@chakra-ui/icons";
 import { Box, Card, CardBody, Flex, HStack, VStack, Wrap } from "@chakra-ui/react";
 import { useAtom } from "jotai";
-import { ChangeEvent, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 
-
+const uploadFile = async () => {
+  const { promise, resolve, reject } = promiseWithResolvers<File>();
+  const input = document.createElement("input");
+  input.type = "file";
+  input.oninput = async (e) => {
+    const f = (e.target as HTMLInputElement).files?.[0];
+    if (!f) {
+      reject(new Error("No file selected"));
+      return;
+    }
+    resolve(f);
+  };
+  input.oncancel = () => reject(new Error('No file selected'));
+  window.addEventListener('focus', () => {
+    setTimeout(() => {
+      if (!input.files?.length) {
+        reject(new Error("No file selected"));
+      }
+    }, 300);
+  }, { once: true });
+  input.click();
+  return await promise;
+};
 
 export const PaperSelectionPage = () => {
 
@@ -48,21 +71,27 @@ export const PaperSelectionPage = () => {
   };
 
   // upload
-  const inputRef = useRef<HTMLInputElement>(null);
-  const onInputChange = async (e: ChangeEvent<HTMLInputElement>) => {
-    const f = e.target?.files?.[0];
-    if (!f) {
-      return;
+  const upload = withHandler(async () => {
+    const f = await uploadFile();
+    const text = await f.text();
+    const json = JSON.parse(text);
+    await Quizzy.importCompleteQuizPapers(json);
+    await refresh();
+  });
+  const create = withHandler(async () => {
+    const p = defaultQuizPaper({ id: uuidV4B64() });
+    const [id] = await Quizzy.importQuizPapers(p) ?? [];
+    if (!id) {
+      throw new Error("No ID");
     }
-    try {
-      const text = await f.text();
-      const json = JSON.parse(text);
-      await Quizzy.importCompleteQuizPapers(json);
-      await refresh();
-    } catch (error) {
-      console.error(error);
-    }
-  }
+    navigate('/edit?paper=' + id);
+  });
+  const onInputChange = () => openDialog({
+    options: [
+      [false, 'create new'],
+      [true, 'upload']
+    ]
+  }).then(res => res ? upload() : create());
 
   return <VStack alignItems='stretch' minH='700px'>
     <HStack>
@@ -82,11 +111,8 @@ export const PaperSelectionPage = () => {
           _hover={{ opacity: '50%' }}
           _active={{ opacity: '80%' }}
         >
-          <input onChange={onInputChange}
-            type='file' style={{ display: 'none '}} 
-            ref={inputRef}/>
           <AddIcon fontSize='6xl' color='gray.500' p={4}
-            onClick={() => inputRef.current?.click()}
+            onClick={onInputChange}
           />
         </CardBody>
       </Card>

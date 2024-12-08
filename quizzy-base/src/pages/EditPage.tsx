@@ -76,6 +76,7 @@ export const EditPage = () => {
       if (question) {
         return { paperId: paperIdProp!, paper, questionId: questionId!, question };
       }
+      return { paperId: paperIdProp!, paper };
     }
     // at this point, paper fetching is failed
     // then try to get question by id
@@ -231,10 +232,6 @@ export const EditPage = () => {
 
   // render
 
-  if (question == undefined) {
-    return 'ERROR: QUESTION NOT FOUND';
-  }
-
   return <>
     <VStack alignItems='stretch'>
       <HStack>
@@ -269,9 +266,9 @@ export const EditPage = () => {
         {/* question mode */}
       </>}
 
-      <EditorContextProvider value={editorQuestion}>
+      {question != undefined ? <EditorContextProvider value={editorQuestion}>
         <QuestionEdit />
-      </EditorContextProvider>
+      </EditorContextProvider> : undefined}
 
     </VStack>
 

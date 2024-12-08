@@ -1,10 +1,12 @@
 
 import Sheet, { withSheetRow, Column } from "#/components/Sheet";
 import { QuizResult } from "#/types";
+import { dispDuration } from "#/utils/time";
 import { Quizzy } from "@/data";
 import { useAsyncEffect } from "@/utils/react";
 import { Button, HStack } from "@chakra-ui/react";
 import { atom, useAtom } from "jotai";
+import { DateTime } from "luxon";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 
@@ -46,9 +48,9 @@ export const ResultsPage = () => {
   useAsyncEffect(refresh, []);
 
   return <Sheet data={results}>
-    <Column field='paperName' />
-    <Column field='startTime' />
-    <Column field='timeUsed' />
+    <Column field='paperName' />   
+   <Column field='startTime' render={(x: number) => DateTime.fromMillis(x || 0).toISO()} />
+    <Column field='timeUsed' render={dispDuration} />
     <Column field='score' />
     <Column field='total' />
     <Column>
