@@ -10,8 +10,8 @@ import { Quizzy, QuizzyRaw } from "@/data";
 import { useAsyncMemo } from "@/utils/react";
 import { ParamsDefinition, useParsedSearchParams } from "@/utils/react-router";
 import { DragHandleIcon } from "@chakra-ui/icons";
-import { Box, Button, Divider, HStack, IconButton, Modal, ModalBody, ModalCloseButton, ModalContent, ModalFooter, ModalHeader, ModalOverlay, useCallbackRef, useDisclosure, VStack } from "@chakra-ui/react";
-import { useCallback, useEffect, useState } from "react";
+import { AlertDialog, AlertDialogBody, AlertDialogContent, AlertDialogFooter, AlertDialogHeader, AlertDialogOverlay, Box, Button, Divider, HStack, IconButton, Modal, ModalBody, ModalCloseButton, ModalContent, ModalFooter, ModalHeader, ModalOverlay, useCallbackRef, useDisclosure, VStack } from "@chakra-ui/react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 
@@ -63,8 +63,8 @@ export const EditPage = () => {
   const q = useDisclosure();
   const { t } = useTranslation();
 
-  const { data: _q } = useAsyncMemo(fetchData, [paperId, questionIndex, questionIdOrig]);
-  const [paper, question] = _q ?? [undefined, undefined, undefined];
+  const { data: _q, refresh } = useAsyncMemo(fetchData, [paperId, questionIndex, questionIdOrig]);
+  const [paper, question, questionId] = _q ?? [undefined, undefined, undefined];
 
   const [editState, setEditState] = useState<{
     question: Question,
@@ -103,9 +103,7 @@ export const EditPage = () => {
     patch.onClear(e);
   }, [question, paper]);
 
-  // TODO paper mode
-
-
+  // editor
   const editorQuestion = useEditor({
     value: editState.question,
     onChange: patchQuestionRef,
@@ -119,20 +117,61 @@ export const EditPage = () => {
   const [questionPreviewIndex, setQuestionPreviewIndex] = useState(1);
   const [questionPreview, setQuestionPreview] = useState<Question>();
 
-
   const selectQuestionPreview = useCallback((index: number) => {
     const q = paper?.questions?.[index - 1];
     setQuestionPreviewIndex(index);
     Quizzy.getQuestions([q ?? '']).then(([question]) => setQuestionPreview(question));
   }, [setQuestionPreviewIndex, setQuestionPreview, paper]);
 
-  // select
+  // select & save
 
-  const selectQuestionPaperMode = useCallback((index: number) => {
-    // TODO ask user to save
-    setSearchParams({ q: index });
-  }, [setSearchParams]);
+  const dAlert = useDisclosure();
+  const [alertType, setAlertType] = useState<string>('save');
+  const cancelRef = useRef<any>();
+  const { openAlert, closeAlert } = useMemo(() => {
+    let promise: Promise<boolean> | undefined = undefined;
+    let resolve: ((value: boolean) => void) | undefined = undefined;
+    return {
+      openAlert: (type: string) => {
+        setAlertType(type);
+        if (promise) {
+          return promise;
+        }
+        promise = new Promise((res) => {
+          resolve = res;
+          dAlert.onOpen();
+        });
+        return promise;
+      },
+      closeAlert: (accept: boolean) => {
+        resolve?.(accept);
+        promise = undefined;
+        resolve = undefined;
+        dAlert.onClose();
+      }
+    }
+  }, [dAlert.onOpen, dAlert.onClose]);
 
+  const selectQuestionPaperMode = useCallback(async (index: number) => {
+    // ask user to save if edited
+    if (patch.totalStep === 0 || await openAlert('discard')) {
+      // this means to discard
+      setSearchParams({ q: index });
+    }
+  }, [setSearchParams, patch, openAlert]);
+
+  const save = useCallback(async () => {
+    if (!await openAlert('save')) {
+      // the save request is rejected
+      return;
+    }
+    if (paperId) {
+      await Quizzy.updateQuizPaper(paperId, editState.paper);
+    }
+    await Quizzy.updateQuestion(questionId ?? '', editState.question);
+    // await refresh();
+    // after the refresh, edit state is automatically cleared
+  }, [paperId, questionId, editState, refresh]);
 
   // preview
   const { data: dPreviewQuestion, ...dPreview } = useDisclosureWithData<Question | undefined>(undefined);
@@ -147,7 +186,7 @@ export const EditPage = () => {
       <HStack>
         <Button onClick={patch.onUndo}>undo</Button>
         <Button onClick={patch.onRedo}>redo</Button>
-        <Button>save [TODO]</Button>
+        <Button onClick={save}>save</Button>
         <Button onClick={() => {
           dPreview.onOpen(editorQuestion.fakeValue ?? editorQuestion.value);
         }}>preview</Button>
@@ -211,6 +250,35 @@ export const EditPage = () => {
         </ModalFooter>
       </ModalContent>
     </Modal>
+
+    <AlertDialog
+      {...dAlert}
+      leastDestructiveRef={cancelRef}
+      onClose={() => closeAlert(false)}
+    >
+      <AlertDialogOverlay>
+        <AlertDialogContent>
+          <AlertDialogHeader fontSize='lg' fontWeight='bold'>
+            {t('page.edit.alert.' + alertType)}
+          </AlertDialogHeader>
+
+          <AlertDialogBody>
+            Are you sure? 
+            {alertType === 'discard' ? <>The unsaved changes will be discarded.</> : undefined}
+            {alertType === 'save' ? <>The changes cannot be undone.</> : undefined}
+          </AlertDialogBody>
+
+          <AlertDialogFooter>
+            <Button ref={cancelRef} onClick={() => closeAlert(false)}>
+              Cancel
+            </Button>
+            <Button colorScheme='red' onClick={() => closeAlert(true)} ml={3}>
+              Confirm
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialogOverlay>
+    </AlertDialog>
 
   </>;
 };

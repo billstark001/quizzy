@@ -17,6 +17,7 @@ export type UsePatchReturn<T, Tag = HTMLDivElement> = {
   onRedo: () => boolean;
   onClear: (initial: T) => void;
   onKeyInput: KeyboardEventHandler<Tag>;
+  totalStep: number;
 };
 
 const isMac = navigator.platform.indexOf("Mac") >= 0 ||
@@ -34,21 +35,24 @@ export const usePatch = <T extends object, Tag = HTMLDivElement>(
   const historyRef = useRef<T[]>([]) as RefObject<T[]>;
   const lastPatchRef = useRef<Partial<T> | undefined>(undefined);
   const pointerRef = useRef(0);
+  const totalStepRef = useRef(0);
   const history = historyRef.current!;
 
   const onEdit = useCallback((patch: Partial<T>) => {
     if (pointerRef.current != 0) {
       history.splice(history.length - pointerRef.current, pointerRef.current);
       pointerRef.current = 0;
-
     }
     const newValue = { ...value, ...patch };
     setValue(newValue);
     if (shouldReplace?.(value, patch, lastPatchRef.current)) {
+      // the last step is merged with the current step
       lastPatchRef.current = { ...lastPatchRef.current, ...patch };
       history.pop();
     } else {
+      // the current step is taken as a new step
       lastPatchRef.current = patch;
+      totalStepRef.current += 1;
     }
     history.push(newValue);
     if (history.length > maxLength) {
@@ -62,6 +66,7 @@ export const usePatch = <T extends object, Tag = HTMLDivElement>(
     }
     setValue(history[history.length - pointerRef.current - 2]);
     pointerRef.current += 1;
+    totalStepRef.current -= 1;
     return true;
   }, [setValue, shouldReplace, history, pointerRef, lastPatchRef]);
 
@@ -71,12 +76,14 @@ export const usePatch = <T extends object, Tag = HTMLDivElement>(
     }
     setValue(history[history.length - pointerRef.current]);
     pointerRef.current -= 1;
+    totalStepRef.current += 1;
     return true;
   }, [setValue, history, pointerRef]);
 
   const onClear = useCallback((initial: T) => {
     history.splice(0, history.length, initial);
     pointerRef.current = 0;
+    totalStepRef.current = 0;
   }, [history, pointerRef]);
 
   const onKeyInput: KeyboardEventHandler<Tag> = useCallback((event) => {
@@ -100,6 +107,7 @@ export const usePatch = <T extends object, Tag = HTMLDivElement>(
     onRedo,
     onClear,
     onKeyInput,
+    totalStep: totalStepRef.current,
   };
 };
 

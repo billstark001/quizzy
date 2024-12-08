@@ -9,7 +9,6 @@ import { applyPatch, Patch } from "#/utils/patch";
 import { generateKeywords } from "./keywords";
 import QuickLRU from "quick-lru";
 import { DatabaseUpdateDefinition, openDatabase } from "#/utils/idb";
-import TrieSearch from "trie-search";
 import { buildTrieTree, loadTrieTree } from "./search";
 
 
@@ -23,11 +22,6 @@ const STORE_KEY_RESULTS = 'results';
 const STORE_KEY_STATS = 'stats';
 
 const STORE_KEY_GENERAL = 'general';
-
-// TODO implement optimistic lock
-export type VersionRecord = {
-  _version: number;
-};
 
 type Bm25Cache = {
   wordAppeared: Record<string, number>;
@@ -162,7 +156,7 @@ export class IDBController implements QuizzyController {
     if (another?.lastUpdate !== original.lastUpdate) {
       throw new Error('Data modified.');
     }
-    await tx.store.put(modified, id);
+    await tx.store.put(modified);
     await tx.done;
 
     // invalidate cache
@@ -204,7 +198,9 @@ export class IDBController implements QuizzyController {
     }
     while (cursor != null) {
       const doc = cursor.value as T;
-      const docLength = (useTag ? doc.tags : doc.keywords)?.length || 1;
+      const cacheList = useTag ? doc.tags : doc.keywords;
+      // TODO implement caching
+      const docLength = cacheList?.length || 1;
       const freq = (useTag ? doc.tagsFrequency : doc.keywordsFrequency) ?? {};
       let score = 0;
       for (const qi of expandedQuery) {
@@ -572,7 +568,6 @@ export class IDBController implements QuizzyController {
   }
 
   deleteQuizResult(id: ID): Promise<void> {
-    // TODO revert stats
     return this.db.delete(STORE_KEY_RESULTS, id);
   }
 
