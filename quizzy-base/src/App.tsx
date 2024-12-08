@@ -12,6 +12,7 @@ import ResultPage from './pages/ResultPage';
 import StatsPage from './pages/StatsPage';
 import { useTranslation } from 'react-i18next';
 import { EditPage } from './pages/EditPage';
+import QuestionPage from './pages/QuestionPage';
 
 export const AppLayout = ({ children }: React.PropsWithChildren<object>) => {
   const navigate = useNavigate();
@@ -50,6 +51,7 @@ export const App = () => {
         <Route path='/settings' element={<SettingsPage />} />
 
         <Route path='/papers' element={<PaperSelectionPage />} />
+        <Route path='/questions' element={<QuestionPage />} />
         <Route path='/records' element={<RecordsPage />} />
         <Route path='/results' element={<ResultsPage />} />
 

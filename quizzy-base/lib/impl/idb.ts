@@ -168,7 +168,7 @@ export class IDBController implements QuizzyController {
   private async _buildScore<T extends DatabaseIndexed & KeywordIndexed>(
     key: string,
     store: string, query: string[], useTag: boolean,
-    k1 = 1.5, b = 0.75,
+    k1 = 1.5, b = 0.75, threshold = 1e-5,
   ) {
     const { idf, idfTag, averageDocLength, averageDocLengthTag } = await this._load<Bm25Cache>('bm25_' + store)
       ?? { idf: {}, idfTag: {}, averageDocLength: 0, averageDocLengthTag: 0, } as Bm25Cache;
@@ -186,12 +186,15 @@ export class IDBController implements QuizzyController {
       const freq = (useTag ? doc.tagsFrequency : doc.keywordsFrequency) ?? {};
       let score = 0;
       for (const qi of query) {
-        const f_qi = freq[qi];
-        score += (_idf[qi] ?? 0)
+        const f_qi = freq[qi] ?? 0;
+        const localTerm = (_idf[qi] ?? 0)
           * (f_qi * (k1 + 1))
-          / (f_qi + k1 * (1 - b + b * docLength / l))
+          / (f_qi + k1 * (1 - b + b * docLength / l));
+        score += localTerm;
       }
-      scores[doc.id] = score;
+      if (score > threshold) {
+        scores[doc.id] = score;
+      }
       cursor = await cursor.continue();
     }
     await tx.done;
@@ -206,26 +209,30 @@ export class IDBController implements QuizzyController {
   private async _search<T extends DatabaseIndexed & KeywordIndexed>(
     store: string, query: string[], useTag: boolean,
     count?: number, page?: number,
-    k1 = 1.5, b = 0.75,
+    k1 = 1.5, b = 0.75, threshold = 1e-5,
   ): Promise<SearchResult<T>> {
 
-    const queryCacheKey = JSON.stringify([store, query, useTag, k1, b]);
-    const scores = this.cache.has(queryCacheKey) 
+    const queryCacheKey = JSON.stringify([store, query, useTag, k1, b, threshold]);
+    const scores = this.cache.has(queryCacheKey)
       ? this.cache.get(queryCacheKey)
-      : await this._buildScore(queryCacheKey, store, query, useTag, k1, b);
+      : await this._buildScore(queryCacheKey, store, query, useTag, k1, b, threshold);
 
-    count = Math.min(count ?? 1, 1);
-    page = Math.min(page ?? 0, 0); // 0-based
+    count = Math.max(count ?? 1, 1);
+    page = Math.max(page ?? 0, 0); // 0-based
 
     const result: T[] = [];
     for (let i = page * count; i < (page + 1) * count; ++i) {
-      const currentResult = await this.db.get(store, scores?.[i][0] ?? '');
+      const currentResult = await this.db.get(store, scores?.[i]?.[0] ?? '');
       if (currentResult != null) {
         result.push(sanitizeIndices(currentResult, true));
       }
     }
 
-    return {result, totalPages: Math.ceil((scores?.length ?? 0) / page)};
+    return { 
+      keywords: query,
+      result, 
+      totalPages: Math.ceil((scores?.length ?? 0) / count) 
+    };
   }
 
   private async _index<T extends DatabaseIndexed & KeywordIndexed>(
@@ -293,19 +300,19 @@ export class IDBController implements QuizzyController {
     // write the cache into database
     const idf: Record<string, number> = Object.fromEntries(
       Object.entries(wordAppeared).map(
-        ([k, n]) => [k, Math.log((totalDocs - n + 0.5) / (n + 0.5))]
+        ([k, n]) => [k, Math.max(1e-8, Math.log((totalDocs - n + 0.5) / (n + 0.5)))]
       )
     );
     const idfTag: Record<string, number> = Object.fromEntries(
       Object.entries(tagAppeared).map(
-        ([k, n]) => [k, Math.log((totalDocs - n + 0.5) / (n + 0.5))]
+        ([k, n]) => [k, Math.max(1e-8, Math.log((totalDocs - n + 0.5) / (n + 0.5)))]
       )
     );
     const averageDocLength = totalLength / (totalDocs || 1);
     const averageDocLengthTag = totalLengthTag / (totalDocs || 1);
-    const bm25Body: Bm25Cache = { 
-      wordAppeared, tagAppeared, 
-      averageDocLength, averageDocLengthTag, 
+    const bm25Body: Bm25Cache = {
+      wordAppeared, tagAppeared,
+      averageDocLength, averageDocLengthTag,
       totalDocs, idf, idfTag,
     };
     await this._dump('bm25_' + store, bm25Body);
@@ -322,7 +329,7 @@ export class IDBController implements QuizzyController {
   }
 
 
-  findQuestion(query: string, count?: number, page?: number): Promise<SearchResult<Question>> {
+  async findQuestion(query: string, count?: number, page?: number): Promise<SearchResult<Question>> {
     const queryKeywords = generateKeywords(query)[0];
     return this._search(STORE_KEY_QUESTIONS, queryKeywords, false, count, page);
   }

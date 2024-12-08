@@ -1,14 +1,15 @@
 import { francAll } from 'franc';
 import TinySegmenter from 'tiny-segmenter';
-import { cut_for_search } from 'jieba-wasm';
+import { default as init, cut_for_search } from 'jieba-wasm/web';
 import { isStopword } from './stopwords';
 
+await init();
 
 const jpSegmenter = new TinySegmenter();
 
 const periodPattern = /^[\p{P}\p{S}\n\r\t\s]+$/u;
 
-const enPattern = /([0-9]+|[a-zA-Z]+(?:'(?:s|t|d|re|ll|ve|mon|m))?|[.,!?;:'"()\[\]{}]|\s+)/g;
+const enPattern = /([0-9]+|[a-zA-Z]+(?:'(?:s|t|d|re|ll|ve|mon|m))?|[\p{P}\p{S}\[\]{}]|\s+|\S{1,4})/gu;
 const enTokenize = (text: string) => {
   enPattern.lastIndex = 0;
   const tokens = text.match(enPattern)
@@ -25,7 +26,7 @@ export const segmentSearchWords = (words: string): string[] => {
 
   // determine language
 
-  const langRes = francAll(words);
+  const langRes = francAll(words, { minLength: 3 });
   langRes.sort((a, b) => b[1] - a[1]);
   let lang = 'und';
   for (const [curLang] of langRes) {
@@ -47,14 +48,14 @@ export const segmentSearchWords = (words: string): string[] => {
   let ret: string[] = [];
 
   if (lang === 'zho') {
-    ret = cut_for_search(words);
+    ret = cut_for_search(words, true);
   } else if (lang === 'jpn') {
     ret = jpSegmenter.segment(words);
   } else {
     ret = enTokenize(words);
   }
 
-  ret = ret.filter(word => !periodPattern.test(word) && !isStopword(word));
+  ret = ret.filter(word => word && !periodPattern.test(word) && !isStopword(word));
   ret.sort();
 
   return ret;

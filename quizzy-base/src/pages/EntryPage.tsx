@@ -16,6 +16,9 @@ export const EntryPage = () => {
 
   return <VStack align='flex-start'>
     <HStack>
+      <Button onClick={() => navigate('/questions')}>
+        {t('btn.entry.questions')}
+      </Button>
       <Button onClick={() => navigate('/papers')}>
         {t('btn.entry.papers')}
       </Button>

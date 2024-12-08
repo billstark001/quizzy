@@ -17,7 +17,8 @@ export type KeywordIndexed = {
 };
 
 export type SearchResult<T> = {
-  result: T[];
+  keywords: readonly string[];
+  result: readonly T[];
   totalPages: number;
 };
 
