@@ -13,6 +13,7 @@ import { useAsyncMemo } from "@/utils/react";
 import { QuizzyRaw } from "@/data";
 import { Question } from "#/types";
 import { SearchResult } from "#/types/technical";
+import { useNavigate } from "react-router-dom";
 
 const SearchBox = () => {
 
@@ -41,15 +42,17 @@ const SearchBox = () => {
   const [isOpen, setIsOpen] = useState(false);
   const disableBlur = useRef(false);
 
+  const navigate = useNavigate();
+
   const handleSearch = (e: ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
     setIsOpen(true);
   };
 
   const handleSelect = (item: Question) => {
-    console.log(item);
     disableBlur.current = false;
     setIsOpen(false);
+    navigate(`/edit?question=${escape(item.id)}`)
   };
 
   return (

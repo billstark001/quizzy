@@ -9,6 +9,8 @@ import { applyPatch, Patch } from "#/utils/patch";
 import { generateKeywords } from "./keywords";
 import QuickLRU from "quick-lru";
 import { DatabaseUpdateDefinition, openDatabase } from "#/utils/idb";
+import TrieSearch from "trie-search";
+import { buildTrieTree, loadTrieTree } from "./search";
 
 
 const DB_KEY = 'Quizzy';
@@ -35,6 +37,10 @@ type Bm25Cache = {
   totalDocs: number;
   idf: Record<string, number>;
   idfTag: Record<string, number>;
+  trie: any,
+  trieSize: number,
+  trieTags: any,
+  trieSizeTags: number,
 };
 
 const updaters: Record<number, DatabaseUpdateDefinition> = {
@@ -165,14 +171,23 @@ export class IDBController implements QuizzyController {
     return id;
   }
 
+  private async _getKeywords(query: string, __: string) {
+    if (!query) {
+      return [];
+    }
+    const [orig, _] = generateKeywords(query);
+    return orig;
+  }
+
   private async _buildScore<T extends DatabaseIndexed & KeywordIndexed>(
     key: string,
     store: string, query: string[], useTag: boolean,
-    k1 = 1.5, b = 0.75, threshold = 1e-5,
+    k1 = 1.5, b = 0.75, threshold = 1e-10,
   ) {
-    const { idf, idfTag, averageDocLength, averageDocLengthTag } = await this._load<Bm25Cache>('bm25_' + store)
-      ?? { idf: {}, idfTag: {}, averageDocLength: 0, averageDocLengthTag: 0, } as Bm25Cache;
+    const { idf, idfTag, averageDocLength, averageDocLengthTag, trie, trieSize, trieTags, trieSizeTags } = await this._load<Bm25Cache>('bm25_' + store)
+      ?? { idf: {}, idfTag: {}, averageDocLength: 0, averageDocLengthTag: 0, trie: {}, trieTags: {}, trieSize: 0, trieSizeTags: 0 } as Bm25Cache;
 
+    const trieTree = loadTrieTree(!useTag ? trie : trieTags, !useTag ? trieSize : trieSizeTags);
     const tx = this.db.transaction(store, 'readonly');
     const scores: Record<string, number> = {};
 
@@ -180,12 +195,19 @@ export class IDBController implements QuizzyController {
     const _idf = useTag ? idfTag : idf;
 
     let cursor = await tx.store.openCursor();
+    let expandedQuery = new Set<string>();
+    for (const qi of query) {
+      expandedQuery.add(qi);
+      for (const qj of trieTree.searchFunc(qi)) {
+        expandedQuery.add(qj);
+      }
+    }
     while (cursor != null) {
       const doc = cursor.value as T;
       const docLength = (useTag ? doc.tags : doc.keywords)?.length || 1;
       const freq = (useTag ? doc.tagsFrequency : doc.keywordsFrequency) ?? {};
       let score = 0;
-      for (const qi of query) {
+      for (const qi of expandedQuery) {
         const f_qi = freq[qi] ?? 0;
         const localTerm = (_idf[qi] ?? 0)
           * (f_qi * (k1 + 1))
@@ -209,7 +231,7 @@ export class IDBController implements QuizzyController {
   private async _search<T extends DatabaseIndexed & KeywordIndexed>(
     store: string, query: string[], useTag: boolean,
     count?: number, page?: number,
-    k1 = 1.5, b = 0.75, threshold = 1e-5,
+    k1 = 1.5, b = 0.75, threshold = 1e-10,
   ): Promise<SearchResult<T>> {
 
     const queryCacheKey = JSON.stringify([store, query, useTag, k1, b, threshold]);
@@ -297,6 +319,10 @@ export class IDBController implements QuizzyController {
     }
     await tx.done;
 
+    // build trie trees
+    const { root: trie, size: trieSize, } = buildTrieTree(Object.keys(wordAppeared));
+    const { root: trieTags, size: trieSizeTags, } = buildTrieTree(Object.keys(tagAppeared));
+
     // write the cache into database
     const idf: Record<string, number> = Object.fromEntries(
       Object.entries(wordAppeared).map(
@@ -314,6 +340,7 @@ export class IDBController implements QuizzyController {
       wordAppeared, tagAppeared,
       averageDocLength, averageDocLengthTag,
       totalDocs, idf, idfTag,
+      trie, trieSize, trieTags, trieSizeTags,
     };
     await this._dump('bm25_' + store, bm25Body);
 
@@ -330,11 +357,11 @@ export class IDBController implements QuizzyController {
 
 
   async findQuestion(query: string, count?: number, page?: number): Promise<SearchResult<Question>> {
-    const queryKeywords = generateKeywords(query)[0];
+    const queryKeywords = await this._getKeywords(query, STORE_KEY_QUESTIONS);
     return this._search(STORE_KEY_QUESTIONS, queryKeywords, false, count, page);
   }
   async findQuizPaper(query: string, count?: number, page?: number): Promise<SearchResult<QuizPaper>> {
-    const queryKeywords = generateKeywords(query)[0];
+    const queryKeywords = await this._getKeywords(query, STORE_KEY_PAPERS);
     return this._search(STORE_KEY_PAPERS, queryKeywords, false, count, page);
   }
   async findQuestionByTags(query: string, count?: number, page?: number): Promise<SearchResult<Question>> {
