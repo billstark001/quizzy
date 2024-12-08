@@ -17,6 +17,7 @@ import { isValidElement, ReactNode, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { WithHandlerOptions, withHandlerRaw } from "./react-msg";
 import ReactDOM from "react-dom/client";
+import AsyncDialog, { DialogOpener } from "./react-dialog";
 
 const LoadingScreen = ({ isLoading }: { isLoading?: boolean }) => {
   return <Fade
@@ -63,7 +64,7 @@ export type WrappedHandlerRootProps = {
   useToastOptions?: UseToastOptions,
   withHandlerOptions?: WithHandlerOptions<any>,
   useDisclosureWithDataProps?: UseDisclosureWithDataProps<_M>,
-  onHandlerUpdated: (handler: _H, toast: _T) => void,
+  onHandlerUpdated: (handler: _H, toast: _T, dialog: DialogOpener) => void,
 };
 
 export const WrappedHandlerRoot = (props: WrappedHandlerRootProps) => {
@@ -95,6 +96,8 @@ export const WrappedHandlerRoot = (props: WrappedHandlerRootProps) => {
   const cancelRef = useRef<any>(null);
 
   const [isLoading, setIsLoading] = useState(false);
+
+  const [openDialog, setOpenDialog] = useState({ f: (() => void 0) as unknown as DialogOpener });
 
   useEffect(() => {
     const options: WithHandlerOptions<any> = Object.freeze({
@@ -135,10 +138,10 @@ export const WrappedHandlerRoot = (props: WrappedHandlerRootProps) => {
 
     const handler: _H = (f, o) => withHandlerRaw(f, o == null ? options : Object.assign({}, options, o)) as any;
 
-    onHandlerUpdated(handler, toast);
+    onHandlerUpdated(handler, toast, openDialog.f);
 
   }, [
-    async, cache,
+    async, cache, openDialog.f,
     t, toast, disclosure.onOpen, setIsLoading, withHandlerOptions,
     onHandlerUpdated,
   ]);
@@ -147,6 +150,7 @@ export const WrappedHandlerRoot = (props: WrappedHandlerRootProps) => {
 
   return <ChakraProvider>
     <LoadingScreen isLoading={isLoading} />
+    <AsyncDialog onOpenDialogChanged={(f) => setOpenDialog({ f })}/>
     <AlertDialog
       leastDestructiveRef={cancelRef as any}
       closeOnOverlayClick={false}
@@ -178,16 +182,19 @@ export const createStandaloneHandler = (props?: Omit<WrappedHandlerRootProps, 'o
 
   let _h: _H | undefined = undefined;
   let _t: _T | undefined = undefined;
+  let _d: DialogOpener | undefined = undefined;
   const wrappedHandler: _H = (f, o) => _h!(f, o);
   const wrappedToast: _T = (t) => _t!(t);
-  const onHandlerUpdated = (handler: _H, toast: _T) => {
+  const wrappedDialog: DialogOpener = ((a, b) => _d!(a, b)) as DialogOpener; 
+  const onHandlerUpdated = (handler: _H, toast: _T, dialog: DialogOpener) => {
     _h = handler;
     _t = toast;
+    _d = dialog;
   }
 
   const root = <WrappedHandlerRoot {...props} onHandlerUpdated={onHandlerUpdated} />;
   const rootNode = ReactDOM.createRoot(document.getElementById('toast')!);
   rootNode.render(root);
 
-  return [wrappedHandler, wrappedToast] as [_H, _T];
+  return [wrappedHandler, wrappedToast, wrappedDialog] as [_H, _T, DialogOpener];
 }

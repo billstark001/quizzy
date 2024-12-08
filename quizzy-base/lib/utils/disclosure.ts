@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, useRef } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { useCallbackRef, useDisclosure, UseDisclosureProps, UseDisclosureReturn } from '@chakra-ui/react';
 import { atom, PrimitiveAtom, useAtom } from 'jotai';
 
@@ -46,19 +46,19 @@ export function useDisclosureWithData<T>(
   const d = useDisclosure({ ...props, onOpen: undefined });
   const { onOpen: onOpenOriginal } = d;
 
-  const _data = useMemo(() => typeof defaultData === 'function'
+  const _f = () => typeof defaultData === 'function'
     ? (defaultData as DataFunction<T>)()
-    : defaultData, [defaultData]);
+    : defaultData;
 
-  const [data, setData] = useState<T>(_data);
+  const [data, setData] = useState<T>(_f);
 
   const onOpen = useCallback((newData?: T) => {
     if (!isDataControlled) {
-      setData(newData !== undefined ? newData : _data);
+      setData(newData !== undefined ? newData : _f());
     }
     onOpenOriginal();
     handleOnOpen?.(newData);
-  }, [isDataControlled, _data, onOpenOriginal, handleOnOpen]);
+  }, [isDataControlled, onOpenOriginal, handleOnOpen]);
 
   return {
     ...d,

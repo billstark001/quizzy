@@ -3,15 +3,15 @@ import { QuestionEdit } from "#/components/QuestionEdit";
 import { BaseQuestionPanel, QuestionPanel } from "#/components/QuestionPanel";
 import { QuestionSelectionModal } from "#/components/QuestionSelectionModal";
 import { defaultQuestion, defaultQuizPaper, Question, QuizPaper } from "#/types";
-import { standaloneToast, withHandler } from "#/utils";
+import { openDialog, standaloneToast, withHandler } from "#/utils";
 import { useDisclosureWithData } from "#/utils/disclosure";
 import { EditorContextProvider, useEditor, usePatch } from "#/utils/react-patch";
 import { Quizzy, QuizzyCache, QuizzyCacheRaw, QuizzyRaw } from "@/data";
 import { useAsyncMemo } from "@/utils/react";
 import { ParamsDefinition, useParsedSearchParams } from "@/utils/react-router";
 import { DragHandleIcon } from "@chakra-ui/icons";
-import { AlertDialog, AlertDialogBody, AlertDialogContent, AlertDialogFooter, AlertDialogHeader, AlertDialogOverlay, Box, Button, Divider, HStack, IconButton, Modal, ModalBody, ModalCloseButton, ModalContent, ModalFooter, ModalHeader, ModalOverlay, useCallbackRef, useDisclosure, VStack } from "@chakra-ui/react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Box, Button, Divider, HStack, IconButton, Modal, ModalBody, ModalCloseButton, ModalContent, ModalFooter, ModalHeader, ModalOverlay, useCallbackRef, useDisclosure, VStack } from "@chakra-ui/react";
+import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 
@@ -51,35 +51,6 @@ export const EditPage = () => {
 
   // navigate
   const navigate = useNavigate();
-
-  // alert dialog
-
-  const dAlert = useDisclosure();
-  const [alertType, setAlertType] = useState<string>('save');
-  const cancelRef = useRef<any>();
-  const { openAlert, closeAlert } = useMemo(() => {
-    let promise: Promise<boolean> | undefined = undefined;
-    let resolve: ((value: boolean) => void) | undefined = undefined;
-    return {
-      openAlert: (type: string) => {
-        setAlertType(type);
-        if (promise) {
-          return promise;
-        }
-        promise = new Promise((res) => {
-          resolve = res;
-          dAlert.onOpen();
-        });
-        return promise;
-      },
-      closeAlert: (accept: boolean) => {
-        resolve?.(accept);
-        promise = undefined;
-        resolve = undefined;
-        dAlert.onClose();
-      }
-    }
-  }, [dAlert.onOpen, dAlert.onClose]);
 
   // params
   const [searchParams, setSearchParams] = useParsedSearchParams(_parser);
@@ -156,7 +127,9 @@ export const EditPage = () => {
     // try to read data from local cache, apply if successful
     let cachedState: Partial<_E> | undefined = await (QuizzyCacheRaw.loadRecord('edit', sessionId)
       .catch(() => void 0));
-    if (cachedState && !await openAlert('loadCache')) {
+    if (cachedState && !await openDialog(
+      <>There is a cached result. Do you want to load it?</>, 'load-discard'
+    )) {
       // discard the cache
       cachedState = undefined;
       await (QuizzyCacheRaw.clearRecord('edit', sessionId).catch(() => void 0));
@@ -213,15 +186,19 @@ export const EditPage = () => {
   // select different questions
   const selectQuestionPaperMode = useCallback(async (index: number) => {
     // ask user to save if edited
-    if (patch.totalStep === 0 || await openAlert('discard')) {
+    if (patch.totalStep === 0 || await openDialog(<>
+      Are you sure? The unsaved changes will be discarded.
+    </>, 'confirm')) {
       // this means to discard
       setSearchParams({ q: index });
     }
-  }, [setSearchParams, patch, openAlert]);
+  }, [setSearchParams, patch]);
 
   // save current edition
   const save = useCallback(async () => {
-    if (!await openAlert('save')) {
+    if (!await openDialog(<>
+      Are you sure? The changes cannot be undone.
+    </>, 'confirm')) {
       // the save request is rejected
       return;
     }
@@ -234,7 +211,9 @@ export const EditPage = () => {
   }, [paperId, questionId, editingState, refresh]);
 
   const deleteCurrent = useCallback(async () => {
-    if (!await openAlert('delete')) {
+    if (!await openDialog(<>
+      Are you sure? The changes cannot be undone.
+    </>, 'confirm')) {
       // the delete request is rejected
       return;
     }
@@ -327,45 +306,6 @@ export const EditPage = () => {
         </ModalFooter>
       </ModalContent>
     </Modal>
-
-    <AlertDialog
-      {...dAlert}
-      leastDestructiveRef={cancelRef}
-      onClose={() => closeAlert(false)}
-    >
-      <AlertDialogOverlay>
-        <AlertDialogContent>
-          <AlertDialogHeader fontSize='lg' fontWeight='bold'>
-            {t('page.edit.alert.' + alertType)}
-          </AlertDialogHeader>
-
-          <AlertDialogBody>
-            {alertType === 'loadCache' ? <>
-              There is a cached result. Do you want to load it?
-            </> : undefined}
-            {alertType === 'discard' ? <>
-              Are you sure? The unsaved changes will be discarded.
-            </> : undefined}
-            {alertType === 'save' || alertType === 'delete' ? <>
-              Are you sure? The changes cannot be undone.
-            </> : undefined}
-          </AlertDialogBody>
-
-          <AlertDialogFooter>
-            <Button ref={cancelRef}
-              colorScheme={alertType === 'loadCache' ? 'red' : undefined}
-              onClick={() => closeAlert(false)}>
-              {alertType === 'loadCache' ? 'Discard' : 'Cancel'}
-            </Button>
-            <Button
-              colorScheme={alertType === 'loadCache' ? 'green' : 'red'}
-              onClick={() => closeAlert(true)} ml={3}>
-              {alertType === 'loadCache' ? 'Load' : 'Confirm'}
-            </Button>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialogOverlay>
-    </AlertDialog>
 
   </>;
 };
