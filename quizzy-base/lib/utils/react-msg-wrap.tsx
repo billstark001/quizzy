@@ -10,6 +10,7 @@ import {
   ChakraProvider,
   AlertDialogCloseButton,
   Fade,
+  ToastId,
 } from "@chakra-ui/react";
 import { useDisclosureWithData, UseDisclosureWithDataProps } from "./disclosure";
 import { isValidElement, ReactNode, useEffect, useRef, useState } from "react";
@@ -54,6 +55,7 @@ type _M = {
 };
 
 type _H = typeof withHandlerRaw;
+type _T = (options?: UseToastOptions) => ToastId;
 
 export type WrappedHandlerRootProps = {
   async?: boolean;
@@ -61,7 +63,7 @@ export type WrappedHandlerRootProps = {
   useToastOptions?: UseToastOptions,
   withHandlerOptions?: WithHandlerOptions<any>,
   useDisclosureWithDataProps?: UseDisclosureWithDataProps<_M>,
-  onHandlerUpdated: (handler: _H) => void,
+  onHandlerUpdated: (handler: _H, toast: _T) => void,
 };
 
 export const WrappedHandlerRoot = (props: WrappedHandlerRootProps) => {
@@ -133,7 +135,7 @@ export const WrappedHandlerRoot = (props: WrappedHandlerRootProps) => {
 
     const handler: _H = (f, o) => withHandlerRaw(f, o == null ? options : Object.assign({}, options, o)) as any;
 
-    onHandlerUpdated(handler);
+    onHandlerUpdated(handler, toast);
 
   }, [
     async, cache,
@@ -175,14 +177,17 @@ export const WrappedHandlerRoot = (props: WrappedHandlerRootProps) => {
 export const createStandaloneHandler = (props?: Omit<WrappedHandlerRootProps, 'onHandlerUpdated'>) => {
 
   let _h: _H | undefined = undefined;
+  let _t: _T | undefined = undefined;
   const wrappedHandler: _H = (f, o) => _h!(f, o);
-  const onHandlerUpdated = (handler: _H) => {
+  const wrappedToast: _T = (t) => _t!(t);
+  const onHandlerUpdated = (handler: _H, toast: _T) => {
     _h = handler;
+    _t = toast;
   }
 
   const root = <WrappedHandlerRoot {...props} onHandlerUpdated={onHandlerUpdated} />;
   const rootNode = ReactDOM.createRoot(document.getElementById('toast')!);
   rootNode.render(root);
 
-  return wrappedHandler;
+  return [wrappedHandler, wrappedToast] as [_H, _T];
 }

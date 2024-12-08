@@ -33,3 +33,7 @@ export type CompleteQuizPaperDraft = QuizPaperBase & {
   id?: ID;
   questions: QuestionWithOptionalID[];
 };
+
+export const defaultQuizPaper = (p?: Partial<QuizPaper>): QuizPaper => (
+  { id: '', name: '', questions: [], ...p }
+);

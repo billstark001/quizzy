@@ -37,4 +37,4 @@ export const formatMilliseconds = (milliseconds: number) => {
   return `${days}:${formattedHours}:${formattedMinutes}:${formattedSeconds}`;
 }
 
-export const withHandler = createStandaloneHandler();
+export const [withHandler, standaloneToast] = createStandaloneHandler();

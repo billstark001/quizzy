@@ -1,6 +1,5 @@
 import { DatabaseUpdateDefinition, openDatabase } from "#/utils/idb";
 import { IDBPDatabase } from "idb";
-import { DatabaseIndexed } from "../types/technical";
 import { withHandler } from "#/utils";
 
 
@@ -48,10 +47,10 @@ export class QuizzyEditCache {
     return ret?.content ?? def;
   }
 
-  async dumpRecord<T extends DatabaseIndexed = any>(
+  async dumpRecord<T = any>(
     type: string, value: T, localId?: string
   ): Promise<void> {
-    localId = localId || value?.id;
+    localId = localId || (value as any)?.id;
     if (!localId) {
       throw new Error('Empty ID');
     }
@@ -63,6 +62,28 @@ export class QuizzyEditCache {
     } as EditRecord<T>);
   }
 
+  async clearRecord(
+    type: string, localId?: string
+  ): Promise<number> {
+    const tx = this.db.transaction(STORE_KEY_CACHE, 'readwrite');
+    let ret = 0;
+    if (localId !== undefined) {
+      const id = createId(type, localId);
+      const obj = !!tx.store.get(id);
+      if (obj) {
+        tx.store.delete(id);
+        ret = 1;
+      }
+    } else {
+      // delete all records of the type
+      const ids = await tx.store.index('type').getAllKeys();
+      await Promise.all(ids.map(id => tx.store.delete(id)));
+      ret = ids.length;
+    }
+    await tx.done;
+    return ret;
+  }
+
   async listRecords<T = any>(type: string) {
     return await this.db.getAllFromIndex(STORE_KEY_CACHE, 'type', type) as T[];
   }
@@ -71,13 +92,15 @@ export class QuizzyEditCache {
 export class WrappedQuizzyEditCache extends QuizzyEditCache {
 
   private readonly boundLoadRecord: <T = any>(type: string, localId: string, def?: T) => Promise<T | undefined>;
-  private readonly boundDumpRecord: <T extends DatabaseIndexed = any>(type: string, value: T, localId?: string) => Promise<void>;
+  private readonly boundDumpRecord: <T = any>(type: string, value: T, localId?: string) => Promise<void>;
+  private readonly boundClearRecord: (type: string, localId?: string) => Promise<number>;
   private readonly boundListRecords: <T = any>(type: string) => Promise<T[]>;
 
   protected constructor(db: IDBPDatabase) {
     super(db);
     this.boundLoadRecord = withHandler(super.loadRecord.bind(this), { async: true, cache: false, notifySuccess: undefined });
     this.boundDumpRecord = withHandler(super.dumpRecord.bind(this), { async: true, cache: false });
+    this.boundClearRecord = withHandler(super.clearRecord.bind(this), { async: true, cache: false });
     this.boundListRecords = withHandler(super.listRecords.bind(this), { async: true, cache: false, notifySuccess: undefined });
   }
   static async connect() {
@@ -91,8 +114,12 @@ export class WrappedQuizzyEditCache extends QuizzyEditCache {
     return await this.boundLoadRecord(type, localId, def);
   }
 
-  override async dumpRecord<T extends DatabaseIndexed = any>(type: string, value: T, localId?: string): Promise<void> {
+  override async dumpRecord<T = any>(type: string, value: T, localId?: string): Promise<void> {
     return await this.boundDumpRecord(type, value, localId);
+  }
+
+  override async clearRecord(type: string, localId?: string): Promise<number> {
+    return await this.boundClearRecord(type, localId);
   }
 
   override async listRecords<T = any>(type: string): Promise<T[]> {

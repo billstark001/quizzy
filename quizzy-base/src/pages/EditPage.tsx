@@ -2,11 +2,11 @@ import { PaperEdit } from "#/components/PaperEdit";
 import { QuestionEdit } from "#/components/QuestionEdit";
 import { BaseQuestionPanel, QuestionPanel } from "#/components/QuestionPanel";
 import { QuestionSelectionModal } from "#/components/QuestionSelectionModal";
-import { Question, QuizPaper } from "#/types";
-import { withHandler } from "#/utils";
+import { defaultQuestion, defaultQuizPaper, Question, QuizPaper } from "#/types";
+import { standaloneToast, withHandler } from "#/utils";
 import { useDisclosureWithData } from "#/utils/disclosure";
 import { EditorContextProvider, useEditor, usePatch } from "#/utils/react-patch";
-import { Quizzy, QuizzyRaw } from "@/data";
+import { Quizzy, QuizzyCache, QuizzyCacheRaw, QuizzyRaw } from "@/data";
 import { useAsyncMemo } from "@/utils/react";
 import { ParamsDefinition, useParsedSearchParams } from "@/utils/react-router";
 import { DragHandleIcon } from "@chakra-ui/icons";
@@ -28,103 +28,31 @@ const _parser: ParamsDefinition<EditParams> = {
   question: "string",
 };
 
-type _S = readonly [QuizPaper | undefined, Question | undefined, string | undefined];
+type _S = Readonly<({
+  paper: QuizPaper;
+  paperId: string;
+} | {
+  paper?: undefined;
+  paperId?: undefined;
+}) & ({
+  question: Question;
+  questionId: string;
+} | {
+  question?: undefined;
+  questionId?: undefined;
+})>;
+
+type _E = Readonly<{
+  question: Question,
+  paper: QuizPaper,
+}>;
 
 export const EditPage = () => {
-  const [searchParams, setSearchParams] = useParsedSearchParams(_parser);
-  const { paper: paperId, q: _questionIndex, question: questionIdOrig } = searchParams;
-  const questionIndex = _questionIndex ?? 1;
 
-  // fetch question and id
+  // navigate
+  const navigate = useNavigate();
 
-  const fetchData = withHandler(async (): Promise<_S> => {
-    // first try to get question by id
-    let question: Question | null | undefined = undefined;
-    try {
-      if (questionIdOrig) {
-        question = (await QuizzyRaw.getQuestions([questionIdOrig]))?.[0];
-      }
-    } catch { }
-    if (question) {
-      return [undefined, question, questionIdOrig];
-    }
-    // then try to get question by paper and index
-    const paper = paperId ? await QuizzyRaw.getQuizPaper(paperId) : null;
-    if (paper) {
-      const qid = paper.questions[questionIndex - 1] ?? '';
-      question = (await QuizzyRaw.getQuestions([qid]))?.[0];
-      if (question) {
-        return [paper, question, qid];
-      }
-    }
-    return [undefined, undefined, undefined];
-  }, { def: [undefined, undefined, undefined] as _S, deps: [paperId, questionIndex, questionIdOrig], notifySuccess: undefined, });
-
-
-  const q = useDisclosure();
-  const { t } = useTranslation();
-
-  const { data: _q, refresh } = useAsyncMemo(fetchData, [paperId, questionIndex, questionIdOrig]);
-  const [paper, question, questionId] = _q ?? [undefined, undefined, undefined];
-
-  const [editState, setEditState] = useState<{
-    question: Question,
-    paper: QuizPaper,
-  }>({
-    question: { id: '', type: 'choice', content: '', options: [] },
-    paper: { id: '', name: '', questions: [] },
-  });
-
-  // patch & update patch
-  const patch = usePatch({
-    value: editState, setValue: (v) => {
-      setEditState(v);
-    }, maxLength: 16
-  });
-  const patchPaper = (pp: Partial<QuizPaper>) => patch.onEdit({
-    paper: { ...editState.paper, ...pp }
-  });
-  const patchQuestion = (pp: Partial<Question>) => patch.onEdit({
-    question: { ...editState.question, ...pp } as any
-  });
-  const patchPaperRef = useCallbackRef(patchPaper);
-  const patchQuestionRef = useCallbackRef(patchQuestion);
-
-  // this executes when initialized
-  // it resets the old edit record
-  useEffect(() => {
-    const e = { ...editState };
-    if (question) {
-      e.question = question;
-    }
-    if (paper) {
-      e.paper = paper;
-    }
-    setEditState(e);
-    patch.onClear(e);
-  }, [question, paper]);
-
-  // editor
-  const editorQuestion = useEditor({
-    value: editState.question,
-    onChange: patchQuestionRef,
-  });
-  const editorPaper = useEditor({
-    value: editState.paper,
-    onChange: patchPaperRef,
-  });
-
-  // current question preview
-  const [questionPreviewIndex, setQuestionPreviewIndex] = useState(1);
-  const [questionPreview, setQuestionPreview] = useState<Question>();
-
-  const selectQuestionPreview = useCallback((index: number) => {
-    const q = paper?.questions?.[index - 1];
-    setQuestionPreviewIndex(index);
-    Quizzy.getQuestions([q ?? '']).then(([question]) => setQuestionPreview(question));
-  }, [setQuestionPreviewIndex, setQuestionPreview, paper]);
-
-  // select & save
+  // alert dialog
 
   const dAlert = useDisclosure();
   const [alertType, setAlertType] = useState<string>('save');
@@ -153,6 +81,136 @@ export const EditPage = () => {
     }
   }, [dAlert.onOpen, dAlert.onClose]);
 
+  // params
+  const [searchParams, setSearchParams] = useParsedSearchParams(_parser);
+  const {
+    paper: paperIdProp,
+    q: questionIndexProp,
+    question: questionIdProp
+  } = searchParams;
+  const questionIndex = Math.max(Number.isNaN(questionIndexProp)
+    ? 0 : questionIndexProp!, 1);
+
+  // fetch the paper and question we need
+  const fetchData = withHandler(async (): Promise<_S> => {
+    // first try to get paper and question by index
+    const paper = paperIdProp
+      ? await (QuizzyRaw.getQuizPaper(paperIdProp).catch(() => void 0)) ?? undefined
+      : undefined;
+    if (paper) {
+      const questionId = paper.questions[questionIndex - 1] || undefined;
+      const question = questionId
+        ? (await (QuizzyRaw.getQuestions([questionId])).catch(() => void 0))?.[0] ?? undefined
+        : undefined;
+      if (question) {
+        return { paperId: paperIdProp!, paper, questionId: questionId!, question };
+      }
+    }
+    // at this point, paper fetching is failed
+    // then try to get question by id
+    if (questionIdProp) {
+      const question = (await QuizzyRaw.getQuestions([questionIdProp]))?.[0];
+      if (question) {
+        return { question, questionId: questionIdProp! };
+      }
+    }
+    return {};
+  }, { def: {} as _S, deps: [paperIdProp, questionIndex, questionIdProp], notifySuccess: undefined, });
+
+
+  const dQuestionSelect = useDisclosure();
+  const { t } = useTranslation();
+
+  const { data, refresh } = useAsyncMemo(fetchData, [paperIdProp, questionIndex, questionIdProp]);
+  const { paperId, paper, questionId, question } = data ?? ({} as _S);
+
+  // at this point, paper <-> paperId, question <-> questionId are linked
+  const sessionId = paperId
+    ? `paper:${paperId}+${questionIndex}`
+    : `question:${questionId}`;
+
+  // editing states
+  const [editingState, setEditingState] = useState<_E>(() => ({
+    question: defaultQuestion(),
+    paper: defaultQuizPaper()
+  }));
+
+  // patch & update patch
+  const patch = usePatch({
+    value: editingState, setValue: (v) => {
+      setEditingState(v);
+    }, maxLength: 16
+  });
+  const patchPaper = (pp: Partial<QuizPaper>) => patch.onEdit({
+    paper: { ...editingState.paper, ...pp }
+  });
+  const patchQuestion = (pp: Partial<Question>) => patch.onEdit({
+    question: { ...editingState.question, ...pp } as any
+  });
+  const patchPaperRef = useCallbackRef(patchPaper);
+  const patchQuestionRef = useCallbackRef(patchQuestion);
+
+  // this executes when initialized or ids changed
+  // it resets the old edit record
+  useEffect(() => void (async () => {
+    // try to read data from local cache, apply if successful
+    let cachedState: Partial<_E> | undefined = await (QuizzyCacheRaw.loadRecord('edit', sessionId)
+      .catch(() => void 0));
+    if (cachedState && !await openAlert('loadCache')) {
+      // discard the cache
+      cachedState = undefined;
+      await (QuizzyCacheRaw.clearRecord('edit', sessionId).catch(() => void 0));
+    }
+    const state: _E = {
+      question: cachedState?.question ?? question ?? defaultQuestion(),
+      paper: cachedState?.paper ?? paper ?? defaultQuizPaper(),
+    }
+    if (cachedState?.question || cachedState?.paper) {
+      standaloneToast({
+        status: 'info',
+        title: t('page.edit.dataLoaded.title'),
+        description: t('page.edit.dataLoaded.desc'),
+      });
+    }
+    setEditingState(state);
+    patch.onClear(state);
+  })().catch(console.error), [questionId, paperId]);
+
+  // save record
+  const saveRecordToCache = useCallbackRef(
+    () => QuizzyCache.dumpRecord('edit', editingState, sessionId)
+  );
+  // auto save
+  useEffect(() => {
+    const interval = setInterval(() => {
+      saveRecordToCache();
+    }, 1000 * 60 * 2);
+    return () => {
+      clearInterval(interval);
+    }
+  }, []);
+
+  // editors
+  const editorQuestion = useEditor({
+    value: editingState.question,
+    onChange: patchQuestionRef,
+  });
+  const editorPaper = useEditor({
+    value: editingState.paper,
+    onChange: patchPaperRef,
+  });
+
+  // current question preview
+  const [questionPreviewIndex, setQuestionPreviewIndex] = useState(1);
+  const [questionPreview, setQuestionPreview] = useState<Question>();
+
+  const selectQuestionPreview = useCallback((index: number) => {
+    const q = paper?.questions?.[index - 1];
+    setQuestionPreviewIndex(index);
+    Quizzy.getQuestions([q ?? '']).then(([question]) => setQuestionPreview(question));
+  }, [setQuestionPreviewIndex, setQuestionPreview, paper]);
+
+  // select different questions
   const selectQuestionPaperMode = useCallback(async (index: number) => {
     // ask user to save if edited
     if (patch.totalStep === 0 || await openAlert('discard')) {
@@ -161,20 +219,20 @@ export const EditPage = () => {
     }
   }, [setSearchParams, patch, openAlert]);
 
+  // save current edition
   const save = useCallback(async () => {
     if (!await openAlert('save')) {
       // the save request is rejected
       return;
     }
     if (paperId) {
-      await Quizzy.updateQuizPaper(paperId, editState.paper);
+      await Quizzy.updateQuizPaper(paperId, editingState.paper);
     }
-    await Quizzy.updateQuestion(questionId ?? '', editState.question);
+    await Quizzy.updateQuestion(questionId ?? '', editingState.question);
     // await refresh();
     // after the refresh, edit state is automatically cleared
-  }, [paperId, questionId, editState, refresh]);
+  }, [paperId, questionId, editingState, refresh]);
 
-  const navigate = useNavigate();
   const deleteCurrent = useCallback(async () => {
     if (!await openAlert('delete')) {
       // the delete request is rejected
@@ -193,6 +251,7 @@ export const EditPage = () => {
   const { data: dPreviewQuestion, ...dPreview } = useDisclosureWithData<Question | undefined>(undefined);
 
   // render
+
   if (question == undefined) {
     return 'ERROR: QUESTION NOT FOUND';
   }
@@ -203,6 +262,7 @@ export const EditPage = () => {
         <Button onClick={patch.onUndo}>undo</Button>
         <Button onClick={patch.onRedo}>redo</Button>
         <Button onClick={save}>save</Button>
+        <Button onClick={saveRecordToCache}>save draft</Button>
         <Button onClick={deleteCurrent}>delete</Button>
         <Button onClick={() => {
           dPreview.onOpen(editorQuestion.fakeValue ?? editorQuestion.value);
@@ -221,7 +281,7 @@ export const EditPage = () => {
           <IconButton colorScheme='blue' aria-label={t('page.question.questions')} icon={<DragHandleIcon />}
             onClick={() => {
               selectQuestionPreview(1);
-              q.onOpen();
+              dQuestionSelect.onOpen();
             }} />
         </HStack>
 
@@ -241,7 +301,7 @@ export const EditPage = () => {
       index={questionPreviewIndex}
       setIndex={selectQuestionPreview}
       onSelect={selectQuestionPaperMode}
-      {...q}
+      {...dQuestionSelect}
       question={questionPreview ? <BaseQuestionPanel w='100%' question={questionPreview} /> : <></>}
     />
 
@@ -280,17 +340,27 @@ export const EditPage = () => {
           </AlertDialogHeader>
 
           <AlertDialogBody>
-            Are you sure? 
-            {alertType === 'discard' ? <>The unsaved changes will be discarded.</> : undefined}
-            {alertType === 'save' || alertType === 'delete' ? <>The changes cannot be undone.</> : undefined}
+            {alertType === 'loadCache' ? <>
+              There is a cached result. Do you want to load it?
+            </> : undefined}
+            {alertType === 'discard' ? <>
+              Are you sure? The unsaved changes will be discarded.
+            </> : undefined}
+            {alertType === 'save' || alertType === 'delete' ? <>
+              Are you sure? The changes cannot be undone.
+            </> : undefined}
           </AlertDialogBody>
 
           <AlertDialogFooter>
-            <Button ref={cancelRef} onClick={() => closeAlert(false)}>
-              Cancel
+            <Button ref={cancelRef}
+              colorScheme={alertType === 'loadCache' ? 'red' : undefined}
+              onClick={() => closeAlert(false)}>
+              {alertType === 'loadCache' ? 'Discard' : 'Cancel'}
             </Button>
-            <Button colorScheme='red' onClick={() => closeAlert(true)} ml={3}>
-              Confirm
+            <Button
+              colorScheme={alertType === 'loadCache' ? 'green' : 'red'}
+              onClick={() => closeAlert(true)} ml={3}>
+              {alertType === 'loadCache' ? 'Load' : 'Confirm'}
             </Button>
           </AlertDialogFooter>
         </AlertDialogContent>

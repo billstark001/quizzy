@@ -501,6 +501,7 @@ export class IDBController implements QuizzyController {
       count += 1;
       tx.objectStore(STORE_KEY_QUESTIONS).delete(id);
     }
+    await tx.done;
     return count;
   }
 
