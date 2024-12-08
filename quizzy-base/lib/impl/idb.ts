@@ -139,6 +139,26 @@ export class IDBController implements QuizzyController {
     return ret;
   }
 
+  private async _delete<T extends DatabaseIndexed>(
+    store: string, id: ID, hard = false,
+  ): Promise<boolean> {
+    const original = await this.db.get(store, id) as T;
+    if (!original) {
+      // inexistent record
+      return false;
+    }
+    if (!hard) {
+      original.deleted = true;
+      original.lastUpdate = Date.now();
+      await this.db.put(store, original);
+    } else {
+      await this.db.delete(store, id);
+    }
+    // invalidate cache
+    this.cache.clear();
+    return true;
+  }
+
   private async _update<T extends DatabaseIndexed & KeywordIndexed>(
     store: string, id: ID, patch: Patch<T>,
     invalidateKeywordsCache = false,
@@ -434,6 +454,13 @@ export class IDBController implements QuizzyController {
     return this._update(STORE_KEY_PAPERS, id, paper);
   }
 
+  deleteQuestion(id: ID): Promise<boolean> {
+    return this._delete(STORE_KEY_QUESTIONS, id, true);
+  }
+  deleteQuizPaper(id: ID): Promise<boolean>{
+    return this._delete(STORE_KEY_PAPERS, id, true);
+  }
+
   // search
 
   async refreshSearchIndices(force?: boolean) {
@@ -441,6 +468,31 @@ export class IDBController implements QuizzyController {
     count += (await this._buildIndices<Question>(STORE_KEY_QUESTIONS, force, ['id', 'keywords'])).length;
     count += (await this._buildIndices<QuizPaper>(STORE_KEY_PAPERS, force, ['id', 'questions', 'keywords'])).length;
     await this.cache.clear();
+    return count;
+  }
+
+  async deleteUnlinked() {
+    let count = 0;
+    const tx = this.db.transaction([STORE_KEY_PAPERS, STORE_KEY_QUESTIONS, STORE_KEY_RECORDS, STORE_KEY_RESULTS], 'readwrite');
+    const allQuestions = await tx.objectStore(STORE_KEY_QUESTIONS).getAll() as Question[];
+    // delete all questions
+    const linkedQuestions = new Set<ID>();
+    for (const { questions } of await tx.objectStore(STORE_KEY_PAPERS).getAll() as QuizPaper[]) {
+      questions?.forEach(q => linkedQuestions.add(q));
+    }
+    for (const result of await tx.objectStore(STORE_KEY_RESULTS).getAll() as QuizResult[]) {
+      Object.keys(result.answers ?? []).forEach(q => linkedQuestions.add(q));
+    }
+    const deleteNeededQuestions = new Set<ID>();
+    for (const { id } of allQuestions) {
+      if (!linkedQuestions.has(id)) {
+        deleteNeededQuestions.add(id);
+      }
+    }
+    for (const id of deleteNeededQuestions) {
+      count += 1;
+      tx.objectStore(STORE_KEY_QUESTIONS).delete(id);
+    }
     return count;
   }
 
@@ -576,12 +628,12 @@ export class IDBController implements QuizzyController {
     return result.id;
   }
 
-  deleteQuizRecord(id: ID): Promise<void> {
-    return this.db.delete(STORE_KEY_RECORDS, id);
+  deleteQuizRecord(id: ID): Promise<boolean> {
+    return this._delete(STORE_KEY_RECORDS, id, true);
   }
 
-  deleteQuizResult(id: ID): Promise<void> {
-    return this.db.delete(STORE_KEY_RESULTS, id);
+  deleteQuizResult(id: ID): Promise<boolean> {
+    return this._delete(STORE_KEY_RESULTS, id, true);
   }
 
   importQuizResults(...results: QuizResult[]): Promise<ID[]> {

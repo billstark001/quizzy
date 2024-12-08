@@ -53,6 +53,8 @@ export interface QuizzyController {
 
   updateQuestion(id: ID, patch: Patch<Question>): Promise<ID>;
   updateQuizPaper(id: ID, paper: Patch<QuizPaper>): Promise<ID>;
+  deleteQuestion(id: ID): Promise<boolean>;
+  deleteQuizPaper(id: ID): Promise<boolean>;
 
   findQuestion(query: string, count?: number, page?: number): Promise<SearchResult<Question>>;
   findQuizPaper(query: string, count?: number, page?: number): Promise<SearchResult<QuizPaper>>;
@@ -73,7 +75,7 @@ export interface QuizzyController {
     record: Partial<QuizRecord>,
     options?: UpdateQuizOptions,
   ): Promise<QuizRecord>;
-  deleteQuizRecord(id: ID): Promise<void>;
+  deleteQuizRecord(id: ID): Promise<boolean>;
   endQuiz(id: ID, options?: EndQuizOptions): Promise<ID | undefined>;
 
   // results
@@ -82,7 +84,7 @@ export interface QuizzyController {
   getQuizResult(id: ID): Promise<QuizResult | undefined>;
   listQuizResultIds(quizPaperID?: ID): Promise<ID[]>;
   listQuizResults(quizPaperID?: ID): Promise<QuizResult[]>;
-  deleteQuizResult(id: ID): Promise<void>;
+  deleteQuizResult(id: ID): Promise<boolean>;
 
 
 };

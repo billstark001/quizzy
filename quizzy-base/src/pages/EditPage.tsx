@@ -13,6 +13,7 @@ import { DragHandleIcon } from "@chakra-ui/icons";
 import { AlertDialog, AlertDialogBody, AlertDialogContent, AlertDialogFooter, AlertDialogHeader, AlertDialogOverlay, Box, Button, Divider, HStack, IconButton, Modal, ModalBody, ModalCloseButton, ModalContent, ModalFooter, ModalHeader, ModalOverlay, useCallbackRef, useDisclosure, VStack } from "@chakra-ui/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
 
 
 export type EditParams = {
@@ -173,6 +174,21 @@ export const EditPage = () => {
     // after the refresh, edit state is automatically cleared
   }, [paperId, questionId, editState, refresh]);
 
+  const navigate = useNavigate();
+  const deleteCurrent = useCallback(async () => {
+    if (!await openAlert('delete')) {
+      // the delete request is rejected
+      return;
+    }
+    if (paperId) {
+      await Quizzy.deleteQuizPaper(paperId);
+      navigate('/papers');
+    } else {
+      await Quizzy.deleteQuestion(questionId ?? '');
+      navigate('/questions');
+    }
+  }, [paperId, questionId]);
+
   // preview
   const { data: dPreviewQuestion, ...dPreview } = useDisclosureWithData<Question | undefined>(undefined);
 
@@ -187,6 +203,7 @@ export const EditPage = () => {
         <Button onClick={patch.onUndo}>undo</Button>
         <Button onClick={patch.onRedo}>redo</Button>
         <Button onClick={save}>save</Button>
+        <Button onClick={deleteCurrent}>delete</Button>
         <Button onClick={() => {
           dPreview.onOpen(editorQuestion.fakeValue ?? editorQuestion.value);
         }}>preview</Button>
@@ -265,7 +282,7 @@ export const EditPage = () => {
           <AlertDialogBody>
             Are you sure? 
             {alertType === 'discard' ? <>The unsaved changes will be discarded.</> : undefined}
-            {alertType === 'save' ? <>The changes cannot be undone.</> : undefined}
+            {alertType === 'save' || alertType === 'delete' ? <>The changes cannot be undone.</> : undefined}
           </AlertDialogBody>
 
           <AlertDialogFooter>

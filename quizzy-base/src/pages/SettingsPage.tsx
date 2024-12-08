@@ -17,6 +17,18 @@ const refreshIndices = withHandler(
   }
 );
 
+const deleteUnlinked = withHandler(
+  async () => {
+    const count = await QuizzyRaw.deleteUnlinked();
+    console.log(`${count} records deleted`);
+    return count;
+  },
+  {
+    async: true,
+    cache: false,
+  }
+)
+
 const exportData = async () => {
   const data = await Quizzy.exportData();
   const dataStr = JSON.stringify(data);
@@ -60,6 +72,10 @@ export const SettingsPage = () => {
     <HStack>
       <Button onClick={() => refreshIndices(force)}>{t('btn.setting.refreshIndices')}</Button>
       <Switch isChecked={force} onChange={(e) => setForce(e.target.checked)}>force</Switch>
+      <Button onClick={deleteUnlinked}>{t('btn.setting.deleteUnlinked')}</Button>
+    </HStack>
+    <Divider />
+    <HStack>
       <Button onClick={importData}>{t('btn.setting.importData')}</Button>
       <Button onClick={exportData}>{t('btn.setting.exportData')}</Button>
     </HStack>
