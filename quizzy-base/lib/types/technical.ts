@@ -9,9 +9,11 @@ export type DatabaseIndexed = {
 };
 
 export type KeywordIndexed = {
+  tags?: string[];
+  categories?: string[];
+  
   keywords?: string[];
   keywordsFrequency?: Record<string, number>;
-  tags?: string[];
   tagsFrequency?: Record<string, number>;
   keywordsUpdatedTime?: number;
 };

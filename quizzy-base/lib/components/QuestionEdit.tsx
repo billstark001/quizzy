@@ -189,22 +189,28 @@ export const QuestionEdit = () => {
   const { data: editTag, ...dTag } = useDisclosureWithData<{
     index?: number,
     orig?: string,
+    isCategory?: boolean,
   }>({});
+
   const [currentTag, setCurrentTag] = useState('');
-  const startEditingTag = useCallback((index?: number) => {
-    const orig = (index == null ? undefined : question.tags?.[index]) ?? '';
+
+  const startEditingTag = useCallback((index?: number, isCategory = false) => {
+    const origArr = isCategory ? question.categories : question.tags;
+    const orig = (index == null ? undefined : origArr?.[index]) ?? '';
     setCurrentTag(orig);
-    dTag.onOpen({ index, orig });
+    dTag.onOpen({ index, orig, isCategory });
   }, [dTag.onOpen, setCurrentTag, question]);
+
   const submitTag = useCallback(async () => {
-    const tags = question.tags ?? [];
+    const { isCategory, index } = editTag;
+    const origArr = (isCategory ? question.categories : question.tags) ?? [];
     await onChangeImmediate({
-      tags: editTag.index == null
-        ? [...tags, currentTag]
-        : getChangedArray(tags, editTag.index, currentTag)
+      [isCategory ? 'categories' : 'tags']: index == null
+        ? [...origArr, currentTag]
+        : getChangedArray(origArr, index, currentTag)
     });
     dTag.onClose();
-  }, [onChangeImmediate, currentTag]);
+  }, [onChangeImmediate, currentTag, editTag, question]);
 
   return <>
     <Grid templateColumns='160px 1fr' gap={2}>
@@ -231,6 +237,21 @@ export const QuestionEdit = () => {
 
         <IconButton
           onClick={() => startEditingTag(undefined)}
+          aria-label={t('page.edit.addButton')}
+          size='xs'
+          icon={<AddIcon />}
+        />
+      </Wrap>
+
+      {/* categories */}
+      <Box>{t('page.edit.categories')}</Box>
+      <Wrap>
+        {(question.categories ?? []).map((t, i) => <Tag key={t}
+          onDoubleClick={() => startEditingTag(i, true)}
+        ><Box>{t}</Box></Tag>)}
+
+        <IconButton
+          onClick={() => startEditingTag(undefined, true)}
           aria-label={t('page.edit.addButton')}
           size='xs'
           icon={<AddIcon />}

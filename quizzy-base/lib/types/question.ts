@@ -20,6 +20,7 @@ export type QuestionType = 'choice' | 'blank' | 'text';
 type _BaseQuestion = {
   name?: string; // serial
   tags?: string[];
+  categories?: string[];
   title?: MarkdownString;
   content: MarkdownString;
   solution?: MarkdownString;

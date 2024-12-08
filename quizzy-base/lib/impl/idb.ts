@@ -13,7 +13,7 @@ import { buildTrieTree, loadTrieTree } from "./search";
 
 
 const DB_KEY = 'Quizzy';
-const VERSION = 2;
+const VERSION = 3;
 
 const STORE_KEY_PAPERS = 'papers';
 const STORE_KEY_RECORDS = 'records';
@@ -67,6 +67,12 @@ const updaters: Record<number, DatabaseUpdateDefinition> = {
   },
   [1]: (db) => {
     db.createObjectStore(STORE_KEY_GENERAL, { keyPath: 'id', });
+  },
+  [2]: (_, tx) => {
+    for (const storeKey of [STORE_KEY_PAPERS, STORE_KEY_QUESTIONS]) {
+      const store = tx.objectStore(storeKey);
+      store.createIndex('categories', 'categories', { multiEntry: true });
+    }
   }
 } as const;
 
@@ -177,7 +183,6 @@ export class IDBController implements QuizzyController {
     if (invalidateKeywordsCache) {
       delete modified.keywords;
       delete modified.keywordsFrequency;
-      delete modified.tags;
       delete modified.tagsFrequency;
       delete modified.keywordsUpdatedTime;
     }
@@ -229,7 +234,7 @@ export class IDBController implements QuizzyController {
     }
     while (cursor != null) {
       const doc = cursor.value as T;
-      const cacheList = useTag ? doc.tags : doc.keywords;
+      const cacheList = useTag ? [...doc.tags ?? [], ...doc.categories ?? []] : doc.keywords;
       // TODO implement caching
       const docLength = cacheList?.length || 1;
       const freq = (useTag ? doc.tagsFrequency : doc.keywordsFrequency) ?? {};
@@ -277,10 +282,10 @@ export class IDBController implements QuizzyController {
       }
     }
 
-    return { 
+    return {
       keywords: query,
-      result, 
-      totalPages: Math.ceil((scores?.length ?? 0) / count) 
+      result,
+      totalPages: Math.ceil((scores?.length ?? 0) / count)
     };
   }
 
@@ -326,6 +331,9 @@ export class IDBController implements QuizzyController {
         for (const tag of object.tags ?? []) {
           tagFreq[tag] = 1;
         }
+        for (const tag of object.categories ?? []) {
+          tagFreq[tag] = 4;
+        }
         object.tagsFrequency = tagFreq;
 
         await cursor.update(object);
@@ -339,7 +347,7 @@ export class IDBController implements QuizzyController {
         tagAppeared[key] = (tagAppeared[key] || 0) + 1;
       }
       totalLength += object.keywords?.length ?? 0;
-      totalLengthTag += object.tags?.length ?? 0;
+      totalLengthTag += (object.tags?.length ?? 0) + (object.categories?.length ?? 0);
       totalDocs += 1;
 
       cursor = await cursor.continue();
@@ -457,7 +465,7 @@ export class IDBController implements QuizzyController {
   deleteQuestion(id: ID): Promise<boolean> {
     return this._delete(STORE_KEY_QUESTIONS, id, true);
   }
-  deleteQuizPaper(id: ID): Promise<boolean>{
+  deleteQuizPaper(id: ID): Promise<boolean> {
     return this._delete(STORE_KEY_PAPERS, id, true);
   }
 

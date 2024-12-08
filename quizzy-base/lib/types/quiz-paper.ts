@@ -6,6 +6,7 @@ type QuizPaperBase = {
   img?: string;
   desc?: MarkdownString;
   tags?: string[];
+  categories?: string[];
   weights?: Record<ID, number>;
   duration?: number; // in milliseconds
 };
