@@ -1,5 +1,6 @@
 import { getOptionOrBlankId } from "#/impl/question-id";
-import { BaseQuestion, BLANK_PREFIX, BlankQuestion, ChoiceQuestion, ID, Question, TextQuestion } from "#/types";
+import { BaseQuestion, BLANK_PREFIX, BlankQuestion, ChoiceQuestion, Question, TextQuestion } from "#/types";
+import { ID } from "#/types/technical";
 import { numberToLetters } from "#/utils/string";
 import { AddIcon, MinusIcon } from "@chakra-ui/icons";
 import {

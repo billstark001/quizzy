@@ -1,15 +1,16 @@
 import { PaperEdit } from "#/components/PaperEdit";
 import { QuestionEdit } from "#/components/QuestionEdit";
-import { BaseQuestionPanel } from "#/components/QuestionPanel";
+import { BaseQuestionPanel, QuestionPanel } from "#/components/QuestionPanel";
 import { QuestionSelectionModal } from "#/components/QuestionSelectionModal";
 import { Question, QuizPaper } from "#/types";
 import { withHandler } from "#/utils";
+import { useDisclosureWithData } from "#/utils/disclosure";
 import { EditorContextProvider, useEditor, usePatch } from "#/utils/react-patch";
 import { Quizzy, QuizzyRaw } from "@/data";
 import { useAsyncMemo } from "@/utils/react";
 import { ParamsDefinition, useParsedSearchParams } from "@/utils/react-router";
 import { DragHandleIcon } from "@chakra-ui/icons";
-import { Box, Button, Divider, HStack, IconButton, useCallbackRef, useDisclosure, VStack } from "@chakra-ui/react";
+import { Box, Button, Divider, HStack, IconButton, Modal, ModalBody, ModalCloseButton, ModalContent, ModalFooter, ModalHeader, ModalOverlay, useCallbackRef, useDisclosure, VStack } from "@chakra-ui/react";
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -74,19 +75,19 @@ export const EditPage = () => {
   });
 
   // patch & update patch
-  const p = usePatch({
+  const patch = usePatch({
     value: editState, setValue: (v) => {
       setEditState(v);
     }, maxLength: 16
   });
-  const pp = (pp: Partial<QuizPaper>) => p.onEdit({
+  const patchPaper = (pp: Partial<QuizPaper>) => patch.onEdit({
     paper: { ...editState.paper, ...pp }
   });
-  const pq = (pp: Partial<Question>) => p.onEdit({
+  const patchQuestion = (pp: Partial<Question>) => patch.onEdit({
     question: { ...editState.question, ...pp } as any
   });
-  const ppr = useCallbackRef(pp);
-  const pqr = useCallbackRef(pq);
+  const patchPaperRef = useCallbackRef(patchPaper);
+  const patchQuestionRef = useCallbackRef(patchQuestion);
 
   // this executes when initialized
   // it resets the old edit record
@@ -99,19 +100,19 @@ export const EditPage = () => {
       e.paper = paper;
     }
     setEditState(e);
-    p.onClear(e);
+    patch.onClear(e);
   }, [question, paper]);
 
   // TODO paper mode
 
 
-  const editor1 = useEditor({
+  const editorQuestion = useEditor({
     value: editState.question,
-    onChange: pqr,
+    onChange: patchQuestionRef,
   });
-  const editor2 = useEditor({
+  const editorPaper = useEditor({
     value: editState.paper,
-    onChange: ppr,
+    onChange: patchPaperRef,
   });
 
   // current question preview
@@ -133,42 +134,52 @@ export const EditPage = () => {
   }, [setSearchParams]);
 
 
+  // preview
+  const { data: dPreviewQuestion, ...dPreview } = useDisclosureWithData<Question | undefined>(undefined);
+
   // render
   if (question == undefined) {
     return 'ERROR: QUESTION NOT FOUND';
   }
 
-  return <VStack alignItems='stretch'>
-    <HStack>
-      <Button onClick={p.onUndo}>undo</Button>
-      <Button onClick={p.onRedo}>redo</Button>
-      <Button>save [TODO]</Button>
-    </HStack>
-
-    <Divider />
-
-    {paper != undefined ? <>
-      {/* paper mode */}
-      <EditorContextProvider value={editor2}>
-        <PaperEdit />
-      </EditorContextProvider>
-      <HStack justifyContent='space-between'>
-        <Box>{t('page.edit.nowEditing', { q: questionIndex })}</Box>
-        <IconButton colorScheme='blue' aria-label={t('page.question.questions')} icon={<DragHandleIcon />}
-          onClick={() => {
-            selectQuestionPreview(1);
-            q.onOpen();
-          }} />
+  return <>
+    <VStack alignItems='stretch'>
+      <HStack>
+        <Button onClick={patch.onUndo}>undo</Button>
+        <Button onClick={patch.onRedo}>redo</Button>
+        <Button>save [TODO]</Button>
+        <Button onClick={() => {
+          dPreview.onOpen(editorQuestion.fakeValue ?? editorQuestion.value);
+        }}>preview</Button>
       </HStack>
 
       <Divider />
-    </> : <>
-      {/* question mode */}
-    </>}
 
-    <EditorContextProvider value={editor1}>
-      <QuestionEdit />
-    </EditorContextProvider>
+      {paper != undefined ? <>
+        {/* paper mode */}
+        <EditorContextProvider value={editorPaper}>
+          <PaperEdit />
+        </EditorContextProvider>
+        <HStack justifyContent='space-between'>
+          <Box>{t('page.edit.nowEditing', { questionIndex })}</Box>
+          <IconButton colorScheme='blue' aria-label={t('page.question.questions')} icon={<DragHandleIcon />}
+            onClick={() => {
+              selectQuestionPreview(1);
+              q.onOpen();
+            }} />
+        </HStack>
+
+        <Divider />
+      </> : <>
+        {/* question mode */}
+      </>}
+
+      <EditorContextProvider value={editorQuestion}>
+        <QuestionEdit />
+      </EditorContextProvider>
+
+    </VStack>
+
     <QuestionSelectionModal
       current={questionIndex} total={paper?.questions?.length || 1}
       index={questionPreviewIndex}
@@ -178,5 +189,28 @@ export const EditPage = () => {
       question={questionPreview ? <BaseQuestionPanel w='100%' question={questionPreview} /> : <></>}
     />
 
-  </VStack>;
+    <Modal {...dPreview} size='5xl'>
+      <ModalOverlay />
+      <ModalContent>
+        <ModalCloseButton />
+        <ModalHeader>
+          {t('page.edit.preview.header')}
+        </ModalHeader>
+        <ModalBody>
+          <QuestionPanel
+            height='68vh'
+            overflowY='scroll'
+            question={dPreviewQuestion as any}
+            displaySolution
+          />
+        </ModalBody>
+        <ModalFooter>
+          <Button onClick={() => dPreview.onClose()}>
+            {t('btn.close')}
+          </Button>
+        </ModalFooter>
+      </ModalContent>
+    </Modal>
+
+  </>;
 };
