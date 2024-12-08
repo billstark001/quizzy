@@ -139,7 +139,10 @@ export class IDBController implements QuizzyController {
     return ret;
   }
 
-  private async _update<T extends DatabaseIndexed>(store: string, id: ID, patch: Patch<T>): Promise<ID> {
+  private async _update<T extends DatabaseIndexed & KeywordIndexed>(
+    store: string, id: ID, patch: Patch<T>,
+    invalidateKeywordsCache = false,
+  ): Promise<ID> {
     const original = await this.db.get(store, id) as T;
     if (!original) { // doesn't exist, create
       patch.id = id;
@@ -150,6 +153,14 @@ export class IDBController implements QuizzyController {
     const modified = applyPatch(original, patch);
     modified.id = id;
     modified.lastUpdate = Date.now();
+    // invalidate cache
+    if (invalidateKeywordsCache) {
+      delete modified.keywords;
+      delete modified.keywordsFrequency;
+      delete modified.tags;
+      delete modified.tagsFrequency;
+      delete modified.keywordsUpdatedTime;
+    }
     // optimistic lock
     const tx = this.db.transaction(store, 'readwrite');
     const another = await tx.store.get(id) as T;
@@ -253,7 +264,7 @@ export class IDBController implements QuizzyController {
     };
   }
 
-  private async _index<T extends DatabaseIndexed & KeywordIndexed>(
+  private async _buildIndices<T extends DatabaseIndexed & KeywordIndexed>(
     store: string,
     force?: boolean,
     excludedKeys?: (keyof T)[],
@@ -426,9 +437,11 @@ export class IDBController implements QuizzyController {
   // search
 
   async refreshSearchIndices(force?: boolean) {
-    await this._index<Question>(STORE_KEY_QUESTIONS, force, ['id', 'keywords']);
-    await this._index<QuizPaper>(STORE_KEY_PAPERS, force, ['id', 'questions', 'keywords']);
+    let count = 0;
+    count += (await this._buildIndices<Question>(STORE_KEY_QUESTIONS, force, ['id', 'keywords'])).length;
+    count += (await this._buildIndices<QuizPaper>(STORE_KEY_PAPERS, force, ['id', 'questions', 'keywords'])).length;
     await this.cache.clear();
+    return count;
   }
 
   // records

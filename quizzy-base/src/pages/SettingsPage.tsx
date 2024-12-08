@@ -1,11 +1,16 @@
 import { withHandler } from "#/utils";
 import { Quizzy, QuizzyRaw } from "@/data";
-import { Button, Divider, HStack, VStack } from "@chakra-ui/react";
+import { Button, Divider, HStack, Switch, VStack } from "@chakra-ui/react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 
 const refreshIndices = withHandler(
-  () => QuizzyRaw.refreshSearchIndices(true),
+  async (force: boolean) => {
+    const count = await QuizzyRaw.refreshSearchIndices(force);
+    console.log(`${count} records updated`);
+    return count;
+  },
   {
     async: true,
     cache: false,
@@ -49,9 +54,12 @@ export const SettingsPage = () => {
 
   const { t } = useTranslation();
 
+  const [force, setForce] = useState(false);
+
   return <VStack alignItems='flex-start' width='100%'>
     <HStack>
-      <Button onClick={refreshIndices}>{t('btn.setting.refreshIndices')}</Button>
+      <Button onClick={() => refreshIndices(force)}>{t('btn.setting.refreshIndices')}</Button>
+      <Switch isChecked={force} onChange={(e) => setForce(e.target.checked)}>force</Switch>
       <Button onClick={importData}>{t('btn.setting.importData')}</Button>
       <Button onClick={exportData}>{t('btn.setting.exportData')}</Button>
     </HStack>
