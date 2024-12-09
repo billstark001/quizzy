@@ -194,7 +194,7 @@ export const useEditorContext = <T extends object>() => useContext(EditorContext
 
 type Updater<T> = (patch: Partial<T>) => void;
 export type EditorProps<T extends object> = {
-  value: T;
+  value?: T;
   onChange: (patch: Partial<T>) => void;
   pathCache?: QuickLRU<string, string[]>;
 };
@@ -263,7 +263,7 @@ export const useEditor = <T extends object>(props: EditorProps<T>) => {
 
   // this debounces and 'deceives' user
   const onChangeDebouncedUnstable = useCallback((patch: Partial<T>) => {
-    setFakeValue({ ...value, ...patch });
+    setFakeValue(value === undefined ? undefined : { ...value, ...patch });
     setHasDebouncedChanges(true);
     debouncedOnChangeLogicalRef.current!(patch);
   }, [debouncedOnChangeLogicalRef, setFakeValue, setHasDebouncedChanges, value]);

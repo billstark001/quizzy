@@ -15,7 +15,7 @@ export type DialogDefinition<T = boolean> = {
 };
 
 
-export type DialogType = 'normal' | 'alert' | 'alert-confirm' | 'ok-cancel' | 'load-discard';
+export type DialogType = 'normal' | 'alert' | 'alert-confirm' | 'ok-cancel' | 'load-discard' | 'save-discard';
 export type DialogOpener = {
   (desc: ReactNode, type?: DialogType, id?: string): Promise<boolean>;
   <T = boolean>(option: Readonly<DialogDefinition<T>>): Promise<T>;
@@ -35,6 +35,9 @@ const getOptionsDefinition = (
   type === 'load-discard' ? [
     [false, t('dialog.option.discard'), { colorScheme: 'red' }],
     [true, t('dialog.option.load'), { colorScheme: 'green' }]
+  ] : type === 'save-discard' ? [
+    [false, t('dialog.option.discard'), { colorScheme: 'red' }],
+    [true, t('dialog.option.save'), { colorScheme: 'green' }]
   ] : type === 'alert-confirm' ? [
     [false, t('dialog.option.cancel')],
     [true, t('dialog.option.confirm'), { colorScheme: 'red' }]

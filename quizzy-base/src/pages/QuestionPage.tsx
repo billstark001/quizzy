@@ -4,7 +4,8 @@ import {
   InputGroup,
   InputLeftElement,
   List,
-  ListItem
+  ListItem,
+  VStack
 } from "@chakra-ui/react";
 import { SearchIcon } from "@chakra-ui/icons";
 import { ChangeEvent, useEffect, useRef, useState } from "react";
@@ -52,11 +53,11 @@ const SearchBox = () => {
   const handleSelect = (item: Question) => {
     disableBlur.current = false;
     setIsOpen(false);
-    navigate(`/edit?question=${escape(item.id)}`)
+    // TODO
   };
 
   return (
-    <Box position="relative" width="300px" onBlur={() => {
+    <Box position="relative" minWidth="300px" onBlur={() => {
       !disableBlur.current && setIsOpen(false);
     }}>
       <InputGroup>
@@ -114,9 +115,9 @@ const SearchBox = () => {
 
 export const QuestionPage = () => {
 
-  return <>
+  return <VStack alignItems='stretch'>
     <SearchBox />
-  </>;
+  </VStack>;
 };
 
 export default QuestionPage;

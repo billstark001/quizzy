@@ -65,7 +65,6 @@ export const PaperSelectionPage = () => {
   const onEdit = async (pid: string) => {
     const p = new URLSearchParams({
       paper: pid,
-      q: '1',
     });
     navigate('/edit?' + p.toString());
   };
@@ -84,7 +83,10 @@ export const PaperSelectionPage = () => {
     if (!id) {
       throw new Error("No ID");
     }
-    navigate('/edit?paper=' + id);
+    const p2 = new URLSearchParams({
+      paper: id,
+    });
+    navigate('/edit?' + p2.toString());
   });
   const onInputChange = () => openDialog({
     options: [
