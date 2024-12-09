@@ -162,9 +162,11 @@ export const EditPage = () => {
     // try to read data from local cache, apply if successful
     let cachedState: Partial<EditState> | undefined = await (QuizzyCacheRaw.loadRecord('edit', sessionId)
       .catch(() => void 0));
-    if (cachedState && !await openDialog(
-      <>There is a cached result. Do you want to load it?</>, 'load-discard'
-    )) {
+    if (cachedState && !await openDialog({
+      id: 'load-cached-result',
+      desc: 'There is a cached result. Do you want to load it?',
+      type: 'load-discard',
+    })) {
       // discard the cache
       cachedState = undefined;
       await (QuizzyCacheRaw.clearRecord('edit', sessionId).catch(() => void 0));
@@ -224,7 +226,7 @@ export const EditPage = () => {
     // ask user to save if edited
     if (patch.totalStep === 0 || await openDialog(<>
       Are you sure? The unsaved changes will be discarded.
-    </>, 'confirm')) {
+    </>, 'alert-confirm')) {
       // this means to discard
       setQuestionIndex(index);
     }
@@ -234,7 +236,7 @@ export const EditPage = () => {
   const save = useCallback(async () => {
     if (!await openDialog(<>
       Are you sure? The changes cannot be undone.
-    </>, 'confirm')) {
+    </>, 'alert-confirm')) {
       // the save request is rejected
       return;
     }
@@ -249,7 +251,7 @@ export const EditPage = () => {
   const deleteCurrent = useCallback(async () => {
     if (!await openDialog(<>
       Are you sure? The changes cannot be undone.
-    </>, 'confirm')) {
+    </>, 'alert-confirm')) {
       // the delete request is rejected
       return;
     }
