@@ -4,15 +4,15 @@ import { numberToLetters } from "#/utils/string";
 import { AddIcon, DeleteIcon, DragHandleIcon } from "@chakra-ui/icons";
 import {
   Box, BoxProps, Button, Code, Grid, HStack, IconButton,
-  Input, Modal, ModalBody, ModalCloseButton, ModalContent,
-  ModalFooter, ModalHeader, ModalOverlay, Select, Switch,
+  Input, Select, Switch,
   SwitchProps, Tag, Textarea, TextareaProps, VStack, Wrap
 } from "@chakra-ui/react";
 import { FocusEventHandler, useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useEditorContext } from "#/utils/react-patch";
+import TagSelectModal, { TagSelectState } from "./TagSelectModal";
 
-export const getChangedArray = <T,>(arr: T[], index: number, value: T) => {
+export const getChangedArray = <T,>(arr: readonly T[], index: number, value: T) => {
   return arr.map((x, i) => i == index ? value : x);
 };
 
@@ -186,31 +186,7 @@ export const QuestionEdit = () => {
 
   // tags
 
-  const { data: editTag, ...dTag } = useDisclosureWithData<{
-    index?: number,
-    orig?: string,
-    isCategory?: boolean,
-  }>({});
-
-  const [currentTag, setCurrentTag] = useState('');
-
-  const startEditingTag = useCallback((index?: number, isCategory = false) => {
-    const origArr = isCategory ? question.categories : question.tags;
-    const orig = (index == null ? undefined : origArr?.[index]) ?? '';
-    setCurrentTag(orig);
-    dTag.onOpen({ index, orig, isCategory });
-  }, [dTag.onOpen, setCurrentTag, question]);
-
-  const submitTag = useCallback(async () => {
-    const { isCategory, index } = editTag;
-    const origArr = (isCategory ? question.categories : question.tags) ?? [];
-    await onChangeImmediate({
-      [isCategory ? 'categories' : 'tags']: index == null
-        ? [...origArr, currentTag]
-        : getChangedArray(origArr, index, currentTag)
-    });
-    dTag.onClose();
-  }, [onChangeImmediate, currentTag, editTag, question]);
+  const { data: editTag, ...dTag } = useDisclosureWithData<TagSelectState>({});
 
   return <>
     <Grid templateColumns='160px 1fr' gap={2}>
@@ -232,11 +208,11 @@ export const QuestionEdit = () => {
       <Box>{t('page.edit.tags')}</Box>
       <Wrap>
         {(question.tags ?? []).map((t, i) => <Tag key={t}
-          onDoubleClick={() => startEditingTag(i)}
+          onDoubleClick={() => dTag.onOpen({ tagIndex: i })}
         ><Box>{t}</Box></Tag>)}
 
         <IconButton
-          onClick={() => startEditingTag(undefined)}
+          onClick={() => dTag.onOpen()}
           aria-label={t('page.edit.addButton')}
           size='xs'
           icon={<AddIcon />}
@@ -247,11 +223,11 @@ export const QuestionEdit = () => {
       <Box>{t('page.edit.categories')}</Box>
       <Wrap>
         {(question.categories ?? []).map((t, i) => <Tag key={t}
-          onDoubleClick={() => startEditingTag(i, true)}
+          onDoubleClick={() => dTag.onOpen({ tagIndex: i, isCategory: true })}
         ><Box>{t}</Box></Tag>)}
 
         <IconButton
-          onClick={() => startEditingTag(undefined, true)}
+          onClick={() => dTag.onOpen({ isCategory: true })}
           aria-label={t('page.edit.addButton')}
           size='xs'
           icon={<AddIcon />}
@@ -286,21 +262,10 @@ export const QuestionEdit = () => {
       </HStack>
     </Grid>
 
-
-    <Modal {...dTag} closeOnOverlayClick={false}>
-      <ModalOverlay />
-      <ModalContent>
-        <ModalCloseButton />
-        <ModalHeader>{t('page.edit.modal.tag.title')}</ModalHeader>
-        <ModalBody as={VStack}>
-          <Input value={currentTag} onChange={(e) => setCurrentTag(e.target.value)} />
-        </ModalBody>
-        <ModalFooter justifyContent='space-between'>
-          <Button colorScheme='red' onClick={dTag.onClose}>{t('btn.cancel')}</Button>
-          <Button colorScheme='blue' onClick={submitTag}>{t('btn.save')}</Button>
-        </ModalFooter>
-      </ModalContent>
-    </Modal>
+    <TagSelectModal
+      {...dTag} {...editTag}
+      object={question} onChange={onChangeImmediate}
+    />
 
   </>;
 };
