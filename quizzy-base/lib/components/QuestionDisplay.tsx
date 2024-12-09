@@ -156,14 +156,15 @@ export const QuestionDisplay = (props: QuestionDisplayProps) => {
       <Button colorScheme='teal' onClick={onSubmit}>{t('page.question.submit')}</Button>
     </HStack>
     <QuestionSelectionModal 
-      index={questionSelect} total={totalQuestions} 
-      current={currentQuestion}
-      setIndex={(i) => {
+      preview={questionSelect} total={totalQuestions} 
+      selected={currentQuestion}
+      onSelectPreview={(i) => {
         setQuestionSelect(i);
         return onPreviewQuestionChanged?.(i);
       }} onSelect={onQuestionChanged}
       {...q}
-      question={question ? <BaseQuestionPanel w='100%' question={previewQuestion ?? question} /> : <></>}
-    />
+    >
+      {question ? <BaseQuestionPanel w='100%' question={previewQuestion ?? question} /> : <></>}
+    </QuestionSelectionModal>
   </VStack>;
 };

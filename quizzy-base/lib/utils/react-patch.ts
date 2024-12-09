@@ -12,7 +12,10 @@ export type UsePatchProps<T> = {
 };
 
 export type UsePatchReturn<T, Tag = HTMLDivElement> = {
-  onEdit: (patch: Partial<T>) => void;
+  onEdit: {
+    (patch: Partial<T>, full?: false): void;
+    (patch: T, full: true): void;
+  }
   onUndo: () => boolean;
   onRedo: () => boolean;
   onClear: (initial: T) => void;
@@ -38,16 +41,16 @@ export const usePatch = <T extends object, Tag = HTMLDivElement>(
   const totalStepRef = useRef(0);
   const history = historyRef.current!;
 
-  const onEdit = useCallback((patch: Partial<T>) => {
+  const onEdit = useCallback((patch: Partial<T>, full?: boolean) => {
     if (pointerRef.current != 0) {
       history.splice(history.length - pointerRef.current, pointerRef.current);
       pointerRef.current = 0;
     }
-    const newValue = { ...value, ...patch };
+    const newValue: T = full ? patch as T : { ...value, ...patch };
     setValue(newValue);
     if (shouldReplace?.(value, patch, lastPatchRef.current)) {
       // the last step is merged with the current step
-      lastPatchRef.current = { ...lastPatchRef.current, ...patch };
+      lastPatchRef.current = full ? patch as T : { ...lastPatchRef.current, ...patch };
       history.pop();
     } else {
       // the current step is taken as a new step

@@ -195,7 +195,7 @@ export const EditPage = () => {
     }
   }, [setSearchParams, patch]);
 
-  // save current edition
+  // save & delete current edition
   const save = useCallback(async () => {
     if (!await openDialog(<>
       Are you sure? The changes cannot be undone.
@@ -273,13 +273,17 @@ export const EditPage = () => {
     </VStack>
 
     <QuestionSelectionModal
-      current={questionIndex} total={paper?.questions?.length || 1}
-      index={questionPreviewIndex}
-      setIndex={selectQuestionPreview}
+      selected={questionIndex} total={paper?.questions?.length || 0}
+      preview={questionPreviewIndex}
+      onSelectPreview={selectQuestionPreview}
       onSelect={selectQuestionPaperMode}
+      allowEdit
+      onAdd={() => true}
+      onEdit={(i) => console.log(i)}
       {...dQuestionSelect}
-      question={questionPreview ? <BaseQuestionPanel w='100%' question={questionPreview} /> : <></>}
-    />
+    >
+      {questionPreview && <BaseQuestionPanel w='100%' question={questionPreview} />}
+    </QuestionSelectionModal>
 
     <Modal {...dPreview} size='5xl'>
       <ModalOverlay />
