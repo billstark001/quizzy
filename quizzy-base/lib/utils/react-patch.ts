@@ -8,6 +8,8 @@ export type UsePatchProps<T, P = Partial<T>> = {
   value: T;
   setValue?: (patch: T) => void;
   shouldReplace?: (current: T, patch: P, lastPatch: P | undefined) => boolean;
+  shouldUndo?: (last: T, lastPatch: P | undefined) => boolean;
+  shouldRedo?: (next: T, nextPatch: P | undefined) => boolean;
   applyPatch?: (base: T, patch: P) => T;
   mergePatch?: (base: P, patch: P) => P;
   maxLength?: number;
@@ -48,6 +50,8 @@ export const usePatch = <T extends object, P = Partial<T>, Tag = HTMLDivElement>
     shouldReplace: _shouldReplace,
     mergePatch: _mergePatch,
     applyPatch: _applyPatch,
+    shouldRedo: _shouldRedo,
+    shouldUndo: _shouldUndo,
   } = props;
 
   const maxLength = (!l || Number.isNaN(l) || l < 1) ? 1 : Math.floor(l);
@@ -55,6 +59,8 @@ export const usePatch = <T extends object, P = Partial<T>, Tag = HTMLDivElement>
   const shouldReplace = useCallbackRef(_shouldReplace);
   const mergePatch = useCallbackRef(_mergePatch ?? defaultMergeAndApplyPatch as unknown as typeof _mergePatch);
   const applyPatch = useCallbackRef(_applyPatch ?? defaultMergeAndApplyPatch as unknown as typeof _applyPatch);
+  const shouldRedo = useCallbackRef(_shouldRedo ?? (() => true));
+  const shouldUndo = useCallbackRef(_shouldUndo ?? (() => true));
 
   const historyRef = useRef<HistoryItem<T, P>[]>([]) as RefObject<HistoryItem<T, P>[]>;
   const lastPatchRef = useRef<P | undefined>(undefined);
@@ -105,21 +111,27 @@ export const usePatch = <T extends object, P = Partial<T>, Tag = HTMLDivElement>
     if (pointerRef.current >= history.length - 1) {
       return false;
     }
-    setValue?.(history[history.length - pointerRef.current - 2].state);
+    const { state, patch } = history[history.length - pointerRef.current - 2];
+    if (shouldUndo(state, patch)) {
+      setValue?.(state);
+    }
     pointerRef.current += 1;
     totalStepRef.current -= 1;
     return true;
-  }, [setValue, history]);
+  }, [setValue, shouldUndo, history]);
 
   const onRedo = useCallback(() => {
     if (pointerRef.current <= 0) {
       return false;
     }
-    setValue?.(history[history.length - pointerRef.current].state);
+    const { state, patch } = history[history.length - pointerRef.current];
+    if (shouldRedo(state, patch)) {
+      setValue?.(state);
+    }
     pointerRef.current -= 1;
     totalStepRef.current += 1;
     return true;
-  }, [setValue, history]);
+  }, [setValue, shouldRedo, history]);
 
   const onClear = useCallback((initial: T) => {
     history.splice(0, history.length, { state: initial });
@@ -132,18 +144,15 @@ export const usePatch = <T extends object, P = Partial<T>, Tag = HTMLDivElement>
     if (event[modifierKey]) {
       if (event.shiftKey && event.key.toLowerCase() === 'z') {
         event.preventDefault();
-        onRedo();
-        return true;
+        return onRedo();
       }
       else if (!event.shiftKey && event.key.toLowerCase() === 'z') {
         event.preventDefault();
-        onUndo();
-        return true;
+        return onUndo();
       }
       else if (event.key.toLowerCase() === 'y') {
         event.preventDefault();
-        onRedo();
-        return true;
+        return onRedo();
       }
     }
     return false;

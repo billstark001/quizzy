@@ -3,6 +3,7 @@ import { QuestionEdit } from "#/components/QuestionEdit";
 import { BaseQuestionPanel, QuestionPanel } from "#/components/QuestionPanel";
 import { QuestionSelectionModal } from "#/components/QuestionSelectionModal";
 import { defaultQuestion, defaultQuizPaper, Question, QuizPaper } from "#/types";
+import { ID } from "#/types/technical";
 import { openDialog, standaloneToast, withHandler } from "#/utils";
 import { useDisclosureWithData } from "#/utils/disclosure";
 import { applyPatch, Patch } from "#/utils/patch";
@@ -19,48 +20,56 @@ import { useNavigate } from "react-router-dom";
 
 export type EditParams = {
   paper: string;
-  q: number;
   question: string;
 };
 
 const _parser: ParamsDefinition<EditParams> = {
   paper: 'string',
-  q: "number",
   question: "string",
 };
 
-type _S = Readonly<({
+type FetchedState = Readonly<{
   paper: QuizPaper;
   paperId: string;
 } | {
   paper?: undefined;
   paperId?: undefined;
-}) & ({
+}>;
+
+type FetchedQuestionState = Readonly<{
   question: Question;
   questionId: string;
 } | {
   question?: undefined;
   questionId?: undefined;
-})>;
+}>;
 
 type EditState = Readonly<{
   question: Question,
   paper: QuizPaper,
+  questions: Readonly<Record<ID, Question>>,
 }>;
 
 type EditPatch = Readonly<{
   target: 'question';
+  replace?: false;
   value: Patch<Question>;
 } | {
   target: 'paper';
+  replace?: false;
   value: Patch<QuizPaper>;
+} | {
+  target: 'question';
+  replace: true;
+  value: Question;
 }>;
 
 const applyEditPatch = (base: EditState, patch: EditPatch): EditState => {
-  const { target, value } = patch;
+  const { target, replace, value } = patch;
+  // TODO handle question
   return {
     ...base,
-    [target]: applyPatch(base[target], value),
+    [target]: replace ? value : applyPatch(base[target], value),
   }
 };
 
@@ -73,27 +82,36 @@ export const EditPage = () => {
   const [searchParams, setSearchParams] = useParsedSearchParams(_parser);
   const {
     paper: paperIdProp,
-    q: questionIndexProp,
     question: questionIdProp
   } = searchParams;
-  const questionIndex = Math.max(Number.isNaN(questionIndexProp)
-    ? 0 : questionIndexProp!, 1);
+
+  const [questionIndex, setQuestionIndex] = useState(1);
 
   // fetch the paper and question we need
-  const fetchData = withHandler(async (): Promise<_S> => {
-    // first try to get paper and question by index
+  const fetchPaper = withHandler(async (): Promise<FetchedState> => {
+    // try to get paper and question by index
     const paper = paperIdProp
       ? await (QuizzyRaw.getQuizPaper(paperIdProp).catch(() => void 0)) ?? undefined
       : undefined;
+    if (paper) {
+      return { paperId: paperIdProp!, paper };
+    }
+    return {};
+  }, { def: {} as FetchedState, deps: [paperIdProp], notifySuccess: undefined, });
+
+  const { data: data1 } = useAsyncMemo(fetchPaper, [paperIdProp]);
+  const { paperId, paper } = data1 ?? {} as FetchedState;
+
+  const fetchQuestion = withHandler(async (): Promise<FetchedQuestionState> => {
+    // first try to get question inside paper by index
     if (paper) {
       const questionId = paper.questions[questionIndex - 1] || undefined;
       const question = questionId
         ? (await (QuizzyRaw.getQuestions([questionId])).catch(() => void 0))?.[0] ?? undefined
         : undefined;
       if (question) {
-        return { paperId: paperIdProp!, paper, questionId: questionId!, question };
+        return { questionId: questionId!, question };
       }
-      return { paperId: paperIdProp!, paper };
     }
     // at this point, paper fetching is failed
     // then try to get question by id
@@ -104,14 +122,13 @@ export const EditPage = () => {
       }
     }
     return {};
-  }, { def: {} as _S, deps: [paperIdProp, questionIndex, questionIdProp], notifySuccess: undefined, });
+  }, { def: {} as FetchedQuestionState, deps: [paper, questionIndex, questionIdProp], notifySuccess: undefined, });
 
+  const { data: dataQuestion } = useAsyncMemo(fetchQuestion, [paper, questionIndex, questionIdProp]);
+  const { questionId, question } = dataQuestion ?? {} as FetchedQuestionState;
 
   const dQuestionSelect = useDisclosure();
   const { t } = useTranslation();
-
-  const { data, refresh } = useAsyncMemo(fetchData, [paperIdProp, questionIndex, questionIdProp]);
-  const { paperId, paper, questionId, question } = data ?? ({} as _S);
 
   // at this point, paper <-> paperId, question <-> questionId are linked
   const sessionId = paperId
@@ -121,7 +138,8 @@ export const EditPage = () => {
   // editing states
   const [editingState, setEditingState] = useState<EditState>(() => ({
     question: defaultQuestion(),
-    paper: defaultQuizPaper()
+    paper: defaultQuizPaper(),
+    questions: {},
   }));
 
   // patch & update patch
@@ -154,6 +172,7 @@ export const EditPage = () => {
     const state: EditState = {
       question: cachedState?.question ?? question ?? defaultQuestion(),
       paper: cachedState?.paper ?? paper ?? defaultQuizPaper(),
+      questions: { ...cachedState?.questions }
     }
     if (cachedState?.question || cachedState?.paper) {
       standaloneToast({
@@ -207,9 +226,9 @@ export const EditPage = () => {
       Are you sure? The unsaved changes will be discarded.
     </>, 'confirm')) {
       // this means to discard
-      setSearchParams({ q: index });
+      setQuestionIndex(index);
     }
-  }, [setSearchParams, patch]);
+  }, [setSearchParams, setQuestionIndex, patch]);
 
   // save & delete current edition
   const save = useCallback(async () => {
@@ -225,7 +244,7 @@ export const EditPage = () => {
     await Quizzy.updateQuestion(questionId ?? '', editingState.question);
     // await refresh();
     // after the refresh, edit state is automatically cleared
-  }, [paperId, questionId, editingState, refresh]);
+  }, [paperId, questionId, editingState]);
 
   const deleteCurrent = useCallback(async () => {
     if (!await openDialog(<>
