@@ -25,7 +25,7 @@ const SearchBox = () => {
     debouncedSetSearchTerm.current = debounce(setSearchTerm, 1000, {
       immediate: true,
     });
-  }, [setSearchTerm]);
+  }, [setSearchTerm, debouncedSetSearchTerm]);
 
   const { data: searchResult } = useAsyncMemo(async (): Promise<SearchResult<Question>> => {
     if (!searchTerm) {

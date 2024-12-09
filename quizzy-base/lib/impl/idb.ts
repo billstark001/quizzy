@@ -1,4 +1,4 @@
-import { CompleteQuizPaperDraft, EndQuizOptions, Question, QuizPaper, QuizRecord, QuizzyController, QuizzyData, StartQuizOptions, Stat, UpdateQuizOptions } from "#/types";
+import { CompleteQuizPaperDraft, EndQuizOptions, Question, QuizPaper, QuizRecord, QuizzyController, QuizzyData, StartQuizOptions, Stat, TagSearchResult, UpdateQuizOptions } from "#/types";
 import { IDBPDatabase } from "idb";
 import { separatePaperAndQuestions, toCompleted } from "./paper-id";
 import { uuidV4B64 } from "#/utils";
@@ -36,6 +36,14 @@ type Bm25Cache = {
   trieTags: any,
   trieSizeTags: number,
 };
+
+const _ts = (query: string, cachePapers?: Bm25Cache, isTag?: boolean) => 
+  cachePapers?.[isTag ? 'trieTags' : 'trie'] 
+  ? loadTrieTree(
+    cachePapers?.[isTag ? 'trieTags' : 'trie'], 
+    cachePapers?.[isTag ? 'trieSizeTags' : 'trieSize'])
+    .searchFunc(query) 
+  : [];
 
 const updaters: Record<number, DatabaseUpdateDefinition> = {
   [0]: (db) => {
@@ -410,6 +418,17 @@ export class IDBController implements QuizzyController {
     return this._search(STORE_KEY_PAPERS, queryKeywords, true, count, page);
   }
 
+  async findTags(query: string, _?: number, __?: number): Promise<TagSearchResult> {
+    // TODO cache trie trees
+    const cachePapers = await this._load<Bm25Cache>('bm25_' + STORE_KEY_PAPERS);
+    const cacheQuestions = await this._load<Bm25Cache>('bm25_' + STORE_KEY_QUESTIONS);
+    return {
+      paper: _ts(query, cachePapers, false),
+      paperTags: _ts(query, cachePapers, true),
+      question: _ts(query, cacheQuestions, false),
+      questionTags: _ts(query, cacheQuestions, true),
+    };
+  }
 
   async importCompleteQuizPapers(...papers: CompleteQuizPaperDraft[]): Promise<string[]> {
     const purePapers: QuizPaper[] = [];

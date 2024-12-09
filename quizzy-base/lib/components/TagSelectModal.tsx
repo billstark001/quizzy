@@ -2,20 +2,29 @@ import { KeywordIndexed } from "#/types/technical";
 import {
   Button, Input, Modal, ModalBody,
   ModalCloseButton, ModalContent, ModalFooter,
-  ModalHeader, ModalOverlay, ModalProps, VStack
+  ModalHeader, ModalOverlay, ModalProps, Tag, useCallbackRef, VStack,
+  Wrap
 } from "@chakra-ui/react";
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { getChangedArray } from "./QuestionEdit";
 import { useTranslation } from "react-i18next";
+import { TagSearchResult } from "#/types";
+import { Quizzy } from "@/data";
+import { debounce, DebounceReturn } from "#/utils/debounce";
 
 export type TagSelectState = {
   tagIndex?: number,
   isCategory?: boolean,
 };
 
+const _d = (): TagSearchResult => ({
+  question: [], questionTags: [], paper: [], paperTags: [],
+});
+
 export const TagSelectModal = (props: Omit<ModalProps, 'children'> & {
   object: Readonly<KeywordIndexed>,
-  onChange: (patch: Partial<KeywordIndexed>) => void
+  onChange: (patch: Partial<KeywordIndexed>) => void,
+  dbIndex?: string,
 } & TagSelectState) => {
 
   const {
@@ -50,14 +59,47 @@ export const TagSelectModal = (props: Omit<ModalProps, 'children'> & {
     onClose();
   }, [onChange, onClose, currentTag, isCategory, tagIndex, origArr]);
 
+  // display list
+  const [listExpanded, setListExpanded] = useState(false);
+  const [tagSearch, setTagSearch] = useState(_d);
+
+  const performSearch = useCallback(async (currentTag: string) => {
+    const result = currentTag ? await Quizzy.findTags(currentTag) : undefined;
+    const l = result
+      ? result.paper.length + result.paperTags.length + result.question.length + result.questionTags.length
+      : 0;
+    if (l) {
+      setListExpanded(true);
+      setTagSearch(result!);
+    } else {
+      setListExpanded(false);
+    }
+  }, [currentTag]);
+
+  const performSearchRef = useCallbackRef(performSearch);
+
+  const debouncedSearch = useRef<DebounceReturn<typeof performSearch>>();
+  useEffect(() => {
+    debouncedSearch.current?.clear();
+    debouncedSearch.current = debounce(performSearch, 500);
+  }, [performSearchRef, debouncedSearch]);
 
   return <Modal closeOnOverlayClick={false} {...modalProps}>
     <ModalOverlay />
     <ModalContent>
       <ModalCloseButton />
       <ModalHeader>{t('page.edit.modal.tag.title')}</ModalHeader>
-      <ModalBody as={VStack}>
-        <Input value={currentTag} onChange={(e) => setCurrentTag(e.target.value)} />
+      <ModalBody as={VStack} alignItems='stretch'>
+        <Input value={currentTag} onChange={(e) => {
+          setCurrentTag(e.target.value);
+          debouncedSearch.current?.(e.target.value);
+        }} />
+        {listExpanded && <>
+          <Wrap>{tagSearch.question.map(x => <Tag key={x}>{x}</Tag>)}</Wrap>
+          <Wrap>{tagSearch.questionTags.map(x => <Tag key={x}>{x}</Tag>)}</Wrap>
+          <Wrap>{tagSearch.paper.map(x => <Tag key={x}>{x}</Tag>)}</Wrap>
+          <Wrap>{tagSearch.paperTags.map(x => <Tag key={x}>{x}</Tag>)}</Wrap>
+        </>}
       </ModalBody>
       <ModalFooter justifyContent='space-between'>
         <Button colorScheme='red' onClick={onClose}>{t('btn.cancel')}</Button>
