@@ -5,6 +5,7 @@ import { QuestionSelectionModal } from "#/components/QuestionSelectionModal";
 import { defaultQuestion, defaultQuizPaper, Question, QuizPaper } from "#/types";
 import { openDialog, standaloneToast, withHandler } from "#/utils";
 import { useDisclosureWithData } from "#/utils/disclosure";
+import { applyPatch, Patch } from "#/utils/patch";
 import { EditorContextProvider, useEditor, usePatch } from "#/utils/react-patch";
 import { Quizzy, QuizzyCache, QuizzyCacheRaw, QuizzyRaw } from "@/data";
 import { useAsyncMemo } from "@/utils/react";
@@ -42,10 +43,26 @@ type _S = Readonly<({
   questionId?: undefined;
 })>;
 
-type _E = Readonly<{
+type EditState = Readonly<{
   question: Question,
   paper: QuizPaper,
 }>;
+
+type EditPatch = Readonly<{
+  target: 'question';
+  value: Patch<Question>;
+} | {
+  target: 'paper';
+  value: Patch<QuizPaper>;
+}>;
+
+const applyEditPatch = (base: EditState, patch: EditPatch): EditState => {
+  const { target, value } = patch;
+  return {
+    ...base,
+    [target]: applyPatch(base[target], value),
+  }
+};
 
 export const EditPage = () => {
 
@@ -102,22 +119,21 @@ export const EditPage = () => {
     : `question:${questionId}`;
 
   // editing states
-  const [editingState, setEditingState] = useState<_E>(() => ({
+  const [editingState, setEditingState] = useState<EditState>(() => ({
     question: defaultQuestion(),
     paper: defaultQuizPaper()
   }));
 
   // patch & update patch
   const patch = usePatch({
-    value: editingState, setValue: (v) => {
-      setEditingState(v);
-    }, maxLength: 16
+    value: editingState, setValue: setEditingState, maxLength: 16,
+    applyPatch: applyEditPatch,
   });
-  const patchPaper = (pp: Partial<QuizPaper>) => patch.onEdit({
-    paper: { ...editingState.paper, ...pp }
+  const patchPaper = (value: Partial<QuizPaper>) => patch.onEdit({
+    target: 'paper', value
   });
-  const patchQuestion = (pp: Partial<Question>) => patch.onEdit({
-    question: { ...editingState.question, ...pp } as any
+  const patchQuestion = (value: Partial<Question>) => patch.onEdit({
+    target: 'question', value,
   });
   const patchPaperRef = useCallbackRef(patchPaper);
   const patchQuestionRef = useCallbackRef(patchQuestion);
@@ -126,7 +142,7 @@ export const EditPage = () => {
   // it resets the old edit record
   useEffect(() => void (async () => {
     // try to read data from local cache, apply if successful
-    let cachedState: Partial<_E> | undefined = await (QuizzyCacheRaw.loadRecord('edit', sessionId)
+    let cachedState: Partial<EditState> | undefined = await (QuizzyCacheRaw.loadRecord('edit', sessionId)
       .catch(() => void 0));
     if (cachedState && !await openDialog(
       <>There is a cached result. Do you want to load it?</>, 'load-discard'
@@ -135,7 +151,7 @@ export const EditPage = () => {
       cachedState = undefined;
       await (QuizzyCacheRaw.clearRecord('edit', sessionId).catch(() => void 0));
     }
-    const state: _E = {
+    const state: EditState = {
       question: cachedState?.question ?? question ?? defaultQuestion(),
       paper: cachedState?.paper ?? paper ?? defaultQuizPaper(),
     }

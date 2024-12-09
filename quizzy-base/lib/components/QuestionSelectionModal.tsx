@@ -190,6 +190,7 @@ export const QuestionSelectionModal = (props: QuestionSelectionModalProps) => {
     value: editOrder,
     setValue: setEditOrder,
     maxLength: 64,
+    applyPatch: (_, p: readonly number[]) => p,
   });
 
   const startEdit = useCallback(() => {
@@ -211,13 +212,13 @@ export const QuestionSelectionModal = (props: QuestionSelectionModalProps) => {
     const currentOrder = [...editOrder];
     currentOrder.splice(indexAfterAddition, 0, editState.nextIndex);
     setEditState({ ...editState, nextIndex: editState.nextIndex + 1 });
-    editPatch.onEdit(currentOrder, true);
+    editPatch.onEdit(currentOrder);
   }, [editState, setEditState, editOrder, editPatch.onEdit, onAdd]);
 
   const remove = useCallback((indexToRemove: number) => {
     const currentOrder = [...editOrder];
     currentOrder.splice(indexToRemove, 1);
-    editPatch.onEdit(currentOrder, true);
+    editPatch.onEdit(currentOrder);
   }, [editState, editPatch.onEdit]);
 
   const insert = useCallback((indexActive: number, indexAfterInsertion: number) => {
@@ -227,7 +228,7 @@ export const QuestionSelectionModal = (props: QuestionSelectionModalProps) => {
     const currentOrder = [...editOrder];
     const [itemActive] = currentOrder.splice(indexActive, 1);
     currentOrder.splice(indexAfterInsertion, 0, itemActive);
-    editPatch.onEdit(currentOrder, true);
+    editPatch.onEdit(currentOrder);
   }, [editState, editPatch.onEdit]);
 
   const endEdit = useCallback(() => {

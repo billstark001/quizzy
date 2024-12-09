@@ -1,107 +1,152 @@
 import { useCallbackRef } from "@chakra-ui/react";
-import { createContext, HTMLAttributes, KeyboardEventHandler, RefObject, useCallback, useContext, useEffect, useRef, useState } from "react";
+import { createContext, HTMLAttributes, KeyboardEvent, RefObject, useCallback, useContext, useEffect, useRef, useState } from "react";
 import { debounce, DebounceProps, DebounceReturn } from "./debounce";
 import QuickLRU from "quick-lru";
 import { parseObjectPath } from "./patch";
 
-export type UsePatchProps<T> = {
+export type UsePatchProps<T, P = Partial<T>> = {
   value: T;
   setValue?: (patch: T) => void;
-  shouldReplace?: (current: T, patch: Partial<T>, lastPatch: Partial<T> | undefined) => boolean;
+  shouldReplace?: (current: T, patch: P, lastPatch: P | undefined) => boolean;
+  applyPatch?: (base: T, patch: P) => T;
+  mergePatch?: (base: P, patch: P) => P;
   maxLength?: number;
 };
 
-export type UsePatchReturn<T, Tag = HTMLDivElement> = {
-  onEdit: {
-    (patch: Partial<T>, full?: false): void;
-    (patch: T, full: true): void;
-  }
+type HistoryItem<T, P = Partial<T>> = {
+  state: T;
+  patch?: P;
+};
+
+export type UsePatchReturn<T, P = Partial<T>, Tag = HTMLDivElement> = {
+  onEdit: (patch: P) => void;
   onUndo: () => boolean;
   onRedo: () => boolean;
   onClear: (initial: T) => void;
-  onKeyInput: KeyboardEventHandler<Tag>;
+  onKeyInput: (event: KeyboardEvent<Tag>) => boolean;
   totalStep: number;
 };
 
-const isMac = navigator.platform.indexOf("Mac") >= 0 ||
-  navigator.platform === "iPhone";
+const defaultMergeAndApplyPatch = <T>(base: T, patch: Partial<T>): T => ({
+  ...base,
+  ...patch,
+});
+
+const isMac = typeof navigator !== 'undefined' && (
+  navigator.platform.indexOf("Mac") >= 0 ||
+  navigator.platform === "iPhone"
+);
 const modifierKey = isMac ? 'metaKey' : 'ctrlKey';
 
-export const usePatch = <T extends object, Tag = HTMLDivElement>(
-  props: UsePatchProps<T>
-): UsePatchReturn<T, Tag> => {
-  const { value, setValue: _setValue, maxLength: l, shouldReplace: _shouldReplace } = props;
+export const usePatch = <T extends object, P = Partial<T>, Tag = HTMLDivElement>(
+  props: UsePatchProps<T, P>
+): UsePatchReturn<T, P, Tag> => {
+  const {
+    value,
+    setValue: _setValue,
+    maxLength: l,
+    shouldReplace: _shouldReplace,
+    mergePatch: _mergePatch,
+    applyPatch: _applyPatch,
+  } = props;
+
   const maxLength = (!l || Number.isNaN(l) || l < 1) ? 1 : Math.floor(l);
   const setValue = useCallbackRef(_setValue);
   const shouldReplace = useCallbackRef(_shouldReplace);
+  const mergePatch = useCallbackRef(_mergePatch ?? defaultMergeAndApplyPatch as unknown as typeof _mergePatch);
+  const applyPatch = useCallbackRef(_applyPatch ?? defaultMergeAndApplyPatch as unknown as typeof _applyPatch);
 
-  const historyRef = useRef<T[]>([]) as RefObject<T[]>;
-  const lastPatchRef = useRef<Partial<T> | undefined>(undefined);
+  const historyRef = useRef<HistoryItem<T, P>[]>([]) as RefObject<HistoryItem<T, P>[]>;
+  const lastPatchRef = useRef<P | undefined>(undefined);
   const pointerRef = useRef(0);
   const totalStepRef = useRef(0);
   const history = historyRef.current!;
 
-  const onEdit = useCallback((patch: Partial<T>, full?: boolean) => {
-    if (pointerRef.current != 0) {
+  // init history
+  useEffect(() => {
+    if (history.length === 0) {
+      history.push({ state: value });
+    }
+  }, []);
+
+  const onEdit = useCallback((patch: P) => {
+    if (pointerRef.current !== 0) {
       history.splice(history.length - pointerRef.current, pointerRef.current);
       pointerRef.current = 0;
     }
-    const newValue: T = full ? patch as T : { ...value, ...patch };
-    setValue(newValue);
+
+    const newValue = applyPatch(value, patch as any);
+    setValue?.(newValue);
+
     if (shouldReplace?.(value, patch, lastPatchRef.current)) {
-      // the last step is merged with the current step
-      lastPatchRef.current = full ? patch as T : { ...lastPatchRef.current, ...patch };
-      history.pop();
+      // merge to last step
+      const lastItem = history[history.length - 1];
+      lastItem.patch = lastItem.patch
+        ? mergePatch(lastItem.patch, patch as any)
+        : patch;
+      lastItem.state = newValue;
+      lastPatchRef.current = lastItem.patch as any;
     } else {
-      // the current step is taken as a new step
+      // new record
+      history.push({
+        state: newValue,
+        patch,
+      });
       lastPatchRef.current = patch;
       totalStepRef.current += 1;
+
+      if (history.length > maxLength) {
+        history.splice(0, history.length - maxLength);
+      }
     }
-    history.push(newValue);
-    if (history.length > maxLength) {
-      history.splice(0, history.length - maxLength);
-    }
-  }, [value, setValue, history, pointerRef]);
+  }, [value, setValue, applyPatch, mergePatch, shouldReplace, history]);
 
   const onUndo = useCallback(() => {
     if (pointerRef.current >= history.length - 1) {
       return false;
     }
-    setValue(history[history.length - pointerRef.current - 2]);
+    setValue?.(history[history.length - pointerRef.current - 2].state);
     pointerRef.current += 1;
     totalStepRef.current -= 1;
     return true;
-  }, [setValue, shouldReplace, history, pointerRef, lastPatchRef]);
+  }, [setValue, history]);
 
   const onRedo = useCallback(() => {
     if (pointerRef.current <= 0) {
       return false;
     }
-    setValue(history[history.length - pointerRef.current]);
+    setValue?.(history[history.length - pointerRef.current].state);
     pointerRef.current -= 1;
     totalStepRef.current += 1;
     return true;
-  }, [setValue, history, pointerRef]);
+  }, [setValue, history]);
 
   const onClear = useCallback((initial: T) => {
-    history.splice(0, history.length, initial);
+    history.splice(0, history.length, { state: initial });
     pointerRef.current = 0;
     totalStepRef.current = 0;
-  }, [history, pointerRef]);
+    lastPatchRef.current = undefined;
+  }, [history]);
 
-  const onKeyInput: KeyboardEventHandler<Tag> = useCallback((event) => {
+  const onKeyInput = useCallback((event: KeyboardEvent<Tag>) => {
     if (event[modifierKey]) {
-      event.preventDefault();
       if (event.shiftKey && event.key.toLowerCase() === 'z') {
+        event.preventDefault();
         onRedo();
+        return true;
       }
       else if (!event.shiftKey && event.key.toLowerCase() === 'z') {
+        event.preventDefault();
         onUndo();
+        return true;
       }
       else if (event.key.toLowerCase() === 'y') {
+        event.preventDefault();
         onRedo();
+        return true;
       }
     }
+    return false;
   }, [onRedo, onUndo]);
 
   return {
@@ -113,6 +158,7 @@ export const usePatch = <T extends object, Tag = HTMLDivElement>(
     totalStep: totalStepRef.current,
   };
 };
+
 
 export type EditorContextScheme<T extends object> = {
   value: T;
