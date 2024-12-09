@@ -233,7 +233,7 @@ export const EditPage = () => {
   // render
 
   return <>
-    <VStack alignItems='stretch'>
+    <VStack alignItems='stretch' onKeyDown={patch.onKeyInput} tabIndex={0}>
       <HStack>
         <Button onClick={patch.onUndo}>undo</Button>
         <Button onClick={patch.onRedo}>redo</Button>
