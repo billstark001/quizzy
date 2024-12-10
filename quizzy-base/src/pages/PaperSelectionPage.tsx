@@ -1,7 +1,7 @@
 import { PaperCard } from "#/components/PaperCard";
 import { defaultQuizPaper, QuizPaper } from "#/types";
 import { openDialog, withHandler } from "#/utils";
-import { promiseWithResolvers } from "#/utils/func";
+import { uploadFile } from "#/utils/html";
 import { uuidV4B64 } from "#/utils/string";
 import { Quizzy } from "@/data";
 import { papersAtom } from "@/data/atoms";
@@ -10,30 +10,6 @@ import { AddIcon } from "@chakra-ui/icons";
 import { Box, Card, CardBody, Flex, HStack, VStack, Wrap } from "@chakra-ui/react";
 import { useAtom } from "jotai";
 import { useNavigate } from "react-router-dom";
-
-const uploadFile = async () => {
-  const { promise, resolve, reject } = promiseWithResolvers<File>();
-  const input = document.createElement("input");
-  input.type = "file";
-  input.oninput = async (e) => {
-    const f = (e.target as HTMLInputElement).files?.[0];
-    if (!f) {
-      reject(new Error("No file selected"));
-      return;
-    }
-    resolve(f);
-  };
-  input.oncancel = () => reject(new Error('No file selected'));
-  window.addEventListener('focus', () => {
-    setTimeout(() => {
-      if (!input.files?.length) {
-        reject(new Error("No file selected"));
-      }
-    }, 300);
-  }, { once: true });
-  input.click();
-  return await promise;
-};
 
 export const PaperSelectionPage = () => {
 
