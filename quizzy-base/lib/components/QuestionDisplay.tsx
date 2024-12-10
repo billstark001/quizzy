@@ -1,7 +1,7 @@
 import Pagination from "#/components/Pagination";
 import { BaseQuestionPanel, BlankQuestionPanelProps, ChoiceQuestionPanelProps, QuestionPanel, QuestionPanelProps, TextQuestionPanelProps } from "#/components/QuestionPanel";
 import { Answers, BlankAnswers, ChoiceAnswers, ChoiceQuestion, Question, TextAnswers } from "#/types";
-import { formatMilliseconds } from "#/utils";
+import { formatMilliseconds } from "#/utils/time";
 import { QuestionSelectionModal } from "#/components/QuestionSelectionModal";
 import { DragHandleIcon } from "@chakra-ui/icons";
 import { Box, Button, HStack, IconButton, Progress, StackProps, useDisclosure, VStack } from "@chakra-ui/react";

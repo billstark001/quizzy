@@ -1,7 +1,8 @@
 import { PaperCard } from "#/components/PaperCard";
 import { defaultQuizPaper, QuizPaper } from "#/types";
-import { openDialog, uuidV4B64, withHandler } from "#/utils";
+import { openDialog, withHandler } from "#/utils";
 import { promiseWithResolvers } from "#/utils/func";
+import { uuidV4B64 } from "#/utils/string";
 import { Quizzy } from "@/data";
 import { papersAtom } from "@/data/atoms";
 import { useAsyncEffect } from "@/utils/react";

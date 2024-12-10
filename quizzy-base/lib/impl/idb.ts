@@ -1,7 +1,7 @@
 import { CompleteQuizPaperDraft, EndQuizOptions, Question, QuizPaper, QuizRecord, QuizzyController, QuizzyData, StartQuizOptions, Stat, TagSearchResult, UpdateQuizOptions } from "#/types";
 import { IDBPDatabase } from "idb";
 import { separatePaperAndQuestions, toCompleted } from "./paper-id";
-import { uuidV4B64 } from "#/utils";
+import { uuidV4B64 } from "#/utils/string";
 import { QuizResult } from "#/types/quiz-result";
 import { createResultAndStatPatches } from "./result";
 import { DatabaseIndexed, ID, KeywordIndexed, sanitizeIndices, SearchResult } from "#/types/technical";

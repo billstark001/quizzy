@@ -1,6 +1,6 @@
 import { CompleteQuizPaper, CompleteQuizPaperDraft, Question, QuizPaper } from "#/types"
 import { ID } from "#/types/technical";
-import { uuidV4B64 } from "#/utils";
+import { uuidV4B64 } from "#/utils/string";
 
 export const toCompleted = async (
   p: CompleteQuizPaperDraft,

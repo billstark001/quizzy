@@ -1,3 +1,12 @@
+import { fromByteArray } from "base64-js";
+import * as uuid from 'uuid';
+
+export const uuidV4B64 = (digit = 16) => {
+  const uuid1 = uuid.v4();
+  const bytes = new Uint8Array(uuid1.match(/[\da-f]{2}/gi)!.map(h => parseInt(h, 16)));
+  const ret = fromByteArray(bytes).replace(/[+/\-=]/g, '_');
+  return ret.substring(0, digit);
+};
 
 export function numberToLetters(num: number) {
   if (num < 1) return '';
