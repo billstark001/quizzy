@@ -1,6 +1,6 @@
 import { withHandler } from "#/utils";
 import { downloadFile, uploadFile } from "#/utils/html";
-import { Quizzy, QuizzyRaw } from "@/data";
+import { QuizzyRaw } from "@/data";
 import { Button, Divider, HStack, Switch, VStack } from "@chakra-ui/react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -30,12 +30,15 @@ const deleteUnlinked = withHandler(
   }
 )
 
-const exportData = async () => {
-  const data = await Quizzy.exportData();
-  const dataStr = JSON.stringify(data);
-  const blob = new Blob([dataStr], { type: 'application/json' });
-  await downloadFile(blob, 'export.json');
-};
+const exportData = withHandler(
+  async () => {
+    const data = await QuizzyRaw.exportData();
+    const dataStr = JSON.stringify(data);
+    const blob = new Blob([dataStr], { type: 'application/json' });
+    await downloadFile(blob, 'export.json');
+  },
+  { async: true, cache: false }
+);
 
 const importData = withHandler(
   async () => {
