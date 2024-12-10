@@ -1,6 +1,6 @@
 import { PaperEdit } from "#/components/PaperEdit";
 import { QuestionEdit } from "#/components/QuestionEdit";
-import { BaseQuestionPanel, QuestionPanel } from "#/components/QuestionPanel";
+import { BaseQuestionPanel } from "#/components/QuestionPanel";
 import { QuestionSelectionModal } from "#/components/QuestionSelectionModal";
 import { defaultQuestion, defaultQuizPaper, Question, QuizPaper } from "#/types";
 import { ID } from "#/types/technical";
@@ -9,10 +9,10 @@ import { useDisclosureWithData } from "#/utils/disclosure";
 import { applyPatch, Patch } from "#/utils/patch";
 import { EditorContextProvider, useEditor, usePatch } from "#/utils/react-patch";
 import { Quizzy, QuizzyCache, QuizzyCacheRaw, QuizzyRaw } from "@/data";
+import QuestionPreviewModal from "@/modals/QuestionPreviewModal";
 import { useAsyncMemo } from "@/utils/react";
-import { useParsedSearchParams } from "@/utils/react-router";
 import { DragHandleIcon } from "@chakra-ui/icons";
-import { Box, Button, Divider, HStack, IconButton, Modal, ModalBody, ModalCloseButton, ModalContent, ModalFooter, ModalHeader, ModalOverlay, useCallbackRef, useDisclosure, VStack } from "@chakra-ui/react";
+import { Box, Button, Divider, HStack, IconButton, useCallbackRef, useDisclosure, VStack } from "@chakra-ui/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
@@ -54,18 +54,17 @@ const applyEditPatch = (base: EditState, patch: EditPatch): EditState => {
   }
 };
 
-export const EditPage = () => {
+const RECORD_KEY = 'edit:paper';
+
+export const PaperEditPage = (props: { paper?: string }) => {
 
   // navigate
   const navigate = useNavigate();
 
   // params
-  const [searchParams] = useParsedSearchParams<{ paper: string }>({
-    paper: 'string',
-  });
   const {
     paper: paperIdProp,
-  } = searchParams;
+  } = props;
 
   const [questionIndex, setQuestionIndex] = useState(1);
 
@@ -123,7 +122,7 @@ export const EditPage = () => {
   // it resets the old edit record
   useEffect(() => void (async () => {
     // try to read data from local cache, apply if successful
-    let cachedState: Partial<EditState> | undefined = await (QuizzyCacheRaw.loadRecord('edit', sessionId)
+    let cachedState: Partial<EditState> | undefined = await (QuizzyCacheRaw.loadRecord(RECORD_KEY, sessionId)
       .catch(() => void 0));
     if (cachedState && !await openDialog({
       id: 'load-cached-result',
@@ -132,7 +131,7 @@ export const EditPage = () => {
     })) {
       // discard the cache
       cachedState = undefined;
-      await (QuizzyCacheRaw.clearRecord('edit', sessionId).catch(() => void 0));
+      await (QuizzyCacheRaw.clearRecord(RECORD_KEY, sessionId).catch(() => void 0));
     }
     const state: EditState = {
       question: cachedState?.question
@@ -157,7 +156,7 @@ export const EditPage = () => {
 
   // save record
   const saveRecordToCache = useCallbackRef(
-    () => QuizzyCache.dumpRecord('edit', editingState, sessionId)
+    () => QuizzyCache.dumpRecord(RECORD_KEY, editingState, sessionId)
   );
   // auto save
   useEffect(() => {
@@ -239,7 +238,7 @@ export const EditPage = () => {
       if (!q?.id) continue;
       await Quizzy.updateQuestion(q.id, q);
     }
-    await QuizzyCache.clearRecord('edit', sessionId);
+    await QuizzyCache.clearRecord(RECORD_KEY, sessionId);
   }, [paperId, editingState]);
 
   const deleteCurrent = useCallback(async () => {
@@ -335,29 +334,8 @@ export const EditPage = () => {
     >
       {questionPreview && <BaseQuestionPanel w='100%' question={questionPreview} />}
     </QuestionSelectionModal>
-
-    <Modal {...dPreview} size='5xl'>
-      <ModalOverlay />
-      <ModalContent>
-        <ModalCloseButton />
-        <ModalHeader>
-          {t('page.edit.preview.header')}
-        </ModalHeader>
-        <ModalBody>
-          <QuestionPanel
-            height='68vh'
-            overflowY='scroll'
-            question={dPreviewQuestion as any}
-            displaySolution
-          />
-        </ModalBody>
-        <ModalFooter>
-          <Button onClick={() => dPreview.onClose()}>
-            {t('btn.close')}
-          </Button>
-        </ModalFooter>
-      </ModalContent>
-    </Modal>
+    
+    <QuestionPreviewModal {...dPreview} question={dPreviewQuestion} />
 
   </>;
 };

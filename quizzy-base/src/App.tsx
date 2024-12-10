@@ -11,8 +11,10 @@ import ResultsPage from './pages/ResultsPage';
 import ResultPage from './pages/ResultPage';
 import StatsPage from './pages/StatsPage';
 import { useTranslation } from 'react-i18next';
-import { EditPage } from './pages/EditPage';
+import { PaperEditPage } from './pages/PaperEditPage';
 import QuestionPage from './pages/QuestionPage';
+import { useParsedSearchParams } from './utils/react-router';
+import { QuestionEditPage } from './pages/QuestionEditPage';
 
 export const AppLayout = ({ children }: React.PropsWithChildren<object>) => {
   const navigate = useNavigate();
@@ -27,7 +29,7 @@ export const AppLayout = ({ children }: React.PropsWithChildren<object>) => {
 
   return <VStack minHeight="100vh" w='100vw' alignItems='stretch' gap={0}>
     <Box bg='blue.500' p={4} pos='sticky'>
-      <Button onClick={() => navigate('/')}> 
+      <Button onClick={() => navigate('/')}>
         {t('btn.entry.root')}
       </Button>
       <Button onClick={toggleColorMode}>
@@ -42,6 +44,21 @@ export const AppLayout = ({ children }: React.PropsWithChildren<object>) => {
     </Container>
   </VStack>;
 };
+
+const EditPage = () => {
+
+  const [searchParams] = useParsedSearchParams<{ paper: string, question: string }>({
+    paper: 'string',
+    question: "string",
+  });
+
+  const { paper, question } = searchParams;
+  if (paper) {
+    return <PaperEditPage paper={paper} />;
+  }
+  return <QuestionEditPage question={question} />;
+
+}
 
 export const App = () => {
   return <HashRouter basename='/'>

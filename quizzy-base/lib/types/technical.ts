@@ -19,6 +19,7 @@ export type KeywordIndexed = {
 };
 
 export type SearchResult<T> = {
+  query: string;
   keywords: readonly string[];
   result: readonly T[];
   totalPages: number;
@@ -32,7 +33,7 @@ export const sanitizeIndices = <T extends DatabaseIndexed & KeywordIndexed>(
 ) => {
   const ret = inPlace ? object : { ...object };
   delete ret.deleted;
-  delete ret.lastUpdate;
+  // delete ret.lastUpdate;
   delete ret.keywords;
   delete ret.keywordsFrequency;
   delete ret.tagsFrequency;

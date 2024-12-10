@@ -51,8 +51,8 @@ export const Pagination: React.FC<PaginationProps> = (props) => {
     }
   };
 
-  const _btn = (i: number, selected: boolean) => <Button
-    key={i}
+  const _btn = (i: number, selected: boolean, key?: number | string) => <Button
+    key={key ?? i}
     onClick={() => handlePageChange(i)}
     colorScheme={selected ? "blue" : "gray"}
   >
@@ -71,21 +71,21 @@ export const Pagination: React.FC<PaginationProps> = (props) => {
 
     const pages: JSX.Element[] = [];
     if (pageOutRange == -1) {
-      pages.push(_btn(currentPageRaw, currentPageRaw == currentPageRaw));
+      pages.push(_btn(currentPageRaw, currentPageRaw == currentPageRaw, 'start_out_range'));
     }
     if (startPageEllipsis) {
-      pages.push(_btn(1, currentPageRaw == 1));
+      pages.push(_btn(1, currentPageRaw == 1, 'start'));
       pages.push(<Box key='start_ellipsis'>...</Box>);
     }
     for (let i = startPage; i <= endPage; i++) {
-      pages.push(_btn(i, currentPageRaw == i));
+      pages.push(_btn(i, currentPageRaw == i, i - currentPageRaw));
     }
     if (endPageEllipsis) {
       pages.push(<Box key='end_ellipsis'>...</Box>);
-      pages.push(_btn(totalPages, currentPageRaw == totalPages));
+      pages.push(_btn(totalPages, currentPageRaw == totalPages, 'end'));
     }
     if (pageOutRange == 1) {
-      pages.push(_btn(currentPageRaw, currentPageRaw == currentPageRaw));
+      pages.push(_btn(currentPageRaw, currentPageRaw == currentPageRaw, 'end_out_range'));
     }
     return pages;
   };

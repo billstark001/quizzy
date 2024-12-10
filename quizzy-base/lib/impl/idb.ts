@@ -180,6 +180,7 @@ export class IDBController implements QuizzyController {
     const original = await this.db.get(store, id) as T;
     if (!original) { // doesn't exist, create
       patch.id = id;
+      patch.lastUpdate = Date.now();
       await this._import(store, [patch as T]);
       return id;
     }
@@ -269,15 +270,15 @@ export class IDBController implements QuizzyController {
   }
 
   private async _search<T extends DatabaseIndexed & KeywordIndexed>(
-    store: string, query: string[], useTag: boolean,
+    store: string, query: string, keywords: string[], useTag: boolean,
     count?: number, page?: number,
     k1 = 1.5, b = 0.75, threshold = 1e-10,
   ): Promise<SearchResult<T>> {
 
-    const queryCacheKey = JSON.stringify([store, query, useTag, k1, b, threshold]);
+    const queryCacheKey = JSON.stringify([store, keywords, useTag, k1, b, threshold]);
     const scores = this.cache.has(queryCacheKey)
       ? this.cache.get(queryCacheKey)
-      : await this._buildScore(queryCacheKey, store, query, useTag, k1, b, threshold);
+      : await this._buildScore(queryCacheKey, store, keywords, useTag, k1, b, threshold);
 
     count = Math.max(count ?? 1, 1);
     page = Math.max(page ?? 0, 0); // 0-based
@@ -291,7 +292,8 @@ export class IDBController implements QuizzyController {
     }
 
     return {
-      keywords: query,
+      query,
+      keywords,
       result,
       totalPages: Math.ceil((scores?.length ?? 0) / count)
     };
@@ -401,21 +403,21 @@ export class IDBController implements QuizzyController {
 
   async findQuestion(query: string, count?: number, page?: number): Promise<SearchResult<Question>> {
     const queryKeywords = await this._getKeywords(query, STORE_KEY_QUESTIONS);
-    return this._search(STORE_KEY_QUESTIONS, queryKeywords, false, count, page);
+    return this._search(STORE_KEY_QUESTIONS, query, queryKeywords, false, count, page);
   }
   async findQuizPaper(query: string, count?: number, page?: number): Promise<SearchResult<QuizPaper>> {
     const queryKeywords = await this._getKeywords(query, STORE_KEY_PAPERS);
-    return this._search(STORE_KEY_PAPERS, queryKeywords, false, count, page);
+    return this._search(STORE_KEY_PAPERS, query, queryKeywords, false, count, page);
   }
   async findQuestionByTags(query: string, count?: number, page?: number): Promise<SearchResult<Question>> {
     const queryKeywords = query.split(' ').filter(x => !!x);
     queryKeywords[0] !== query && queryKeywords.splice(0, 0, query);
-    return this._search(STORE_KEY_QUESTIONS, queryKeywords, true, count, page);
+    return this._search(STORE_KEY_QUESTIONS, query, queryKeywords, true, count, page);
   }
   async findQuizPaperByTags(query: string, count?: number, page?: number): Promise<SearchResult<QuizPaper>> {
     const queryKeywords = query.split(' ').filter(x => !!x);
     queryKeywords[0] !== query && queryKeywords.splice(0, 0, query);
-    return this._search(STORE_KEY_PAPERS, queryKeywords, true, count, page);
+    return this._search(STORE_KEY_PAPERS, query, queryKeywords, true, count, page);
   }
 
   async findTags(query: string, _?: number, __?: number): Promise<TagSearchResult> {
