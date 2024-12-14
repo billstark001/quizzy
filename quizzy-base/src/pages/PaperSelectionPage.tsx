@@ -1,13 +1,12 @@
 import { PaperCard } from "#/components/PaperCard";
 import { defaultQuizPaper, QuizPaper } from "#/types";
-import { openDialog, withHandler } from "#/utils";
+import { withHandler } from "#/utils";
 import { uploadFile } from "#/utils/html";
 import { uuidV4B64 } from "#/utils/string";
 import { Quizzy } from "@/data";
 import { papersAtom } from "@/data/atoms";
 import { useAsyncEffect } from "@/utils/react";
-import { AddIcon } from "@chakra-ui/icons";
-import { Box, Card, CardBody, Flex, HStack, VStack, Wrap } from "@chakra-ui/react";
+import { Button, HStack, VStack, Wrap } from "@chakra-ui/react";
 import { useAtom } from "jotai";
 import { useNavigate } from "react-router-dom";
 
@@ -31,8 +30,11 @@ export const PaperSelectionPage = () => {
   useAsyncEffect(refresh, []);
 
   // start a new quiz
-  const onStart = async (pid: string) => {
-    const record = await Quizzy.startQuiz(pid);
+  const onStart = async (paperId: string) => {
+    const record = await Quizzy.startQuiz({
+      type: 'paper',
+      paperId,
+    });
     const p = new URLSearchParams({
       record: record.id,
       q: '1',
@@ -65,16 +67,13 @@ export const PaperSelectionPage = () => {
     });
     navigate('/edit?' + p2.toString());
   });
-  const onInputChange = () => openDialog({
-    options: [
-      [false, 'create new'],
-      [true, 'upload']
-    ]
-  }).then(res => res ? upload() : create());
+  
 
   return <VStack alignItems='stretch' minH='700px'>
     <HStack>
-      <Box>Title</Box>
+    <Button onClick={create}>create</Button>
+    <Button onClick={upload}>upload</Button>
+    <Button>random [TODO]</Button>
     </HStack>
     <Wrap>
       {papers.map(p => <PaperCard
@@ -84,17 +83,6 @@ export const PaperSelectionPage = () => {
         onStart={() => onStart(p.id)}
         onEdit={() => onEdit(p.id)}
       />)}
-      <Card w='sm' cursor='pointer'>
-        <CardBody as={Flex} justifyContent='center' alignItems='center'
-          transition="background-color, opacity 0.3s ease"
-          _hover={{ opacity: '50%' }}
-          _active={{ opacity: '80%' }}
-        >
-          <AddIcon fontSize='6xl' color='gray.500' p={4}
-            onClick={onInputChange}
-          />
-        </CardBody>
-      </Card>
     </Wrap>
   </VStack>;
 };

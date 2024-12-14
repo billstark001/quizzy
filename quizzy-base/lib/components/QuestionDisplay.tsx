@@ -17,6 +17,8 @@ export type QuestionDisplayProps = {
   currentQuestion: number,
   totalQuestions: number,
   onQuestionChanged?: (num: number) => void | Promise<void>,
+  onPrev?: (current: number) => void | Promise<void>,
+  onNext?: (current: number) => void | Promise<void>,
 
   previewQuestion?: Question,
   onPreviewQuestionChanged?: (num: number) => void | Promise<void>,
@@ -45,6 +47,7 @@ export const QuestionDisplay = (props: QuestionDisplayProps) => {
     currentQuestion,
     totalQuestions,
     onQuestionChanged,
+    onPrev, onNext,
 
     previewQuestion,
     onPreviewQuestionChanged,
@@ -142,7 +145,10 @@ export const QuestionDisplay = (props: QuestionDisplayProps) => {
     <HStack justifyContent='space-between' width='100%'>
       <Button colorScheme='red' onClick={onExit}>{t('page.question.exit')}</Button>
       <Button colorScheme='blue' 
-        onClick={() => currentQuestion > 1 && onQuestionChanged?.(currentQuestion - 1)}
+        onClick={
+          onPrev ? () => onPrev(currentQuestion) :
+          () => currentQuestion > 1 && onQuestionChanged?.(currentQuestion - 1)
+        }
       >{t('page.question.prev')}</Button>
       <Box flex={1} minWidth={0}></Box>
       <IconButton colorScheme='blue' aria-label={t('page.question.questions')} icon={<DragHandleIcon />} 
@@ -151,7 +157,10 @@ export const QuestionDisplay = (props: QuestionDisplayProps) => {
           q.onOpen();
         }} />
       <Button colorScheme='blue'
-        onClick={() => currentQuestion < totalQuestions && onQuestionChanged?.(currentQuestion + 1)}
+        onClick={
+          onNext ? () => onNext(currentQuestion) :
+          () => currentQuestion < totalQuestions && onQuestionChanged?.(currentQuestion + 1)
+        }
       >{t('page.question.next')}</Button>
       <Button colorScheme='teal' onClick={onSubmit}>{t('page.question.submit')}</Button>
     </HStack>

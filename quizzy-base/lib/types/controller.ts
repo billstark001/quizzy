@@ -1,23 +1,16 @@
 import { Patch } from "#/utils/patch";
 import { Question } from "./question";
 import { CompleteQuizPaperDraft, QuizPaper } from "./quiz-paper";
-import { QuizRecord } from "./quiz-record";
+import { QuizRecord, QuizRecordEvent, QuizRecordOperation, QuizRecordTactics } from "./quiz-record";
 import { QuizResult } from "./quiz-result";
 import { Stat } from "./stats";
 import { ID, SearchResult } from "./technical";
 
 export type StartQuizOptions = {
-  timestamp?: number;
-  record?: QuizRecord;
+  currentTime?: number;
 };
 
 export type UpdateQuizOptions = {
-  timestamp?: number;
-  ignoreTimeUsed?: boolean;
-}
-
-export type EndQuizOptions = {
-  timestamp?: number;
 }
 
 export type QuizzyData = {
@@ -76,14 +69,12 @@ export interface QuizzyController {
   listQuizRecords(quizPaperID?: ID): Promise<QuizRecord[]>;
   listQuizRecordIds(quizPaperID?: ID): Promise<ID[]>;
 
-  startQuiz(id: ID, options?: StartQuizOptions): Promise<QuizRecord>;
+  startQuiz(tactics: Readonly<QuizRecordTactics>, options?: Readonly<StartQuizOptions>): Promise<QuizRecord>;
   updateQuiz(
-    id: ID,
-    record: Partial<QuizRecord>,
-    options?: UpdateQuizOptions,
-  ): Promise<QuizRecord>;
+    operation: Readonly<QuizRecordOperation>,
+    options?: Readonly<UpdateQuizOptions>,
+  ): Promise<[QuizRecord, QuizRecordEvent | undefined]>;
   deleteQuizRecord(id: ID): Promise<boolean>;
-  endQuiz(id: ID, options?: EndQuizOptions): Promise<ID | undefined>;
 
   // results
 

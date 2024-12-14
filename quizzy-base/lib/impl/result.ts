@@ -10,7 +10,7 @@ const DEFAULT_SCORE = 1;
 
 export const createResultAndStatPatches = (
   record: QuizRecord,
-  paper: QuizPaper,
+  paper: QuizPaper | undefined,
   questions: Record<ID, Question>,
   resultID?: ID,
 ) => {
@@ -29,8 +29,8 @@ export const createResultAndStatPatches = (
 
   // iterate through all questions
   // handle answer and score variables
-  for (let i = 0; i < paper.questions.length; ++i) {
-    const qid = paper.questions[i];
+  for (let i = 0; i < record.questionOrder.length; ++i) {
+    const qid = record.questionOrder[i];
     const question = questions[qid];
     if (!question) {
       continue;
@@ -105,7 +105,7 @@ export const createResultAndStatPatches = (
     }
 
     // calculate scores
-    const weight = paper.weights?.[qid] || DEFAULT_SCORE;
+    const weight = paper?.weights?.[qid] || DEFAULT_SCORE;
     const localScore = isCorrect ? weight : 0;
     score += localScore;
     total += weight;
@@ -131,8 +131,7 @@ export const createResultAndStatPatches = (
   const result: QuizResult = {
     id: resultID ?? uuidV4B64(),
 
-    paperId: paper.id,
-    paperName: paper.name,
+    paperName: (record.nameOverride ?? paper?.name) || `Result #${record.id}`,
 
     startTime: record.startTime,
     timeUsed: record.timeUsed,

@@ -1,4 +1,4 @@
-import { CompleteQuizPaperDraft, EndQuizOptions, Question, QuizPaper, QuizRecord, QuizzyController, QuizzyData, StartQuizOptions, Stat, TagSearchResult, UpdateQuizOptions } from "#/types";
+import { CompleteQuizPaperDraft, Question, QuizPaper, QuizRecord, QuizRecordEvent, QuizRecordInitiation, QuizRecordOperation, QuizRecordTactics, QuizzyController, QuizzyData, StartQuizOptions, Stat, TagSearchResult, UpdateQuizOptions } from "#/types";
 import { IDBPDatabase } from "idb";
 import { separatePaperAndQuestions, toCompleted } from "./paper-id";
 import { uuidV4B64 } from "#/utils/string";
@@ -10,6 +10,8 @@ import { generateKeywords } from "./keywords";
 import QuickLRU from "quick-lru";
 import { DatabaseUpdateDefinition, openDatabase } from "#/utils/idb";
 import { buildTrieTree, loadTrieTree } from "./search";
+import { startQuiz, updateQuiz } from "./quiz";
+import { initWeightedState } from "#/utils/random-seq";
 
 
 const DB_KEY = 'Quizzy';
@@ -550,18 +552,63 @@ export class IDBController implements QuizzyController {
     return this.db.getAllKeysFromIndex(STORE_KEY_RECORDS, 'paperID', quizPaperID) as Promise<ID[]>;
   }
 
-  async startQuiz(id: ID, options?: StartQuizOptions | undefined): Promise<QuizRecord> {
-    const t = options?.timestamp ?? Date.now();
-    const record: QuizRecord = {
-      id: '',
-      paperId: id,
-      paused: false,
-      startTime: t,
-      updateTime: t,
-      timeUsed: 0,
-      answers: {},
-      ...(options?.record ?? {}),
-    };
+  async parseTactics(t: Readonly<QuizRecordTactics>): Promise<QuizRecordInitiation | undefined> {
+    const { type } = t;
+    if (type === 'paper') {
+      const paper = await this.getQuizPaper(t.paperId);
+      return paper ? {
+        paperId: paper.id,
+        questionOrder: paper.questions,
+      } : undefined;
+    } else if (type === 'random-paper') {
+      const papers: (QuizPaper | undefined)[] = [];
+      for (const pid of Object.keys(t.papers)) {
+        papers.push(await this.getQuizPaper(pid));
+      }
+      const weightList: Record<string, number> = {};
+      for (const paper of papers) {
+        if (!paper) {
+          continue;
+        }
+        const totalWeight = Math.max(t.papers[paper.id] || 1, 1e-4);
+        const individualWeight = totalWeight / paper.questions.length;
+        for (const q of paper.questions) {
+          weightList[q] = individualWeight;
+        }
+      }
+      if (Object.keys(weightList).length == 0) {
+        return undefined;
+      } 
+      return {
+        questionOrder: [],
+        randomState: initWeightedState(weightList),
+      };
+    } else if (type === 'random-category' || type === 'random-tag') {
+      const isCategory = type === 'random-category';
+      const targetIndex = isCategory ? 'categories' : 'tags';
+      const weightList: Record<string, number> = {};
+      for (const [target, weight] of Object.entries(isCategory ? t.categories : t.tags)) {
+        const totalWeight = Math.max(weight || 1, 1e-6);
+        const questions: Question[] = (await this.db.getAllFromIndex(STORE_KEY_QUESTIONS, targetIndex, target))
+          .filter(x => !!x);
+        const individualWeight = totalWeight / (questions.length || 1);
+        for (const question of questions) {
+          weightList[question.id] = individualWeight;
+        }
+      }
+      if (Object.keys(weightList).length == 0) {
+        return undefined;
+      } 
+      return {
+        questionOrder: [],
+        randomState: initWeightedState(weightList),
+      };
+    }
+  }
+
+  async startQuiz(tactics: QuizRecordTactics, options?: StartQuizOptions | undefined): Promise<QuizRecord> {
+    const t = options?.currentTime ?? Date.now();
+    const record = await startQuiz(tactics, t, this.parseTactics.bind(this));
     const tx = this.db.transaction(STORE_KEY_RECORDS, 'readwrite');
     do {
       record.id = uuidV4B64();
@@ -572,54 +619,49 @@ export class IDBController implements QuizzyController {
     return record;
   }
 
-  async updateQuiz(id: ID, record: Partial<QuizRecord>, options?: UpdateQuizOptions | undefined): Promise<QuizRecord> {
+  async updateQuiz(
+    operation: Readonly<QuizRecordOperation>, 
+    _?: Readonly<UpdateQuizOptions>
+  ) {
+    const { id } = operation;
     const tx = this.db.transaction(STORE_KEY_RECORDS, 'readwrite');
     const oldRecord = await tx.store.get(id) as QuizRecord | undefined;
     if (!oldRecord) {
       throw new Error('Invalid record ID');
     }
-    const t = options?.timestamp ?? Date.now();
-    const newRecord = {
-      ...oldRecord,
-      ...record,
-      answers: {
-        ...oldRecord.answers,
-        ...record.answers,
-      },
-      id: oldRecord.id,
-      updateTime: t,
-    };
-    if (!options?.ignoreTimeUsed) {
-      newRecord.timeUsed = oldRecord.timeUsed + (t - oldRecord.updateTime);
-    }
+    const [newRecord, event] = updateQuiz(oldRecord, operation);
     await tx.store.put(newRecord);
     await tx.done;
-    return newRecord;
+    // handle submission
+    if (event?.type === 'submit') {
+      const resultId = await this.endQuiz(event.id);
+      event.resultId = resultId ?? event.resultId;
+    } else if (event?.type === 'goto') {
+      // get question
+      event.question = (await this.getQuestions([event.questionId]))[0];
+    }
+    return [newRecord, event] as [QuizRecord, QuizRecordEvent | undefined];
   }
 
 
-  async endQuiz(id: ID, _options?: EndQuizOptions): Promise<ID | undefined> {
-
+  async endQuiz(id: ID): Promise<ID | undefined> {
     // read necessary data
     const r = await this.getQuizRecord(id);
     if (!r) {
       return;
     }
-    const p = await this.getQuizPaper(r.paperId);
-    if (!p) {
-      return;
-    }
-    const q: Record<ID, Question> = Object.fromEntries(
+    const p = r.paperId ? await this.getQuizPaper(r.paperId) : undefined;
+    const q: Record<ID, Question> = p ? Object.fromEntries(
       (await this.getQuestions(p.questions)).filter(q => !!q)
         .map(q => [q.id, q]),
-    );
+    ) : {};
     // create result and patches
     const [result, patches] = createResultAndStatPatches(r, p, q);
 
 
     // create write transactions
     const tx = this.db.transaction([
-      STORE_KEY_RESULTS, STORE_KEY_STATS, STORE_KEY_RECORDS,
+      STORE_KEY_RESULTS, STORE_KEY_RECORDS,
     ], 'readwrite');
 
     // put the result into the store
@@ -627,32 +669,33 @@ export class IDBController implements QuizzyController {
     while (!!await _sr.get(result.id)) {
       result.id = uuidV4B64();
     }
-    _sr.add(result);
+    await _sr.add(result);
 
     // delete original record
     await tx.objectStore(STORE_KEY_RECORDS).delete(id);
 
     // patch stats
-    const _ss = tx.objectStore(STORE_KEY_STATS);
-    for (const { tag, questionId, correct } of patches) {
-      // get or create the corresponding stat object
-      const stat: Stat = await _ss.index('tag').get(tag)
-        ?? await _ss.index('alternatives').get(tag) ?? {
-          id: '', tag, alternatives: [], correct: {}, total: {}, percentage: 0,
-        } as Stat;
-      // generate and assign ID if inexistent
-      while (!stat.id || !!await _ss.get(stat.id)) {
-        stat.id = uuidV4B64();
-      }
-      // apply patch
-      stat.total[questionId] = (stat.total[questionId] || 0) + 1;
-      stat.correct[questionId] = (stat.correct[questionId] || 0) + Number(correct ?? 0);
-      const correctCount = Object.values(stat.correct).reduce((acc, val) => acc + val, 0);
-      const totalCount = Object.values(stat.total).reduce((acc, val) => acc + val, 0);
-      stat.percentage = correctCount / totalCount;
-      // write back to store
-      await _ss.put(stat);
-    }
+    // TODO renew
+    // const _ss = tx.objectStore(STORE_KEY_STATS);
+    // for (const { tag, questionId, correct } of patches) {
+    //   // get or create the corresponding stat object
+    //   const stat: Stat = await _ss.index('tag').get(tag)
+    //     ?? await _ss.index('alternatives').get(tag) ?? {
+    //       id: '', tag, alternatives: [], correct: {}, total: {}, percentage: 0,
+    //     } as Stat;
+    //   // generate and assign ID if inexistent
+    //   while (!stat.id || !!await _ss.get(stat.id)) {
+    //     stat.id = uuidV4B64();
+    //   }
+    //   // apply patch
+    //   stat.total[questionId] = (stat.total[questionId] || 0) + 1;
+    //   stat.correct[questionId] = (stat.correct[questionId] || 0) + Number(correct ?? 0);
+    //   const correctCount = Object.values(stat.correct).reduce((acc, val) => acc + val, 0);
+    //   const totalCount = Object.values(stat.total).reduce((acc, val) => acc + val, 0);
+    //   stat.percentage = correctCount / totalCount;
+    //   // write back to store
+    //   await _ss.put(stat);
+    // }
 
     await tx.done;
     return result.id;

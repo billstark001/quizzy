@@ -17,7 +17,6 @@ const keys: Readonly<{[key in keyof QuizzyController]: undefined}> = Object.free
   'startQuiz': undefined, 
   'updateQuiz': undefined, 
   'deleteQuizRecord': undefined, 
-  'endQuiz': undefined, 
   'importQuizResults': undefined, 
   'getQuizResult': undefined, 
   'listQuizResultIds': undefined, 

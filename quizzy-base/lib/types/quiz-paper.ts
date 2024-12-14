@@ -20,10 +20,6 @@ export type QuizPaperDraft = QuizPaperBase & {
   id?: ID;
 };
 
-export type GenerativeQuizPaper = Omit<QuizPaper, 'questions'> & {
-  questions: (currentList: ID[]) => ID | ID[] | [ID, number][];
-}
-
 export type CompleteQuizPaper = QuizPaperBase & {
   id: ID;
   questions: Question[];

@@ -1,10 +1,11 @@
 import { QuestionDisplay } from "#/components/QuestionDisplay";
-import { Answers, Question } from "#/types";
+import { Answers, Question, QuizRecord, QuizRecordEvent } from "#/types";
+import { openDialog } from "#/utils";
 import { Quizzy } from "@/data";
-import { useAsyncMemo } from "@/utils/react";
+import { useAsyncEffect } from "@/utils/react";
 import { ParamsDefinition, useParsedSearchParams } from "@/utils/react-router";
 import { Box } from "@chakra-ui/react";
-import { SetStateAction, useState } from "react";
+import { SetStateAction, useCallback, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 
@@ -18,6 +19,8 @@ const _parser: ParamsDefinition<QuizPageParams> = {
   q: 'number',
 };
 
+const _getQuestion = async (record: Readonly<QuizRecord> | undefined, qIndex: number) => (await Quizzy.getQuestions([record?.questionOrder?.[qIndex - 1] ?? '']))[0];
+
 export const QuizPage = () => {
   const [searchParams, setSearchParams] = useParsedSearchParams(_parser);
   const { record: recordId, q: _q } = searchParams;
@@ -25,75 +28,109 @@ export const QuizPage = () => {
 
   const navigate = useNavigate();
 
-  const { data: record, refresh: refreshRecord } = useAsyncMemo(
-    async () => {
-      return await Quizzy.getQuizRecord(recordId ?? '')
-    },
-    [recordId],
-  );
+  const [record, setRecord] = useState<QuizRecord>();
+  const [question, setQuestion] = useState<Question>();
 
+  useAsyncEffect(async () => {
+    const record = await Quizzy.getQuizRecord(recordId ?? '');
+    setRecord(record);
+    setQuestion(await _getQuestion(record, qIndex));
+  }, [recordId]);
 
-  const { data: paper } = useAsyncMemo(
-    async () => record ? await Quizzy.getQuizPaper(record.paperId) : undefined,
-    [record?.paperId]
-  );
+  const [previewQuestion, setPreviewQuestion] = useState<Question>();
+  const onPreviewQuestionChanged = useCallback(async (qIndex: number) => {
+    setPreviewQuestion(await _getQuestion(record, qIndex));
+  }, [setPreviewQuestion, record]);
 
-  const { data: question } = useAsyncMemo(
-    async () => {
-      if (!paper) {
-        return;
+  // event
+
+  const onSubmit = useCallback(async () => {
+    const [_, event] = await Quizzy.updateQuiz({
+      type: 'submit',
+      id: recordId ?? '',
+      currentTime: Date.now(),
+    });
+    if (event?.type === 'submit') {
+      navigate('/result/' + event.resultId);
+    }
+  }, [recordId]);
+
+  const handleEvent = useCallback(async (event?: QuizRecordEvent) => {
+    if (event?.type === 'goto') {
+      setQuestion(event.question ?? await _getQuestion(record, event.questionIndex));
+      setSearchParams({ q: event.questionIndex });
+    } else if (event?.type === 'submit') {
+      navigate('/result/' + event.resultId);
+    } else if (event?.type === 'exhausted') {
+      const doSubmit = event.isForward && await openDialog(<>
+        This is the last question. Submit?
+      </>, 'ok-cancel', 'quiz-submit');
+      if (doSubmit){
+        await onSubmit();
       }
-      const [q] = await Quizzy.getQuestions([paper.questions[qIndex - 1]]);
-      await Quizzy.updateQuiz(recordId ?? '', { lastQuestion: qIndex });
-      return q;
-    },
-    [paper, qIndex]
-  );
+    }
+  }, [record, onSubmit]);
 
-  const [previewQuestion, setPreviewQuestion] = useState<Question | undefined>(undefined);
-  const onPreviewQuestionChanged = async (qIndex: number) => {
-    setPreviewQuestion(
-      (await Quizzy.getQuestions([paper?.questions[qIndex - 1] ?? '']))[0]
-    );
-  };
-  
 
-  const _A = record?.answers[question?.id ?? ''];
-  const currentAnswers = (!_A || Object.keys(_A).length == 0 ? undefined : _A) ?? {
-    type: question?.type ?? 'choice',
-    answer: question?.type === 'text' ? '' : [],
-  } as Answers;
-  const setCurrentAnswers = async (a: SetStateAction<Answers>) => {
+  // answers
+
+  const currentAnswers = useMemo(() => {
+    const _A = record?.answers[question?.id ?? ''];
+    return (!_A || Object.keys(_A).length == 0 ? undefined : _A) ?? {
+      type: question?.type ?? 'choice',
+      answer: question?.type === 'text' ? '' : [],
+    } as Answers;
+  }, [record, question]);
+
+  const setCurrentAnswers = useCallback(async (a: SetStateAction<Answers>) => {
     if (typeof a === 'function') {
       a = a(currentAnswers);
     }
-    await Quizzy.updateQuiz(record?.id ?? '', {
-      answers: {
-        [question?.id ?? '']: a,
-      }
+    const [newRecord, event] = await Quizzy.updateQuiz({
+      currentTime: Date.now(),
+      id: record?.id ?? '',
+      type: 'answer',
+      questionId: question?.id ?? '',
+      answers: a,
     });
-    refreshRecord();
-  };
+    setRecord(newRecord);
+    await handleEvent(event);
+  }, [currentAnswers, record, question, setRecord, setQuestion, setSearchParams, handleEvent]);
+
+
+  // question shifting
+  const onQuestionChanged = useCallback(async (q: number) => {
+    setSearchParams({ q });
+    setQuestion(await _getQuestion(record, q));
+  }, [record]);
+
+  const onNext = useCallback(async (_: number) => {
+    const [newRecord, event] = await Quizzy.updateQuiz({
+      id: recordId ?? '',
+      type: 'forward',
+      currentTime: Date.now(),
+    });
+    setRecord(newRecord);
+    await handleEvent(event);
+  }, [recordId, handleEvent]);
 
 
   const _setCurrentAnswers = (a: SetStateAction<Answers>) => setCurrentAnswers(a).catch(console.error);
 
-  if (!record || !paper || !question) {
+  if (!record || !question) {
     return <Box>NO RECORD</Box>;
   }
-
+  
   return <QuestionDisplay
     question={question} answers={currentAnswers}
-    totalQuestions={paper.questions.length} currentQuestion={qIndex}
+    totalQuestions={record.questionOrder.length} currentQuestion={qIndex}
     setAnswers={_setCurrentAnswers}
     previewQuestion={previewQuestion}
     onPreviewQuestionChanged={onPreviewQuestionChanged}
-    onQuestionChanged={(q) => setSearchParams({ q })}
+    onQuestionChanged={onQuestionChanged}
+    onNext={onNext}
     onExit={() => navigate('/')}
-    onSubmit={async () => {
-      const id = await Quizzy.endQuiz(recordId ?? '');
-      navigate('/result/' + id);
-    }}
+    onSubmit={onSubmit}
   />;
 
 };
