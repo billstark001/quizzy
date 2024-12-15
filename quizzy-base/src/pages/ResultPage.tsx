@@ -49,7 +49,7 @@ export const ResultPage = () => {
   const { t } = useTranslation();
 
 
-  const { paperName, startTime, timeUsed, score, total } = result ?? {};
+  const { paperName, startTime, timeUsed, score, totalScore: total } = result ?? {};
 
   // question view
 

@@ -54,7 +54,7 @@ export type ChoiceQuestion = BaseQuestion & _ChoiceQuestion;
 export type TextQuestion = BaseQuestion & _TextQuestion;
 
 export type Question = BaseQuestion & _Question;
-export type QuestionWithOptionalID = _BaseQuestion & _Question & { id?: ID } & KeywordIndexed;
+export type QuestionWithOptionalId = _BaseQuestion & _Question & { id?: ID } & KeywordIndexed;
 
 
 export const defaultQuestion = (p?: Partial<Question>): Question => ({ id: '', type: 'choice', content: '', options: [], ...p } as Question);

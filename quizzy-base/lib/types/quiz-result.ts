@@ -1,24 +1,35 @@
 import { Answers } from "./answer";
-import { QuizRecordBase } from "./quiz-record";
+import { StatBase } from "./stats";
 import { DatabaseIndexed, ID } from "./technical";
 
+export type AnswerStatus = 'correct' | 'wrong' | 'no-answer';
+
 export type QuizResultRecordRow = {
+  id: ID;
   name: string;
+  status: AnswerStatus;
   answer: string;
   correct: string;
   score: number;
-  weight: number;
+  totalScore: number;
 } & DatabaseIndexed;
 
-export type QuizResult = QuizRecordBase & {
-  // TODO
 
+
+export type QuizResult = DatabaseIndexed & {
+  paperId?: string;
   paperName: string;
+  startTime: number;
+  timeUsed: number;
 
+  answers: Record<ID, Answers>;
   correct: Record<ID, Answers>;
 
   // name, score, weight
   records: QuizResultRecordRow[];
   score: number;
-  total: number;
+  totalScore: number;
+  percentage: number;
+
+  stat?: StatBase;
 };

@@ -3,7 +3,7 @@ import { Question } from "./question";
 import { CompleteQuizPaperDraft, QuizPaper } from "./quiz-paper";
 import { QuizRecord, QuizRecordEvent, QuizRecordOperation, QuizRecordTactics } from "./quiz-record";
 import { QuizResult } from "./quiz-result";
-import { Stat } from "./stats";
+import { Stat, StatBase } from "./stats";
 import { ID, SearchResult } from "./technical";
 
 export type StartQuizOptions = {
@@ -32,7 +32,7 @@ export type TagSearchResult = {
 export interface QuizzyController {
 
   // general
-  
+
   importData(data: QuizzyData): Promise<void>;
   exportData(): Promise<QuizzyData>;
 
@@ -66,8 +66,8 @@ export interface QuizzyController {
   importQuizRecords(...records: QuizRecord[]): Promise<ID[]>;
   getQuizRecord(id: ID): Promise<QuizRecord | undefined>;
 
-  listQuizRecords(quizPaperID?: ID): Promise<QuizRecord[]>;
-  listQuizRecordIds(quizPaperID?: ID): Promise<ID[]>;
+  listQuizRecords(quizPaperId?: ID): Promise<QuizRecord[]>;
+  listQuizRecordIds(quizPaperId?: ID): Promise<ID[]>;
 
   startQuiz(tactics: Readonly<QuizRecordTactics>, options?: Readonly<StartQuizOptions>): Promise<QuizRecord>;
   updateQuiz(
@@ -80,9 +80,12 @@ export interface QuizzyController {
 
   importQuizResults(...results: QuizResult[]): Promise<ID[]>;
   getQuizResult(id: ID): Promise<QuizResult | undefined>;
-  listQuizResultIds(quizPaperID?: ID): Promise<ID[]>;
-  listQuizResults(quizPaperID?: ID): Promise<QuizResult[]>;
+  listQuizResultIds(quizPaperId?: ID): Promise<ID[]>;
+  listQuizResults(quizPaperId?: ID): Promise<QuizResult[]>;
   deleteQuizResult(id: ID): Promise<boolean>;
 
+  // stats
 
+  generateStats(...resultIds: ID[]): Promise<Stat | StatBase | undefined>;
+  listStats(): Promise<Stat[]>;
 };

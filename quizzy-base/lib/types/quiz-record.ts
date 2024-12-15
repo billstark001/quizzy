@@ -28,13 +28,11 @@ export type QuizRecordInitiation = ({
   questionOrder: ID[];
 };
 
-export type QuizRecordBase = {
+
+export type QuizRecord = & DatabaseIndexed & QuizRecordInitiation & {
   startTime: number;
   timeUsed: number;
   answers: Record<ID, Answers>;
-} & DatabaseIndexed;
-
-export type QuizRecord = QuizRecordBase & QuizRecordInitiation & {
   lastQuestion?: number;
   paused: boolean;
   lastEnter?: number;

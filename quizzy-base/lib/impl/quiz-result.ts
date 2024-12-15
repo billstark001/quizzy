@@ -1,4 +1,4 @@
-import { Answers, Question, QuizPaper, QuizRecord, QuizResultRecordRow, QuizResult, StatPatch } from "#/types";
+import { Answers, Question, QuizPaper, QuizRecord, QuizResultRecordRow, QuizResult, AnswerStatus } from "#/types";
 import { ID } from "#/types/technical";
 import { uuidV4B64 } from "#/utils/string";
 import { numberToLetters } from "#/utils/string";
@@ -8,11 +8,11 @@ import { getOptionOrBlankId } from "./question-id";
 const DEFAULT_SCORE = 1;
 
 
-export const createResultAndStatPatches = (
+export const createQuizResult = (
   record: QuizRecord,
   paper: QuizPaper | undefined,
   questions: Record<ID, Question>,
-  resultID?: ID,
+  resultId?: ID,
 ) => {
 
   // answers
@@ -20,12 +20,9 @@ export const createResultAndStatPatches = (
 
   // scores
   let score = 0;
-  let total = 0;
+  let totalScore = 0;
 
   const records: QuizResultRecordRow[] = [];
-
-  // stat patch
-  const patches: StatPatch[] = [];
 
   // iterate through all questions
   // handle answer and score variables
@@ -36,100 +33,107 @@ export const createResultAndStatPatches = (
       continue;
     }
 
-    let isCorrect = false;
+    let status: AnswerStatus = 'no-answer';
     const answerRaw: string[] = [];
     const correctRaw: string[] = [];
 
     if (question.type === 'choice') {
-      const a: Answers = {
+      const correctAnswer: Answers = {
         type: question.type,
         answer: Object.fromEntries(question.options.map((o, i) => [
           getOptionOrBlankId(o, i, question),
           o.shouldChoose
         ] as [ID, boolean])),
       };
-      correctAnswers[qid] = a;
+      correctAnswers[qid] = correctAnswer;
       // create text-form question record
       question.options.forEach(
         (o, i) => o.shouldChoose && correctRaw.push(numberToLetters(i + 1))
       );
 
-      const a2 = record.answers[qid];
-      isCorrect = a2?.type === 'choice'
-        && Object.keys(a.answer).filter(
-          (k) => !!a.answer[k] !== !!a2.answer[k]
-        ).length === 0;
+      const userAnswer = record.answers[qid];
+      const noAnswer = userAnswer?.type !== 'choice'
+        || Object.keys(userAnswer.answer).length === 0;
+      const wrongAnswer = !noAnswer && Object.keys(correctAnswer.answer)
+        .findIndex(
+          (k) => !!correctAnswer.answer[k] !== !!userAnswer.answer[k]
+        ) !== -1;
+      status = noAnswer ? 'no-answer' : wrongAnswer ? 'wrong' : 'correct';
       // create text-form answer record
-      a2?.type === 'choice' && question.options.forEach(
-        (o, i) => a2.answer[getOptionOrBlankId(o, i, question)]
+      userAnswer?.type === 'choice' && question.options.forEach(
+        (o, i) => userAnswer.answer[getOptionOrBlankId(o, i, question)]
           && answerRaw.push(numberToLetters(i + 1))
       );
 
     } else if (question.type === 'blank') {
-      const a: Answers = {
+      const correctAnswer: Answers = {
         type: 'blank',
         answer: Object.fromEntries(question.blanks.map((b, i) => [
           getOptionOrBlankId(b, i, question),
           b.answer ?? ''
         ] as [ID, string])),
       }
-      correctAnswers[qid] = a;
+      correctAnswers[qid] = correctAnswer;
 
       // TODO better evaluators
-      const a2 = record.answers[qid];
-      isCorrect = a2?.type === 'blank'
-        && Object.keys(a.answer).filter(
-          (k) => (a.answer[k] ?? '') !== (a2.answer[k] ?? '')
-        ).length === 0;
+      const userAnswer = record.answers[qid];
+      const noAnswer = userAnswer?.type !== 'blank'
+        || Object.keys(userAnswer.answer).length === 0;
+      const wrongAnswer = !noAnswer
+        && Object.keys(correctAnswer.answer).findIndex(
+          (k) => (correctAnswer.answer[k] ?? '') !== (userAnswer.answer[k] ?? '')
+        ) !== -1;
+      status = noAnswer ? 'no-answer' : wrongAnswer ? 'wrong' : 'correct';
 
       // create records
-      const _b = a2?.type === 'blank';
+      const _b = userAnswer?.type === 'blank';
       question.blanks.forEach((b, i) => {
         const id = getOptionOrBlankId(b, i, question);
-        answerRaw.push(_b ? a2.answer[id] : '');
+        answerRaw.push(_b ? userAnswer.answer[id] : '');
         correctRaw.push(b.answer ?? '');
       });
 
     } else { // type is text
-      const a: Answers = {
+      const correctAnswer: Answers = {
         type: 'text',
-        answer: question.answer ?? '',
+        answer: question.answer?.trim() ?? '',
       };
       // TODO better evaluators
-      correctAnswers[qid] = a;
-      isCorrect = !!question.answer
-        && question.answer === record.answers[qid]?.answer;
+      const userAnswer = (typeof record.answers[qid]?.answer === 'string'
+        ? record.answers[qid]?.answer
+        : String(record.answers[qid]?.answer ?? '')).trim();
+      
+      correctAnswers[qid] = correctAnswer;
+      const noAnswer = !question.answer?.replace(/\s\n\r/g, '');
+      const isCorrect = noAnswer
+        ? !correctAnswer.answer
+        : correctAnswer.answer === userAnswer;
+      status = isCorrect ? 'correct' : noAnswer ? 'no-answer' : 'wrong';
 
-      answerRaw.push(String(record.answers[qid]?.answer ?? ''));
-      correctRaw.push(question.answer ?? '');
+      answerRaw.push(userAnswer);
+      correctRaw.push(correctAnswer.answer);
     }
 
     // calculate scores
     const weight = paper?.weights?.[qid] || DEFAULT_SCORE;
-    const localScore = isCorrect ? weight : 0;
+    const localScore = status === 'correct' ? weight : 0;
     score += localScore;
-    total += weight;
+    totalScore += weight;
 
     // record
     records.push({
       id: question.id,
       name: question.name ?? `${i + 1}`,
+      status,
       answer: answerRaw.join(question.type === 'choice' ? ', ' : '\n'),
       correct: correctRaw.join(question.type === 'choice' ? ', ' : '\n'),
       score: localScore,
-      weight,
+      totalScore: weight,
     })
-
-    // create patch
-    for (const tag in question.tags ?? []) {
-      patches.push({
-        tag, questionId: question.id, correct: isCorrect,
-      });
-    }
   }
 
   const result: QuizResult = {
-    id: resultID ?? uuidV4B64(),
+    id: resultId ?? uuidV4B64(),
 
     paperName: (record.nameOverride ?? paper?.name) || `Result #${record.id}`,
 
@@ -141,8 +145,9 @@ export const createResultAndStatPatches = (
 
     records,
     score,
-    total,
+    totalScore,
+    percentage: score / (totalScore || 1),
   };
 
-  return [result, patches] as [QuizResult, StatPatch[]];
+  return result;
 }

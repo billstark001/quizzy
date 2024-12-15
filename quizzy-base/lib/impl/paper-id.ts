@@ -4,7 +4,7 @@ import { uuidV4B64 } from "#/utils/string";
 
 export const toCompleted = async (
   p: CompleteQuizPaperDraft,
-  hasID?: (id: ID) => boolean | Promise<boolean>
+  hasId?: (id: ID) => boolean | Promise<boolean>
 ): Promise<CompleteQuizPaper> => {
   // deep copy
   const paper: CompleteQuizPaperDraft = JSON.parse(JSON.stringify(p));
@@ -13,8 +13,8 @@ export const toCompleted = async (
   if (!paper.id) {
     do {
       paper.id = uuidV4B64();
-    } while (await hasID?.(paper.id!));
-  } else if (await hasID?.(paper.id!)) {
+    } while (await hasId?.(paper.id!));
+  } else if (await hasId?.(paper.id!)) {
     throw new Error('ID Conflict');
   }
 

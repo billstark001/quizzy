@@ -1,9 +1,9 @@
-import { CompleteQuizPaperDraft, Question, QuizPaper, QuizRecord, QuizRecordEvent, QuizRecordInitiation, QuizRecordOperation, QuizRecordTactics, QuizzyController, QuizzyData, StartQuizOptions, Stat, TagSearchResult, UpdateQuizOptions } from "#/types";
+import { CompleteQuizPaperDraft, Question, QuizPaper, QuizRecord, QuizRecordEvent, QuizRecordInitiation, QuizRecordOperation, QuizRecordTactics, QuizzyController, QuizzyData, StartQuizOptions, Stat, StatBase, TagSearchResult, UpdateQuizOptions } from "#/types";
 import { IDBPDatabase } from "idb";
 import { separatePaperAndQuestions, toCompleted } from "./paper-id";
 import { uuidV4B64 } from "#/utils/string";
 import { QuizResult } from "#/types/quiz-result";
-import { createResultAndStatPatches } from "./result";
+import { createQuizResult } from "./quiz-result";
 import { DatabaseIndexed, ID, KeywordIndexed, sanitizeIndices, SearchResult } from "#/types/technical";
 import { applyPatch, Patch } from "#/utils/patch";
 import { generateKeywords } from "./keywords";
@@ -12,10 +12,11 @@ import { DatabaseUpdateDefinition, openDatabase } from "#/utils/idb";
 import { buildTrieTree, loadTrieTree } from "./search";
 import { startQuiz, updateQuiz } from "./quiz";
 import { initWeightedState } from "#/utils/random-seq";
+import { createStatFromQuizResults } from "./stats";
 
 
 const DB_KEY = 'Quizzy';
-const VERSION = 3;
+const VERSION = 1;
 
 const STORE_KEY_PAPERS = 'papers';
 const STORE_KEY_RECORDS = 'records';
@@ -39,51 +40,57 @@ type Bm25Cache = {
   trieSizeTags: number,
 };
 
-const _ts = (query: string, cachePapers?: Bm25Cache, isTag?: boolean) => 
-  cachePapers?.[isTag ? 'trieTags' : 'trie'] 
-  ? loadTrieTree(
-    cachePapers?.[isTag ? 'trieTags' : 'trie'], 
-    cachePapers?.[isTag ? 'trieSizeTags' : 'trieSize'])
-    .searchFunc(query) 
-  : [];
+const _ts = (query: string, cachePapers?: Bm25Cache, isTag?: boolean) =>
+  cachePapers?.[isTag ? 'trieTags' : 'trie']
+    ? loadTrieTree(
+      cachePapers?.[isTag ? 'trieTags' : 'trie'],
+      cachePapers?.[isTag ? 'trieSizeTags' : 'trieSize'])
+      .searchFunc(query)
+    : [];
 
 const updaters: Record<number, DatabaseUpdateDefinition> = {
   [0]: (db) => {
     const _id: IDBObjectStoreParameters = { keyPath: 'id', };
+
     const paperStore = db.createObjectStore(STORE_KEY_PAPERS, _id);
     const recordStore = db.createObjectStore(STORE_KEY_RECORDS, _id);
     const questionStore = db.createObjectStore(STORE_KEY_QUESTIONS, _id);
     const resultStore = db.createObjectStore(STORE_KEY_RESULTS, _id);
     const statStore = db.createObjectStore(STORE_KEY_STATS, _id);
+
+    db.createObjectStore(STORE_KEY_GENERAL, { keyPath: 'id', });
+
     for (const store of [paperStore, recordStore, questionStore, resultStore, statStore]) {
       store.createIndex('deleted', 'deleted');
       store.createIndex('lastUpdate', 'lastUpdate');
     }
+
     for (const store of [paperStore, questionStore]) {
       store.createIndex('name', 'name');
       store.createIndex('tags', 'tags', { multiEntry: true });
+      store.createIndex('categories', 'categories', { multiEntry: true });
       store.createIndex('keywords', 'keywords', { multiEntry: true });
       store.createIndex('keywordsUpdatedTime', 'keywordsUpdatedTime', {});
     }
-    for (const key of ['paperId', 'paused', 'startTime', 'updateTime']) {
+
+    for (const key of [
+      'paperId', 'paused', 'startTime',
+      'updateTime', 'timeUsed', 'lastEnter'
+    ] as (keyof QuizRecord)[]) {
       recordStore.createIndex(key, key);
     }
-    for (const key of ['paperId', 'startTime',]) {
+
+    for (const key of [
+      'paperId', 'startTime', 'timeUsed',
+      'score', 'totalScore', 'percentage'
+    ] as (keyof QuizResult)[]) {
       resultStore.createIndex(key, key);
     }
-    statStore.createIndex('tag', 'tag', { unique: true });
-    statStore.createIndex('alternatives', 'alternatives', { multiEntry: true });
-    statStore.createIndex('percentage', 'percentage');
+
+    statStore.createIndex('allTags', 'allTags', { multiEntry: true });
+    statStore.createIndex('allCategories', 'allCategories', { multiEntry: true });
+    statStore.createIndex('results', 'results', { multiEntry: true });
   },
-  [1]: (db) => {
-    db.createObjectStore(STORE_KEY_GENERAL, { keyPath: 'id', });
-  },
-  [2]: (_, tx) => {
-    for (const storeKey of [STORE_KEY_PAPERS, STORE_KEY_QUESTIONS]) {
-      const store = tx.objectStore(storeKey);
-      store.createIndex('categories', 'categories', { multiEntry: true });
-    }
-  }
 } as const;
 
 export class IDBController implements QuizzyController {
@@ -538,18 +545,18 @@ export class IDBController implements QuizzyController {
     return await this.db.get(STORE_KEY_RECORDS, id);
   }
 
-  listQuizRecords(quizPaperID?: ID): Promise<QuizRecord[]> {
-    if (!quizPaperID) {
+  listQuizRecords(quizPaperId?: ID): Promise<QuizRecord[]> {
+    if (!quizPaperId) {
       return this.db.getAll(STORE_KEY_RECORDS);
     }
-    return this.db.getAllFromIndex(STORE_KEY_RECORDS, 'paperID', quizPaperID);
+    return this.db.getAllFromIndex(STORE_KEY_RECORDS, 'paperId', quizPaperId);
   }
 
-  listQuizRecordIds(quizPaperID?: ID): Promise<ID[]> {
-    if (!quizPaperID) {
+  listQuizRecordIds(quizPaperId?: ID): Promise<ID[]> {
+    if (!quizPaperId) {
       return this.db.getAllKeys(STORE_KEY_RECORDS) as Promise<ID[]>;
     }
-    return this.db.getAllKeysFromIndex(STORE_KEY_RECORDS, 'paperID', quizPaperID) as Promise<ID[]>;
+    return this.db.getAllKeysFromIndex(STORE_KEY_RECORDS, 'paperId', quizPaperId) as Promise<ID[]>;
   }
 
   async parseTactics(t: Readonly<QuizRecordTactics>): Promise<QuizRecordInitiation | undefined> {
@@ -578,7 +585,7 @@ export class IDBController implements QuizzyController {
       }
       if (Object.keys(weightList).length == 0) {
         return undefined;
-      } 
+      }
       return {
         questionOrder: [],
         randomState: initWeightedState(weightList),
@@ -598,7 +605,7 @@ export class IDBController implements QuizzyController {
       }
       if (Object.keys(weightList).length == 0) {
         return undefined;
-      } 
+      }
       return {
         questionOrder: [],
         randomState: initWeightedState(weightList),
@@ -620,7 +627,7 @@ export class IDBController implements QuizzyController {
   }
 
   async updateQuiz(
-    operation: Readonly<QuizRecordOperation>, 
+    operation: Readonly<QuizRecordOperation>,
     _?: Readonly<UpdateQuizOptions>
   ) {
     const { id } = operation;
@@ -650,14 +657,14 @@ export class IDBController implements QuizzyController {
     if (!r) {
       return;
     }
-    const p = r.paperId ? await this.getQuizPaper(r.paperId) : undefined;
-    const q: Record<ID, Question> = p ? Object.fromEntries(
-      (await this.getQuestions(p.questions)).filter(q => !!q)
+    const quizPaper = r.paperId ? await this.getQuizPaper(r.paperId) : undefined;
+    const allQuestions: Record<ID, Question> = quizPaper ? Object.fromEntries(
+      (await this.getQuestions(quizPaper.questions)).filter(q => !!q)
         .map(q => [q.id, q]),
     ) : {};
     // create result and patches
-    const [result, patches] = createResultAndStatPatches(r, p, q);
-
+    const result = createQuizResult(r, quizPaper, allQuestions);
+    result.stat = await createStatFromQuizResults([result], async (id) => allQuestions[id]);
 
     // create write transactions
     const tx = this.db.transaction([
@@ -673,29 +680,6 @@ export class IDBController implements QuizzyController {
 
     // delete original record
     await tx.objectStore(STORE_KEY_RECORDS).delete(id);
-
-    // patch stats
-    // TODO renew
-    // const _ss = tx.objectStore(STORE_KEY_STATS);
-    // for (const { tag, questionId, correct } of patches) {
-    //   // get or create the corresponding stat object
-    //   const stat: Stat = await _ss.index('tag').get(tag)
-    //     ?? await _ss.index('alternatives').get(tag) ?? {
-    //       id: '', tag, alternatives: [], correct: {}, total: {}, percentage: 0,
-    //     } as Stat;
-    //   // generate and assign ID if inexistent
-    //   while (!stat.id || !!await _ss.get(stat.id)) {
-    //     stat.id = uuidV4B64();
-    //   }
-    //   // apply patch
-    //   stat.total[questionId] = (stat.total[questionId] || 0) + 1;
-    //   stat.correct[questionId] = (stat.correct[questionId] || 0) + Number(correct ?? 0);
-    //   const correctCount = Object.values(stat.correct).reduce((acc, val) => acc + val, 0);
-    //   const totalCount = Object.values(stat.total).reduce((acc, val) => acc + val, 0);
-    //   stat.percentage = correctCount / totalCount;
-    //   // write back to store
-    //   await _ss.put(stat);
-    // }
 
     await tx.done;
     return result.id;
@@ -717,19 +701,60 @@ export class IDBController implements QuizzyController {
     return this.db.get(STORE_KEY_RESULTS, id);
   }
 
-  listQuizResultIds(quizPaperID?: ID): Promise<ID[]> {
-    if (!quizPaperID) {
+  listQuizResultIds(quizPaperId?: ID): Promise<ID[]> {
+    if (!quizPaperId) {
       return this.db.getAllKeys(STORE_KEY_RESULTS) as Promise<ID[]>;
     }
-    return this.db.getAllKeysFromIndex(STORE_KEY_RESULTS, 'paperID', quizPaperID) as Promise<ID[]>;
+    return this.db.getAllKeysFromIndex(STORE_KEY_RESULTS, 'paperId', quizPaperId) as Promise<ID[]>;
   }
 
-  listQuizResults(quizPaperID?: ID): Promise<QuizResult[]> {
-    if (!quizPaperID) {
+  listQuizResults(quizPaperId?: ID): Promise<QuizResult[]> {
+    if (!quizPaperId) {
       return this.db.getAll(STORE_KEY_RESULTS);
     }
-    return this.db.getAllFromIndex(STORE_KEY_RESULTS, 'paperID', quizPaperID);
+    return this.db.getAllFromIndex(STORE_KEY_RESULTS, 'paperId', quizPaperId);
   }
 
+  // stats
+
+
+  async generateStats(...resultIds: ID[]): Promise<Stat | StatBase | undefined> {
+    const results = (await Promise.all(resultIds.map(
+      (id) => this.db.get(STORE_KEY_RESULTS, id) as Promise<QuizResult | undefined>,
+    ))).filter(x => !!x);
+    if (!results.length) {
+      return undefined;
+    }
+    // get questions
+    const questionCache: Record<ID, Promise<Question | undefined> | undefined> = {};
+    const getQuestion = async (id: ID) => {
+      if (questionCache[id]) {
+        return questionCache[id];
+      }
+      const promise = this.getQuestions([id]).then(x => x[0] as Question | undefined);
+      questionCache[id] = promise;
+      return await promise;
+    };
+    const stat = await createStatFromQuizResults(results, getQuestion);
+    if (results.length === 1) {
+      // concurrent problem is not a concern
+      // since results are never modified
+      const res = results[0];
+      res.stat = stat;
+      await this.db.put(STORE_KEY_RESULTS, res);
+      return stat;
+    }
+    const statWithId: Stat = {
+      ...stat,
+      id: uuidV4B64(),
+      results: results.map(x => x.id),
+    };
+    await this.db.put(STORE_KEY_STATS, statWithId);
+    return statWithId;
+  }
+
+  async listStats(): Promise<Stat[]> {
+    return this.db.getAll(STORE_KEY_STATS);
+  }
 
 }

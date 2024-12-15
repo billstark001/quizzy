@@ -1,5 +1,5 @@
 import { DatabaseIndexed, ID, KeywordIndexed, MarkdownString } from "./technical";
-import { Question, QuestionWithOptionalID } from "./question";
+import { Question, QuestionWithOptionalId } from "./question";
 
 type QuizPaperBase = {
   name: string; // display
@@ -27,7 +27,7 @@ export type CompleteQuizPaper = QuizPaperBase & {
 
 export type CompleteQuizPaperDraft = QuizPaperBase & {
   id?: ID;
-  questions: QuestionWithOptionalID[];
+  questions: QuestionWithOptionalId[];
 };
 
 export const defaultQuizPaper = (p?: Partial<QuizPaper>): QuizPaper => (

@@ -100,7 +100,13 @@ export const updateQuiz = (
       ret = {
         ...retPayload,
         lastQuestion: nextIndex,
-      }
+      };
+      retEvent = {
+        type: 'goto',
+        id: recordId,
+        questionIndex: ret.lastQuestion!,
+        questionId: ret.questionOrder[nextIndex - 1],
+      };
     } else if (isSequential) {
       // the list is exhausted
       retEvent = {
