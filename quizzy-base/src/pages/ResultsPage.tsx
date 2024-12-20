@@ -52,7 +52,7 @@ export const ResultsPage = () => {
    <Column field='startTime' render={(x: number) => DateTime.fromMillis(x || 0).toISO()} />
     <Column field='timeUsed' render={dispDuration} />
     <Column field='score' />
-    <Column field='total' />
+    <Column field='totalScore' />
     <Column>
       <GotoButton refresh={refresh} />
     </Column>

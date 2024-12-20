@@ -150,7 +150,7 @@ export const ChoiceQuestionPanel = (props: ChoiceQuestionPanelProps) => {
       {options.map((o, i) => {
         const id = getOptionOrBlankId(o, i, question);
         const selected = !!get?.(id);
-        const [c1, c2, c3, c4] = getOptionColor(selected, isDisplay ? o.shouldChoose : undefined, isDark);
+        const [c1, c2, c3, c4] = getOptionColor(selected, isDisplay ? !!o.shouldChoose : undefined, isDark);
         return <HStack key={id}
           w='100%' p='0.5em'
           backgroundColor={c1}

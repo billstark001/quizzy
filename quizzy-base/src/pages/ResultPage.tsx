@@ -92,8 +92,8 @@ export const ResultPage = () => {
         <Column field='name' />
         <Column field='answer' />
         <Column field='correct' />
+        <Column field='status' />
         <Column field='score' />
-        <Column field='weight' />
         <Column>
           <ResultDisplayButton onClick={onOpen} />
         </Column>
