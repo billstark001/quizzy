@@ -28,7 +28,7 @@ export const SearchBox = <T extends DatabaseIndexed>(props: SearchBoxProps<T>) =
   const fetchSearchResult = useCallbackRef(props.fetchSearchResult);
 
   const [searchTerm, setSearchTerm] = useState("");
-  const debouncedSetSearchTerm = useRef<DebounceReturn<typeof setSearchTerm>>();
+  const debouncedSetSearchTerm = useRef<DebounceReturn<typeof setSearchTerm>>(undefined);
   const [isOpen, setIsOpen] = useState(false);
   const [disableBlur, setDisableBlur] = useState(false);
 

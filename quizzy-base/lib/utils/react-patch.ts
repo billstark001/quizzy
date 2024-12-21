@@ -240,7 +240,7 @@ export const useEditor = <T extends object>(props: EditorProps<T>) => {
   const [fakeValue, setFakeValue] = useState<T | undefined>(undefined);
   const [hasDebouncedChanges, setHasDebouncedChanges] = useState(false);
 
-  const onChangeRef = useRef<Updater<T>>();
+  const onChangeRef = useRef<Updater<T>>(undefined);
   useEffect(() => {
     onChangeRef.current = onChangeProp;
   }, [onChangeProp]);
@@ -253,7 +253,7 @@ export const useEditor = <T extends object>(props: EditorProps<T>) => {
   }, [onChangeRef, setFakeValue, setHasDebouncedChanges]);
 
   // this debounces the logical commission
-  const debouncedOnChangeLogicalRef = useRef<DebounceReturn<Updater<T>>>();
+  const debouncedOnChangeLogicalRef = useRef<DebounceReturn<Updater<T>>>(undefined);
   useEffect(() => {
     debouncedOnChangeLogicalRef.current = debounce((onChangeLogical), 5000, debounceProps);
   }, [onChangeLogical]);

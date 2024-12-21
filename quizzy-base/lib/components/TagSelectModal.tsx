@@ -78,7 +78,7 @@ export const TagSelectModal = (props: Omit<ModalProps, 'children'> & {
 
   const performSearchRef = useCallbackRef(performSearch);
 
-  const debouncedSearch = useRef<DebounceReturn<typeof performSearch>>();
+  const debouncedSearch = useRef<DebounceReturn<typeof performSearch>>(undefined);
   useEffect(() => {
     debouncedSearch.current?.clear();
     debouncedSearch.current = debounce(performSearch, 500);

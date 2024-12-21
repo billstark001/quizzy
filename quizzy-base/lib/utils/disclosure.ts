@@ -84,7 +84,7 @@ export const useDisclosureWithConfirm = <T = boolean>(
   const { defaultValue, onClose: onCloseProp } = props ?? { defaultValue: false };
   const handleOnClose = useCallbackRef(onCloseProp);
 
-  const resolver = useRef<((value: T) => void) | undefined>();
+  const resolver = useRef<((value: T) => void) | undefined>(undefined);
   const disclosure = useDisclosure({ ...props, onClose: undefined });
   const { onOpen, onClose: onCloseOriginal } = disclosure;
 

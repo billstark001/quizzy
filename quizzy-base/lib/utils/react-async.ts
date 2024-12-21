@@ -43,7 +43,7 @@ export const useAsyncMemo = <T>(
   
   // Ref to track component mount state
   const mountedRef = useRef<boolean>(true);
-  const memoizedFnRef = useRef<() => Promise<void>>();
+  const memoizedFnRef = useRef<() => Promise<void>>(undefined);
 
   // Memoize the async function with dependencies
   const memoizedFn = useCallback(async () => {
