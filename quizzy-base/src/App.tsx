@@ -15,6 +15,7 @@ import { PaperEditPage } from './pages/PaperEditPage';
 import QuestionPage from './pages/QuestionPage';
 import { useParsedSearchParams } from './utils/react-router';
 import { QuestionEditPage } from './pages/QuestionEditPage';
+import StatPage from './pages/StatPage';
 
 export const AppLayout = ({ children }: React.PropsWithChildren<object>) => {
   const navigate = useNavigate();
@@ -76,6 +77,7 @@ export const App = () => {
         <Route path='/edit' element={<EditPage />} />
         <Route path='/result/:rid' element={<ResultPage />} />
         <Route path='/stats' element={<StatsPage />} />
+        <Route path='/stat/:sid' element={<StatPage />} />
       </Routes>
     </AppLayout>
   </HashRouter>;

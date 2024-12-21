@@ -1,5 +1,6 @@
 import { PaperCard } from "#/components/PaperCard";
 import { TagListResult } from "#/types";
+import { useSelection } from "#/utils/react";
 import { useAsyncMemo } from "#/utils/react-async";
 import { Quizzy } from "@/data";
 import { usePapers } from "@/data/atoms";
@@ -18,38 +19,9 @@ import {
   VStack,
   Wrap,
 } from "@chakra-ui/react";
-import { useCallback, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
-
-const useSelection = () => {
-  const [selectedRecord, setSelectedRecord] = useState<Record<string, boolean>>({});
-  const setSelected = useCallback((id: string, selected = true) => {
-    setSelectedRecord((s) => ({ ...s, [id]: selected }));
-  }, [setSelectedRecord]);
-  const toggleSelected = useCallback((id: string) => {
-    setSelectedRecord((s) => ({ ...s, [id]: !s[id] }));
-  }, [setSelectedRecord]);
-  const isSelected = useCallback((id: string) => !!selectedRecord[id], [selectedRecord]);
-  const getAllSelected = useCallback(
-    () => Object.entries(selectedRecord)
-      .filter(([, v]) => !!v)
-      .map(([k]) => k),
-    [selectedRecord]
-  );
-
-  const isAnySelected = getAllSelected().length !== 0;
-
-  return {
-    selectedRecord,
-    setSelectedRecord,
-    setSelected,
-    toggleSelected,
-    isSelected,
-    getAllSelected,
-    isAnySelected,
-  };
-};
 
 const defaultTagListResult = (): TagListResult => ({
   questionCategories: [],

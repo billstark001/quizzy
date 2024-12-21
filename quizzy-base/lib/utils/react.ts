@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { ReactElement, ElementType, isValidElement } from 'react';
+import { ReactElement, ElementType, isValidElement, useCallback, useState } from 'react';
 
 export const getTagStyle = <T extends object = object>(
   el: ReactElement<T> | Record<string, any> | undefined,
@@ -57,3 +57,34 @@ export const removeUndefinedValues = <T extends object = object>(obj: T) => {
   }
   return obj;
 };
+
+
+export const useSelection = () => {
+  const [selectedRecord, setSelectedRecord] = useState<Record<string, boolean>>({});
+  const setSelected = useCallback((id: string, selected = true) => {
+    setSelectedRecord((s) => ({ ...s, [id]: selected }));
+  }, [setSelectedRecord]);
+  const toggleSelected = useCallback((id: string) => {
+    setSelectedRecord((s) => ({ ...s, [id]: !s[id] }));
+  }, [setSelectedRecord]);
+  const isSelected = useCallback((id: string) => !!selectedRecord[id], [selectedRecord]);
+  const getAllSelected = useCallback(
+    () => Object.entries(selectedRecord)
+      .filter(([, v]) => !!v)
+      .map(([k]) => k),
+    [selectedRecord]
+  );
+
+  const isAnySelected = getAllSelected().length !== 0;
+
+  return {
+    selectedRecord,
+    setSelectedRecord,
+    setSelected,
+    toggleSelected,
+    isSelected,
+    getAllSelected,
+    isAnySelected,
+  };
+};
+
