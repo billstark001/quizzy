@@ -1,7 +1,6 @@
 import { DatabaseIndexed, ID, KeywordIndexed, MarkdownString } from "./technical";
 
 
-
 export type ChoiceQuestionOption = {
   id?: ID;
   shouldChoose?: boolean;
@@ -19,8 +18,10 @@ export type QuestionType = 'choice' | 'blank' | 'text';
 
 type _BaseQuestion = {
   name?: string; // serial
-  tags?: string[];
-  categories?: string[];
+  
+  tags?: string[]; // knowledge points covered in this question
+  categories?: string[]; // category of this question in the syllabus
+  
   title?: MarkdownString;
   content: MarkdownString;
   solution?: MarkdownString;
