@@ -646,11 +646,24 @@ export class IDBController implements QuizzyController {
   async updateQuiz(
     operation: Readonly<QuizRecordOperation>,
     _?: Readonly<UpdateQuizOptions>
-  ) {
+  ): Promise<[QuizRecord, QuizRecordEvent | undefined]> {
     const { id } = operation;
     const tx = this.db.transaction(STORE_KEY_RECORDS, 'readwrite');
     const oldRecord = await tx.store.get(id) as QuizRecord | undefined;
     if (!oldRecord) {
+      if (operation.type === 'hard-pause') {
+        return [{
+          id,
+          startTime: -1,
+          timeUsed: -1,
+          answers: {},
+          lastQuestion: -1,
+          paused: false,
+          updateTime: -1,
+          paperId: '',
+          questionOrder: [],
+        }, undefined];
+      }
       throw new Error('Invalid record ID');
     }
     const [newRecord, event] = updateQuiz(oldRecord, operation);
@@ -664,7 +677,7 @@ export class IDBController implements QuizzyController {
       // get question
       event.question = (await this.getQuestions([event.questionId]))[0];
     }
-    return [newRecord, event] as [QuizRecord, QuizRecordEvent | undefined];
+    return [newRecord, event];
   }
 
 
