@@ -20,7 +20,7 @@ const updaters: Record<number, DatabaseUpdateDefinition> = {
   [0]: (db) => {
     const cacheStore = db.createObjectStore(STORE_KEY_CACHE, { keyPath: 'id', });
     cacheStore.createIndex('type', 'type');
-    cacheStore.createIndex('localId', 'localId', { unique: true });
+    cacheStore.createIndex('localId', 'localId');
     cacheStore.createIndex('lastModify', 'lastModify');
   }
 } as const;

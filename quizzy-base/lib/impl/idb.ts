@@ -1,4 +1,4 @@
-import { CompleteQuizPaperDraft, Question, QuizPaper, QuizRecord, QuizRecordEvent, QuizRecordInitiation, QuizRecordOperation, QuizRecordTactics, QuizzyController, QuizzyData, StartQuizOptions, Stat, StatBase, TagSearchResult, UpdateQuizOptions } from "#/types";
+import { CompleteQuizPaperDraft, Question, QuizPaper, QuizRecord, QuizRecordEvent, QuizRecordInitiation, QuizRecordOperation, QuizRecordTactics, QuizzyController, QuizzyData, StartQuizOptions, Stat, StatBase, TagListResult, TagSearchResult, UpdateQuizOptions } from "#/types";
 import { IDBPDatabase } from "idb";
 import { separatePaperAndQuestions, toCompleted } from "./paper-id";
 import { uuidV4B64 } from "#/utils/string";
@@ -8,7 +8,7 @@ import { DatabaseIndexed, ID, KeywordIndexed, sanitizeIndices, SearchResult } fr
 import { applyPatch, Patch } from "#/utils/patch";
 import { generateKeywords } from "./keywords";
 import QuickLRU from "quick-lru";
-import { DatabaseUpdateDefinition, openDatabase } from "#/utils/idb";
+import { DatabaseUpdateDefinition, getAllMultiEntryValues, openDatabase } from "#/utils/idb";
 import { buildTrieTree, loadTrieTree } from "./search";
 import { startQuiz, updateQuiz } from "./quiz";
 import { initWeightedState } from "#/utils/random-seq";
@@ -441,6 +441,23 @@ export class IDBController implements QuizzyController {
     };
   }
 
+  async listTags(): Promise<TagListResult> {
+    return {
+      questionCategories: await getAllMultiEntryValues(
+        this.db, STORE_KEY_QUESTIONS, 'categories',
+      ) as string[],
+      questionTags: await getAllMultiEntryValues(
+        this.db, STORE_KEY_QUESTIONS, 'tags',
+      ) as string[],
+      paperCategories: await getAllMultiEntryValues(
+        this.db, STORE_KEY_PAPERS, 'categories',
+      ) as string[],
+      paperTags: await getAllMultiEntryValues(
+        this.db, STORE_KEY_PAPERS, 'tags',
+      ) as string[],
+    };
+  }
+
   async importCompleteQuizPapers(...papers: CompleteQuizPaperDraft[]): Promise<string[]> {
     const purePapers: QuizPaper[] = [];
     for (const _paper of papers) {
@@ -658,10 +675,10 @@ export class IDBController implements QuizzyController {
       return;
     }
     const quizPaper = r.paperId ? await this.getQuizPaper(r.paperId) : undefined;
-    const allQuestions: Record<ID, Question> = quizPaper ? Object.fromEntries(
-      (await this.getQuestions(quizPaper.questions)).filter(q => !!q)
+    const allQuestions: Record<ID, Question> = Object.fromEntries(
+      (await this.getQuestions(r.questionOrder)).filter(q => !!q)
         .map(q => [q.id, q]),
-    ) : {};
+    );
     // create result and patches
     const result = createQuizResult(r, quizPaper, allQuestions);
     result.stat = await createStatFromQuizResults([result], async (id) => allQuestions[id]);

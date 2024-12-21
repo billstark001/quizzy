@@ -28,6 +28,12 @@ export type TagSearchResult = {
   question: string[];
   questionTags: string[];
 };
+export type TagListResult = {
+  paperCategories: string[];
+  paperTags: string[];
+  questionCategories: string[];
+  questionTags: string[];
+};
 
 export interface QuizzyController {
 
@@ -59,7 +65,10 @@ export interface QuizzyController {
   findQuestionByTags(query: string, count?: number, page?: number): Promise<SearchResult<Question>>;
   findQuizPaperByTags(query: string, count?: number, page?: number): Promise<SearchResult<QuizPaper>>;
 
+  // tags
+  
   findTags(query: string, count?: number, page?: number): Promise<TagSearchResult>;
+  listTags(): Promise<TagListResult>;
 
   // records
 

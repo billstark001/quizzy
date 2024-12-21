@@ -4,7 +4,7 @@ import { openDialog } from "#/utils";
 import { Quizzy } from "@/data";
 import { useAsyncEffect } from "#/utils/react-async";
 import { ParamsDefinition, useParsedSearchParams } from "@/utils/react-router";
-import { Box } from "@chakra-ui/react";
+import { Box, Button, VStack } from "@chakra-ui/react";
 import { SetStateAction, useCallback, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -104,7 +104,7 @@ export const QuizPage = () => {
     setQuestion(await _getQuestion(record, q));
   }, [record]);
 
-  const onNext = useCallback(async (_: number) => {
+  const onNext = useCallback(async () => {
     const [newRecord, event] = await Quizzy.updateQuiz({
       id: recordId ?? '',
       type: 'forward',
@@ -118,7 +118,10 @@ export const QuizPage = () => {
   const _setCurrentAnswers = (a: SetStateAction<Answers>) => setCurrentAnswers(a).catch(console.error);
 
   if (!record || !question) {
-    return <Box>NO RECORD</Box>;
+    return <VStack>
+      <Box>NO QUESTION</Box>
+      { record != null && <Button onClick={onNext}>start</Button>}
+    </VStack>;
   }
   
   return <QuestionDisplay

@@ -1,4 +1,4 @@
-import { IDBPDatabase, IDBPTransaction, openDB } from "idb";
+import { DBSchema, IDBPDatabase, IDBPTransaction, IndexNames, openDB, StoreNames } from "idb";
 
 export type DatabaseUpdateDefinition = (db: IDBPDatabase, tx: IDBPTransaction<unknown, string[], "versionchange">) => void;
 
@@ -14,10 +14,33 @@ export const openDatabase = async (key: string, version: number, updaters: Reado
     },
   });
   return db;
-}
+};
+
+export const getAllMultiEntryValues = async <
+  T extends DBSchema | unknown = unknown,
+>(
+  db: IDBPDatabase<T>,
+  storeName: StoreNames<T>,
+  indexName: IndexNames<T, StoreNames<T>>,
+): Promise<string[]> => {
+  const uniqueValues = new Set<string>();
+
+  let cursor = await db
+    .transaction(storeName)
+    .store
+    .index(indexName)
+    .openKeyCursor();
+
+  while (cursor) {
+    uniqueValues.add(cursor.key as string);
+    cursor = await cursor.continue();
+  }
+
+  return Array.from(uniqueValues);
+};
 
 export const searchByTag = async (
-  db: IDBPDatabase, store: string, 
+  db: IDBPDatabase, store: string,
   tag: string, index = 'tags'
 ) => {
   const tx = db.transaction(store, 'readonly');
@@ -31,7 +54,7 @@ interface BackupData {
 
 
 export const backupDatabase = async (
-  db: IDBPDatabase, 
+  db: IDBPDatabase,
   storeNames: string[]
 ): Promise<BackupData> => {
 

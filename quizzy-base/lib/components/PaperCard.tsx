@@ -1,14 +1,18 @@
 import { QuizPaper } from "#/types";
+import { CheckIcon } from "@chakra-ui/icons";
 import {
   Card, Heading, CardBody, Stack, Text, Image,
   Button, ButtonGroup, CardFooter, Divider, useColorMode,
   CardProps, Wrap,
   Tag,
+  IconButton,
 } from "@chakra-ui/react";
 import { useTranslation } from "react-i18next";
 
-export type PaperCardProps = Omit<CardProps, 'children'> & {
+export type PaperCardProps = Omit<CardProps, 'children' | 'onSelect'> & {
   paper: QuizPaper,
+  selected?: boolean,
+  onSelect?: (selected: boolean) => void,
   onStart?: () => void,
   onRevise?: () => void,
   onEdit?: () => void,
@@ -19,6 +23,8 @@ const DEFAULT_IMG = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAZAAAACWCAYAA
 export const PaperCard = (props: PaperCardProps) => {
   const {
     paper,
+    selected,
+    onSelect,
     onStart,
     onRevise,
     onEdit,
@@ -27,6 +33,8 @@ export const PaperCard = (props: PaperCardProps) => {
 
   const { t } = useTranslation();
   const { colorMode } = useColorMode();
+
+  const useSelect = selected != null || onSelect != null;
 
 
   return <Card w='sm' {...cardProps}>
@@ -54,6 +62,11 @@ export const PaperCard = (props: PaperCardProps) => {
     <Divider />
     <CardFooter>
       <ButtonGroup as={Wrap} spacing='2' justifyContent='flex-end'>
+        {useSelect && <IconButton 
+          icon={<CheckIcon />} aria-label="check"
+          colorScheme={selected ? 'blue' : undefined}
+          onClick={() => onSelect?.(!selected)}
+        />}
         <Button variant='solid' colorScheme='blue' onClick={onStart}>
           {t('card.paper.start')}
         </Button>

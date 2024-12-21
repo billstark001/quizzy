@@ -21,15 +21,16 @@ const _d = (): TagSearchResult => ({
   question: [], questionTags: [], paper: [], paperTags: [],
 });
 
-export const TagSelectModal = (props: Omit<ModalProps, 'children'> & {
+export const TagSelectModal = (props: Omit<ModalProps, 'children' | 'onSelect'> & {
   object: Readonly<KeywordIndexed>,
-  onChange: (patch: Partial<KeywordIndexed>) => void,
+  onChange?: (patch: Partial<KeywordIndexed>) => void | Promise<void>,
+  onSelect?: (tag: string) => void,
   dbIndex?: string,
 } & TagSelectState) => {
 
   const {
     isCategory, tagIndex,
-    object, onChange,
+    object, onChange, onSelect,
     ...modalProps
   } = props;
 
@@ -51,13 +52,14 @@ export const TagSelectModal = (props: Omit<ModalProps, 'children'> & {
   }, [isOpen]);
 
   const submitTag = useCallback(async () => {
-    await onChange({
+    await onChange?.({
       [isCategory ? 'categories' : 'tags']: tagIndex == null
         ? [...origArr, currentTag]
         : getChangedArray(origArr, tagIndex, currentTag)
     });
+    onSelect?.(currentTag);
     onClose();
-  }, [onChange, onClose, currentTag, isCategory, tagIndex, origArr]);
+  }, [onChange, onSelect, onClose, currentTag, isCategory, tagIndex, origArr]);
 
   // display list
   const [listExpanded, setListExpanded] = useState(false);
@@ -84,6 +86,12 @@ export const TagSelectModal = (props: Omit<ModalProps, 'children'> & {
     debouncedSearch.current = debounce(performSearch, 500);
   }, [performSearchRef, debouncedSearch]);
 
+  const getRenderedTags = (t: string[], isTag = false, isPaper = false) => t.map(x => <Tag 
+    key={x} cursor='pointer' onClick={() => setCurrentTag(x)}
+    border={isTag ? '1px solid gray' : undefined}
+    background={isPaper ? undefined : 'transparent'}
+  >{x}</Tag>);
+
   return <Modal closeOnOverlayClick={false} {...modalProps}>
     <ModalOverlay />
     <ModalContent>
@@ -94,12 +102,12 @@ export const TagSelectModal = (props: Omit<ModalProps, 'children'> & {
           setCurrentTag(e.target.value);
           debouncedSearch.current?.(e.target.value);
         }} />
-        {listExpanded && <>
-          <Wrap>{tagSearch.question.map(x => <Tag key={x}>{x}</Tag>)}</Wrap>
-          <Wrap>{tagSearch.questionTags.map(x => <Tag key={x}>{x}</Tag>)}</Wrap>
-          <Wrap>{tagSearch.paper.map(x => <Tag key={x}>{x}</Tag>)}</Wrap>
-          <Wrap>{tagSearch.paperTags.map(x => <Tag key={x}>{x}</Tag>)}</Wrap>
-        </>}
+        {listExpanded && <Wrap>
+          {getRenderedTags(tagSearch.questionTags, true)}
+          {getRenderedTags(tagSearch.question)}
+          {getRenderedTags(tagSearch.paperTags, true, true)}
+          {getRenderedTags(tagSearch.paper, false, true)}
+        </Wrap>}
       </ModalBody>
       <ModalFooter justifyContent='space-between'>
         <Button colorScheme='red' onClick={onClose}>{t('btn.cancel')}</Button>
