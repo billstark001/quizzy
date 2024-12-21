@@ -38,16 +38,17 @@ export const createQuizResult = (
     const correctRaw: string[] = [];
 
     if (question.type === 'choice') {
+      const options = question.options ?? [];
       const correctAnswer: Answers = {
         type: question.type,
-        answer: Object.fromEntries(question.options.map((o, i) => [
+        answer: Object.fromEntries(options.map((o, i) => [
           getOptionOrBlankId(o, i, question),
           o.shouldChoose
         ] as [ID, boolean])),
       };
       correctAnswers[qid] = correctAnswer;
       // create text-form question record
-      question.options.forEach(
+      options.forEach(
         (o, i) => o.shouldChoose && correctRaw.push(numberToLetters(i + 1))
       );
 
@@ -60,15 +61,16 @@ export const createQuizResult = (
         ) !== -1;
       status = noAnswer ? 'no-answer' : wrongAnswer ? 'wrong' : 'correct';
       // create text-form answer record
-      userAnswer?.type === 'choice' && question.options.forEach(
+      userAnswer?.type === 'choice' && options.forEach(
         (o, i) => userAnswer.answer[getOptionOrBlankId(o, i, question)]
           && answerRaw.push(numberToLetters(i + 1))
       );
 
     } else if (question.type === 'blank') {
+      const blanks = question.blanks ?? [];
       const correctAnswer: Answers = {
         type: 'blank',
-        answer: Object.fromEntries(question.blanks.map((b, i) => [
+        answer: Object.fromEntries(blanks.map((b, i) => [
           getOptionOrBlankId(b, i, question),
           b.answer ?? ''
         ] as [ID, string])),
@@ -87,7 +89,7 @@ export const createQuizResult = (
 
       // create records
       const _b = userAnswer?.type === 'blank';
-      question.blanks.forEach((b, i) => {
+      blanks.forEach((b, i) => {
         const id = getOptionOrBlankId(b, i, question);
         answerRaw.push(_b ? userAnswer.answer[id] : '');
         correctRaw.push(b.answer ?? '');

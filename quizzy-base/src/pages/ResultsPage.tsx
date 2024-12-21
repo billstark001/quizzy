@@ -47,7 +47,7 @@ const Selector = withSheetRow<QuizResult, CheckboxProps & {
   setSelected: (id: string, selected?: boolean) => void;
   isSelected: (id: string) => boolean;
 }>((props) => {
-  const { item, isSelected, setSelected, ...other } = props;
+  const { item, isSelected, setSelected, index: _, isHeader: __, ...other } = props;
   const selected = item ? isSelected(item.id) : false;
   return <Checkbox
     isChecked={selected}

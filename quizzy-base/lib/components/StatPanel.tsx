@@ -50,5 +50,9 @@ export const StatPanel = (props: StatPanelProps) => {
       <Chart units={stat.countByTag} />
       <Chart units={stat.scoreByTag} />
     </HStack>
+    <HStack justifyContent='center'>
+      <Chart units={stat.countByCategory} />
+      <Chart units={stat.scoreByCategory} />
+    </HStack>
   </VStack>
 };

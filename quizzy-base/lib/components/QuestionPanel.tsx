@@ -133,13 +133,13 @@ export const ChoiceQuestionPanel = (props: ChoiceQuestionPanelProps) => {
     ...sol
   } = props;
 
-  const { options } = question;
+  const { options, multiple } = question;
   const { colorMode } = useColorMode();
   const isDark = colorMode === 'dark';
   const isDisplay = state === 'display';
 
-  const isMultiChoice = question.multiple
-    ?? (question.options.filter(x => x.shouldChoose).length > 1);
+  const isMultiChoice = multiple
+    ?? ((options?.filter(x => x.shouldChoose)?.length ?? 0) > 1);
 
   return <BaseQuestionPanel question={question} {...sol}>
     <VStack
@@ -147,7 +147,7 @@ export const ChoiceQuestionPanel = (props: ChoiceQuestionPanelProps) => {
       w='100%'
       p='0.5em 1em'
     >
-      {options.map((o, i) => {
+      {options?.map((o, i) => {
         const id = getOptionOrBlankId(o, i, question);
         const selected = !!get?.(id);
         const [c1, c2, c3, c4] = getOptionColor(selected, isDisplay ? !!o.shouldChoose : undefined, isDark);
@@ -241,7 +241,7 @@ export const BlankQuestionPanel = (props: BlankQuestionPanelProps) => {
   const { blanks } = question;
   const KeyIdMap = useMemo(() => {
     const ret: Record<string, ID> = {};
-    blanks.forEach((b, index) => {
+    blanks?.forEach((b, index) => {
       ret[b.key] = getOptionOrBlankId(b, index, question);
     });
     return ret as Readonly<Record<string, ID>>;
