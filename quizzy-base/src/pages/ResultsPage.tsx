@@ -3,7 +3,7 @@ import Sheet, { withSheetRow, Column } from "#/components/Sheet";
 import { QuizResult } from "#/types";
 import { dispDuration } from "#/utils/time";
 import { Quizzy } from "@/data";
-import { useAsyncEffect } from "@/utils/react";
+import { useAsyncEffect } from "#/utils/react-async";
 import { Button, HStack } from "@chakra-ui/react";
 import { atom, useAtom } from "jotai";
 import { DateTime } from "luxon";

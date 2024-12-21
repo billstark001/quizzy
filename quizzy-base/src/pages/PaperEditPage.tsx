@@ -11,7 +11,7 @@ import { EditorContextProvider, useEditor, usePatch } from "#/utils/react-patch"
 import { uuidV4B64 } from "#/utils/string";
 import { Quizzy, QuizzyCache, QuizzyCacheRaw, QuizzyRaw } from "@/data";
 import QuestionPreviewModal from "@/modals/QuestionPreviewModal";
-import { useAsyncMemo } from "@/utils/react";
+import { useAsyncMemo } from "#/utils/react-async";
 import { DragHandleIcon } from "@chakra-ui/icons";
 import { Box, Button, Divider, HStack, IconButton, useCallbackRef, useDisclosure, VStack } from "@chakra-ui/react";
 import { useCallback, useEffect, useRef, useState } from "react";

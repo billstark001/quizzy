@@ -2,7 +2,7 @@ import { QuestionDisplay } from "#/components/QuestionDisplay";
 import { Answers, Question, QuizRecord, QuizRecordEvent } from "#/types";
 import { openDialog } from "#/utils";
 import { Quizzy } from "@/data";
-import { useAsyncEffect } from "@/utils/react";
+import { useAsyncEffect } from "#/utils/react-async";
 import { ParamsDefinition, useParsedSearchParams } from "@/utils/react-router";
 import { Box } from "@chakra-ui/react";
 import { SetStateAction, useCallback, useMemo, useState } from "react";

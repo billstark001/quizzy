@@ -4,7 +4,7 @@ import { Question, QuizResult, QuizResultRecordRow } from "#/types";
 import { ID } from "#/types/technical";
 import { useDisclosureWithData } from "#/utils/disclosure";
 import { Quizzy } from "@/data";
-import { useAsyncEffect } from "@/utils/react";
+import { useAsyncEffect } from "#/utils/react-async";
 import { Box, Button, Modal, ModalBody, ModalCloseButton, ModalContent, ModalHeader, ModalOverlay, VStack } from "@chakra-ui/react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";

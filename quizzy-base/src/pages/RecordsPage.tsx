@@ -3,7 +3,7 @@ import { QuizRecord } from "#/types";
 import { ID } from "#/types/technical";
 import { dispDuration } from "#/utils/time";
 import { Quizzy } from "@/data";
-import { useAsyncEffect } from "@/utils/react";
+import { useAsyncEffect } from "#/utils/react-async";
 import { Button, HStack } from "@chakra-ui/react";
 import { atom, useAtom } from "jotai";
 import { DateTime } from "luxon";
@@ -60,12 +60,12 @@ export const RecordsPage = () => {
     if (!records) {
       return;
     }
-    const papers = await Quizzy.getQuizPaperNames(...records.map(r => r.paperId));
+    const papers = await Quizzy.getQuizPaperNames(...records.map(r => r.paperId ?? ''));
     const record: Record<ID, string> = {
       ...paperNames,
     };
     for (let i = 0; i < records.length; ++i) {
-      record[records[i].paperId] = papers[i] || '<none>';
+      record[records[i].paperId ?? ''] = papers[i] || '<none>';
     }
     setPaperNames(record);
   }, [records]);

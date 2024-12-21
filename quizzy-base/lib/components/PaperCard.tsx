@@ -1,17 +1,14 @@
+import { QuizPaper } from "#/types";
 import {
   Card, Heading, CardBody, Stack, Text, Image,
   Button, ButtonGroup, CardFooter, Divider, useColorMode,
-  CardProps, Wrap
+  CardProps, Wrap,
+  Tag,
 } from "@chakra-ui/react";
-import { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
 export type PaperCardProps = Omit<CardProps, 'children'> & {
-  imageSrc?: string,
-  imageAlt?: string,
-  title?: ReactNode,
-  desc?: ReactNode,
-  status?: ReactNode,
+  paper: QuizPaper,
   onStart?: () => void,
   onRevise?: () => void,
   onEdit?: () => void,
@@ -21,11 +18,7 @@ const DEFAULT_IMG = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAZAAAACWCAYAA
 
 export const PaperCard = (props: PaperCardProps) => {
   const {
-    imageSrc,
-    imageAlt,
-    title,
-    desc,
-    status,
+    paper,
     onStart,
     onRevise,
     onEdit,
@@ -35,25 +28,27 @@ export const PaperCard = (props: PaperCardProps) => {
   const { t } = useTranslation();
   const { colorMode } = useColorMode();
 
+
   return <Card w='sm' {...cardProps}>
     <CardBody>
       <Image
-        src={imageSrc ?? DEFAULT_IMG}
-        alt={imageAlt}
+        src={paper.img ?? DEFAULT_IMG}
+        alt={paper.name}
         aspectRatio={16 / 9}
         backgroundColor={colorMode === "dark" ? "gray.600" : 'gray.200'}
         borderRadius='lg'
       />
       <Stack mt='6' spacing='3'>
         <Heading size='md'>
-          {title}
+          {paper.name}
         </Heading>
         <Text>
-          {desc}
+          {paper.desc}
         </Text>
-        <Text color='blue.600' fontSize='md'>
-          {status}
-        </Text>
+        <Wrap>
+          {paper.categories?.map((t, i) => <Tag key={i} border='1px solid gray'>{t}</Tag>)}
+          {paper.tags?.map((t, i) => <Tag key={i}>{t}</Tag>)}
+        </Wrap>
       </Stack>
     </CardBody>
     <Divider />
@@ -62,12 +57,12 @@ export const PaperCard = (props: PaperCardProps) => {
         <Button variant='solid' colorScheme='blue' onClick={onStart}>
           {t('card.paper.start')}
         </Button>
-        <Button variant='ghost' colorScheme='blue' onClick={onRevise}>
+        {onRevise && <Button variant='ghost' colorScheme='blue' onClick={onRevise}>
           {t('card.paper.revise')}
-        </Button>
-        <Button variant='ghost' colorScheme='blue' onClick={onEdit}>
+        </Button>}
+        {onEdit && <Button variant='ghost' colorScheme='blue' onClick={onEdit}>
           {t('card.paper.edit')}
-        </Button>
+        </Button>}
       </ButtonGroup>
     </CardFooter>
   </Card>

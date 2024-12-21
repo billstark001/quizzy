@@ -6,7 +6,7 @@ import { applyPatch, Patch } from "#/utils/patch";
 import { EditorContextProvider, useEditor, usePatch } from "#/utils/react-patch";
 import { Quizzy, QuizzyCache, QuizzyCacheRaw, QuizzyRaw } from "@/data";
 import QuestionPreviewModal from "@/modals/QuestionPreviewModal";
-import { useAsyncMemo } from "@/utils/react";
+import { useAsyncMemo } from "#/utils/react-async";
 import { Button, Divider, HStack, useCallbackRef, VStack } from "@chakra-ui/react";
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";

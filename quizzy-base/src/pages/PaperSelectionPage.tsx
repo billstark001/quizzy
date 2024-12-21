@@ -5,7 +5,7 @@ import { uploadFile } from "#/utils/html";
 import { uuidV4B64 } from "#/utils/string";
 import { Quizzy } from "@/data";
 import { papersAtom } from "@/data/atoms";
-import { useAsyncEffect } from "@/utils/react";
+import { useAsyncEffect } from "#/utils/react-async";
 import { Button, HStack, VStack, Wrap } from "@chakra-ui/react";
 import { useAtom } from "jotai";
 import { useNavigate } from "react-router-dom";
@@ -77,9 +77,7 @@ export const PaperSelectionPage = () => {
     </HStack>
     <Wrap>
       {papers.map(p => <PaperCard
-        key={p.id}
-        title={p.name}
-        desc={p.desc}
+        paper={p}
         onStart={() => onStart(p.id)}
         onEdit={() => onEdit(p.id)}
       />)}
