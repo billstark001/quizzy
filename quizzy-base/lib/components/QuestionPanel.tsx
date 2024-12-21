@@ -1,4 +1,5 @@
 import { getOptionOrBlankId } from "#/impl/question-id";
+import ChakraUIRenderer from "#/thirdparty/chakra-ui-markdown-renderer";
 import { BaseQuestion, BLANK_PREFIX, BlankQuestion, ChoiceQuestion, Question, TextQuestion } from "#/types";
 import { ID } from "#/types/technical";
 import { numberToLetters } from "#/utils/string";
@@ -13,7 +14,6 @@ import {
   useColorMode,
   HTMLChakraProps
 } from "@chakra-ui/react";
-import ChakraUIRenderer from "chakra-ui-markdown-renderer";
 import { createContext, Dispatch, SetStateAction, useCallback, useContext, useMemo, useState } from "react";
 import ReactMarkdown from "react-markdown";
 
