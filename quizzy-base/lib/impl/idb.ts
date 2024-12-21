@@ -736,6 +736,7 @@ export class IDBController implements QuizzyController {
 
 
   async generateStats(...resultIds: ID[]): Promise<Stat | StatBase | undefined> {
+    const now = Date.now();
     const results = (await Promise.all(resultIds.map(
       (id) => this.db.get(STORE_KEY_RESULTS, id) as Promise<QuizResult | undefined>,
     ))).filter(x => !!x);
@@ -763,6 +764,7 @@ export class IDBController implements QuizzyController {
     }
     const statWithId: Stat = {
       ...stat,
+      time: now,
       id: uuidV4B64(),
       results: results.map(x => x.id),
     };
@@ -771,7 +773,14 @@ export class IDBController implements QuizzyController {
   }
 
   async listStats(): Promise<Stat[]> {
-    return this.db.getAll(STORE_KEY_STATS);
+    return await this.db.getAll(STORE_KEY_STATS);
   }
 
+  async getStat(id: ID): Promise<Stat | undefined> {
+    return await this.db.get(STORE_KEY_STATS, id);
+  }
+
+  async deleteStat(id: ID): Promise<boolean> {
+    return await this._delete(STORE_KEY_STATS, id, true);
+  }
 }

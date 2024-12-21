@@ -48,8 +48,8 @@ export const ResultsPage = () => {
   useAsyncEffect(refresh, []);
 
   return <Sheet data={results}>
-    <Column field='paperName' />   
-   <Column field='startTime' render={(x: number) => DateTime.fromMillis(x || 0).toISO()} />
+    <Column field='paperName' />
+    <Column field='startTime' render={(x: number) => DateTime.fromMillis(x || 0).toISO()} />
     <Column field='timeUsed' render={dispDuration} />
     <Column field='score' />
     <Column field='totalScore' />

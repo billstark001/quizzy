@@ -28,19 +28,29 @@ export const defaultStatUnit = (): StatUnit => ({
   noAnswer: 0,
 });
 
-export const toPercentage = ({ correct, wrong, noAnswer }: StatUnit): StatUnit => {
+export const toPercentage = (x?: StatUnit, use100 = false): StatUnit => {
+  const { correct, wrong, noAnswer } = x! ?? {};
   const all = (correct + wrong + noAnswer) || 1;
+  const scale = use100 ? 100 : 1;
   return {
-    correct: correct / all,
-    wrong: wrong / all,
-    noAnswer: noAnswer / all,
+    correct: (correct || 0) * scale / all,
+    wrong: (wrong || 0) * scale / all,
+    noAnswer: (noAnswer || 0) * scale / all,
   };
 };
+
+export const stringifyUnit = (x?: StatUnit, percentage?: boolean) => {
+  const { correct, wrong, noAnswer } = x! ?? {};
+  const all = (correct + wrong + noAnswer) || 1;
+  return percentage
+    ? `${Number((correct || 0 / all) * 100).toFixed(2)}%`
+    : `${correct || 0} / ${all}`;
+}
 
 export const defaultStatBase = (): StatBase => ({
   countByQuestion: {},
   countByTag: {},
-  countByCategory: {}, 
+  countByCategory: {},
   scoreByQuestion: {},
   scoreByTag: {},
   scoreByCategory: {},
@@ -55,4 +65,5 @@ export const defaultStatBase = (): StatBase => ({
 
 export type Stat = StatBase & DatabaseIndexed & {
   results: ID[];
+  time: number;
 };

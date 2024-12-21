@@ -97,4 +97,6 @@ export interface QuizzyController {
 
   generateStats(...resultIds: ID[]): Promise<Stat | StatBase | undefined>;
   listStats(): Promise<Stat[]>;
+  getStat(id: ID): Promise<Stat | undefined>;
+  deleteStat(id: ID): Promise<boolean>;
 };
