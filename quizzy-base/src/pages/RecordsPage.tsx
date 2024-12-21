@@ -28,11 +28,16 @@ const ResumeButton = withSheetRow<QuizRecord, _K>((props) => {
   }
 
   return <HStack>
-    <Button onClick={() => {
+    <Button onClick={async () => {
       const params = new URLSearchParams({
         record: item.id,
         q: String(item.lastQuestion || 1),
       })
+      await Quizzy.updateQuiz({
+        type: 'resume',
+        currentTime: Date.now(),
+        id: item.id,
+      });
       navigate('/quiz?' + params.toString());
     }} colorScheme='blue'>
       {t('btn.continue')}

@@ -5,7 +5,7 @@ import { Quizzy } from "@/data";
 import { useAsyncEffect } from "#/utils/react-async";
 import { ParamsDefinition, useParsedSearchParams } from "@/utils/react-router";
 import { Box, Button, VStack } from "@chakra-ui/react";
-import { SetStateAction, useCallback, useMemo, useState } from "react";
+import { SetStateAction, useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 
@@ -114,6 +114,23 @@ export const QuizPage = () => {
     await handleEvent(event);
   }, [recordId, handleEvent]);
 
+  const onExit = useCallback(() => {
+    navigate('/records');
+  }, [navigate]);
+  
+  useEffect(() => {
+    Quizzy.updateQuiz({
+      id: recordId ?? '',
+      type: 'resume',
+      currentTime: Date.now(),
+    }).catch(console.error)
+    return () => void Quizzy.updateQuiz({
+      id: recordId ?? '',
+      type: 'hard-pause',
+      currentTime: Date.now(),
+    }).catch(console.error);
+  }, []);
+
 
   const _setCurrentAnswers = (a: SetStateAction<Answers>) => setCurrentAnswers(a).catch(console.error);
 
@@ -132,7 +149,7 @@ export const QuizPage = () => {
     onPreviewQuestionChanged={onPreviewQuestionChanged}
     onQuestionChanged={onQuestionChanged}
     onNext={onNext}
-    onExit={() => navigate('/')}
+    onExit={onExit}
     onSubmit={onSubmit}
   />;
 

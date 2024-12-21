@@ -33,12 +33,10 @@ export const updateQuiz = (
   let ret: QuizRecord | undefined;
   let retEvent: QuizRecordEvent | undefined;
   let needsForward = false;
-  const updateTimePayload = paused ? {
+  const elapsedTime = paused ? 0 : (currentTime - (record.updateTime ?? record.startTime));
+  const updateTimePayload = {
     updateTime: currentTime,
-    timeUsed: (record.timeUsed || 0),
-  } : {
-    updateTime: currentTime,
-    timeUsed: (record.timeUsed || 0) + currentTime - (record.updateTime ?? record.startTime),
+    timeUsed: (record.timeUsed || 0) + elapsedTime,
   };
 
   if (oprType === 'pause' || oprType === 'hard-pause') {
