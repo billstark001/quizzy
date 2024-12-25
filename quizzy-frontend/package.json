@@ -1,5 +1,5 @@
 {
-  "name": "@quizzy/base",
+  "name": "@quizzy/frontend",
   "version": "0.0.0",
   "type": "module",
   "scripts": {

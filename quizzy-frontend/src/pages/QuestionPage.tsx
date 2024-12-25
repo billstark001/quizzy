@@ -10,7 +10,7 @@ import { useNavigate } from "react-router-dom";
 import Sheet, { Column, withSheetRow } from "@/components/Sheet";
 import Pagination from "@/components/Pagination";
 import { DateTime } from "luxon";
-import { useTranslation } from "react-i18next";
+import { useTranslation } from "../../node_modules/react-i18next";
 import QuestionPreviewModal from "@/modals/QuestionPreviewModal";
 import { useDisclosureWithData } from "@/utils/disclosure";
 import { SearchBox } from "@/components/SearchBox";

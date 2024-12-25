@@ -10,7 +10,7 @@ import RecordsPage from './pages/RecordsPage';
 import ResultsPage from './pages/ResultsPage';
 import ResultPage from './pages/ResultPage';
 import StatsPage from './pages/StatsPage';
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from '../node_modules/react-i18next';
 import { PaperEditPage } from './pages/PaperEditPage';
 import QuestionPage from './pages/QuestionPage';
 import { useParsedSearchParams } from './utils/react-router';

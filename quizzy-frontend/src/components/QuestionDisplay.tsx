@@ -6,7 +6,7 @@ import { QuestionSelectionModal } from "@/components/QuestionSelectionModal";
 import { DragHandleIcon } from "@chakra-ui/icons";
 import { Box, Button, HStack, IconButton, Progress, StackProps, useDisclosure, VStack } from "@chakra-ui/react";
 import { Dispatch, ElementType, ReactNode, SetStateAction, useState } from "react";
-import { useTranslation } from "react-i18next";
+import { useTranslation } from "../../node_modules/react-i18next";
 import { getTagStyle } from "@/utils/react";
 
 

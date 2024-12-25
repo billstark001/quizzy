@@ -3,7 +3,7 @@ import { downloadFile, uploadFile } from "@/utils/html";
 import { QuizzyRaw } from "@/data";
 import { Button, Divider, HStack, Switch, VStack } from "@chakra-ui/react";
 import { useState } from "react";
-import { useTranslation } from "react-i18next";
+import { useTranslation } from "../../node_modules/react-i18next";
 
 
 const refreshIndices = withHandler(

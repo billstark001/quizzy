@@ -6,7 +6,7 @@ import { useAsyncEffect } from "@/utils/react-async";
 import { Button, HStack } from "@chakra-ui/react";
 import { atom, useAtom } from "jotai";
 import { DateTime } from "luxon";
-import { useTranslation } from "react-i18next";
+import { useTranslation } from "../../node_modules/react-i18next";
 import { useNavigate } from "react-router-dom";
 
 const statsAtom = atom<readonly Stat[]>([]);

@@ -7,7 +7,7 @@ import {
 } from "@chakra-ui/react";
 import { useState, useCallback, useEffect, useRef } from "react";
 import { getChangedArray } from "./QuestionEdit";
-import { useTranslation } from "react-i18next";
+import { useTranslation } from "../../node_modules/react-i18next";
 import { Quizzy } from "@/data";
 import { debounce, DebounceReturn } from "@/utils/debounce";
 

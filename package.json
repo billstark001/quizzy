@@ -6,6 +6,6 @@
   },
   "workspaces": [
     "quizzy-common",
-    "quizzy-base"
+    "quizzy-frontend"
   ]
 }

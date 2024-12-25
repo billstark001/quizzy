@@ -14,7 +14,7 @@ import {
 } from "@chakra-ui/react";
 import { useDisclosureWithData, UseDisclosureWithDataProps } from "./disclosure";
 import { isValidElement, ReactNode, useEffect, useRef, useState } from "react";
-import { useTranslation } from "react-i18next";
+import { useTranslation } from "../../node_modules/react-i18next";
 import { WithHandlerOptions, withHandlerRaw } from "./react-msg";
 import ReactDOM from "react-dom/client";
 import AsyncDialog, { DialogOpener } from "./react-dialog";

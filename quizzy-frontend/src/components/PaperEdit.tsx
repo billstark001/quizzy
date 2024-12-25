@@ -5,7 +5,7 @@ import {
   Box, Grid, HStack, IconButton,
   Input, InputProps, Tag, Wrap
 } from "@chakra-ui/react";
-import { useTranslation } from "react-i18next";
+import { useTranslation } from "../../node_modules/react-i18next";
 import { useEditorContext } from "@/utils/react-patch";
 import { Textarea2 } from "./QuestionEdit";
 import TagSelectModal, { TagSelectState } from "./TagSelectModal";
