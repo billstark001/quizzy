@@ -7,7 +7,7 @@ import {
   Tag,
   IconButton,
 } from "@chakra-ui/react";
-import { useTranslation } from "../../node_modules/react-i18next";
+import { useTranslation } from "react-i18next";
 
 export type PaperCardProps = Omit<CardProps, 'children' | 'onSelect'> & {
   paper: QuizPaper,

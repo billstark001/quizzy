@@ -1,6 +1,6 @@
 import StartQuizModal from "@/modals/StartQuizModal";
 import { Button, HStack, useDisclosure, VStack } from "@chakra-ui/react";
-import { useTranslation } from "../../node_modules/react-i18next";
+import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 
 export const EntryPage = () => {

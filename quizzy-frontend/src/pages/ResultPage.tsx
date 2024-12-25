@@ -7,7 +7,7 @@ import { Quizzy } from "@/data";
 import { useAsyncEffect, useAsyncMemo } from "@/utils/react-async";
 import { Box, Button, Divider, Modal, ModalBody, ModalCloseButton, ModalContent, ModalHeader, ModalOverlay, VStack } from "@chakra-ui/react";
 import { useState } from "react";
-import { useTranslation } from "../../node_modules/react-i18next";
+import { useTranslation } from "react-i18next";
 import { useParams } from "react-router-dom";
 import { StatPanel } from "@/components/StatPanel";
 

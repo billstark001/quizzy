@@ -17,6 +17,7 @@ export default defineConfig({
     exclude: ['jieba-wasm'], // 替换为实际使用的 wasm 库名
   },
   build: {
+    target: 'esnext',
     rollupOptions: {
       // make sure to externalize deps that shouldn't be bundled
       // into your library

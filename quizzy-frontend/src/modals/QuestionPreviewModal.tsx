@@ -1,7 +1,7 @@
 import { QuestionPanel } from "@/components/QuestionPanel";
 import { Question } from "@quizzy/common/types";
 import { Button, Modal, ModalBody, ModalCloseButton, ModalContent, ModalFooter, ModalHeader, ModalOverlay, ModalProps } from "@chakra-ui/react";
-import { useTranslation } from "../../node_modules/react-i18next";
+import { useTranslation } from "react-i18next";
 
 export const QuestionPreviewModal = (props: Omit<ModalProps, 'children'> & {
   question?: Question;

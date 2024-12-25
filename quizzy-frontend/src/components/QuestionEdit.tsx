@@ -8,7 +8,7 @@ import {
   SwitchProps, Tag, Textarea, TextareaProps, VStack, Wrap
 } from "@chakra-ui/react";
 import { FocusEventHandler, useCallback, useEffect, useRef, useState } from "react";
-import { useTranslation } from "../../node_modules/react-i18next";
+import { useTranslation } from "react-i18next";
 import { useEditorContext } from "@/utils/react-patch";
 import TagSelectModal, { TagSelectState } from "./TagSelectModal";
 

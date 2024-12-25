@@ -15,7 +15,7 @@ import { useAsyncMemo } from "@/utils/react-async";
 import { DragHandleIcon } from "@chakra-ui/icons";
 import { Box, Button, Divider, HStack, IconButton, useCallbackRef, useDisclosure, VStack } from "@chakra-ui/react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useTranslation } from "../../node_modules/react-i18next";
+import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 
 

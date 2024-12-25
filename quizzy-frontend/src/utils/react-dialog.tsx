@@ -1,6 +1,6 @@
 import React, { isValidElement, ReactNode, RefObject, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AlertDialog, AlertDialogBody, AlertDialogCloseButton, AlertDialogContent, AlertDialogFooter, AlertDialogHeader, AlertDialogOverlay, AlertDialogProps, Button, ButtonProps, HStack, useCallbackRef } from "@chakra-ui/react";
-import { useTranslation } from "../../node_modules/react-i18next";
+import { useTranslation } from "react-i18next";
 import { uuidV4B64 } from "@quizzy/common/utils";
 import { promiseWithResolvers } from "./func";
 

@@ -5,7 +5,7 @@ import {
   ModalFooter, ModalHeader, ModalOverlay, ModalProps, Switch, useCallbackRef, Wrap
 } from "@chakra-ui/react";
 import { ReactNode, useCallback, useMemo, useState } from "react";
-import { useTranslation } from "../../node_modules/react-i18next";
+import { useTranslation } from "react-i18next";
 
 import {
   DndContext,
