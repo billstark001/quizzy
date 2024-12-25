@@ -19,9 +19,6 @@ export default defineConfig({
   build: {
     target: 'esnext',
     rollupOptions: {
-      // make sure to externalize deps that shouldn't be bundled
-      // into your library
-      external: ['react', 'react/jsx-runtime'],
       output: {
         // Provide global variables to use in the UMD build
         // for externalized deps
