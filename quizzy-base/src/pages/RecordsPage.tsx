@@ -1,9 +1,9 @@
-import Sheet, { Column, withSheetRow } from "#/components/Sheet";
-import { QuizRecord } from "#/types";
-import { ID } from "#/types/technical";
-import { dispDuration } from "#/utils/time";
+import Sheet, { Column, withSheetRow } from "@/components/Sheet";
+import { QuizRecord } from "@quizzy/common/types";
+import { ID } from "@quizzy/common/types";
+import { dispDuration } from "@/utils/time";
 import { Quizzy } from "@/data";
-import { useAsyncEffect } from "#/utils/react-async";
+import { useAsyncEffect } from "@/utils/react-async";
 import { Button, HStack } from "@chakra-ui/react";
 import { atom, useAtom } from "jotai";
 import { DateTime } from "luxon";

@@ -4,16 +4,16 @@ import {
 } from "@chakra-ui/react";
 import { useCallback, useState } from "react";
 import { QuizzyRaw } from "@/data";
-import { Question } from "#/types";
-import { SearchResult } from "#/types/technical";
+import { Question } from "@quizzy/common/types";
+import { SearchResult } from "@quizzy/common/types";
 import { useNavigate } from "react-router-dom";
-import Sheet, { Column, withSheetRow } from "#/components/Sheet";
-import Pagination from "#/components/Pagination";
+import Sheet, { Column, withSheetRow } from "@/components/Sheet";
+import Pagination from "@/components/Pagination";
 import { DateTime } from "luxon";
 import { useTranslation } from "react-i18next";
 import QuestionPreviewModal from "@/modals/QuestionPreviewModal";
-import { useDisclosureWithData } from "#/utils/disclosure";
-import { SearchBox } from "#/components/SearchBox";
+import { useDisclosureWithData } from "@/utils/disclosure";
+import { SearchBox } from "@/components/SearchBox";
 
 
 const fetchSearchResult = async (searchTerm?: string, page?: number): Promise<SearchResult<Question> | undefined> => {

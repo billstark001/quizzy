@@ -9,7 +9,7 @@ import wasm from "vite-plugin-wasm";
 export default defineConfig({
   plugins: [
     react(),
-    dts({ include: ['lib'] }),
+    // dts({ include: ['lib'] }),
     wasm(),
     tsconfigPaths(),
   ],
@@ -17,13 +17,6 @@ export default defineConfig({
     exclude: ['jieba-wasm'], // 替换为实际使用的 wasm 库名
   },
   build: {
-    copyPublicDir: false,
-    lib: {
-      entry: resolve(__dirname, 'lib/main.ts'),
-      formats: ['es'],
-      name: 'quizzy-base',
-      fileName: "quizzy-base",
-    },
     rollupOptions: {
       // make sure to externalize deps that shouldn't be bundled
       // into your library
@@ -38,7 +31,6 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': resolve(__dirname, 'src'),
-      '#': resolve(__dirname, 'lib'),
     }
   },
 });

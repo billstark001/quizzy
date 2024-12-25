@@ -1,5 +1,5 @@
-import { StatPanel } from "#/components/StatPanel";
-import { useAsyncMemo } from "#/utils/react-async";
+import { StatPanel } from "@/components/StatPanel";
+import { useAsyncMemo } from "@/utils/react-async";
 import { Quizzy } from "@/data";
 import { VStack } from "@chakra-ui/react";
 import { useParams } from "react-router-dom";

@@ -1,7 +1,7 @@
-import { PaperCard } from "#/components/PaperCard";
-import { TagListResult } from "#/types";
-import { useSelection } from "#/utils/react";
-import { useAsyncMemo } from "#/utils/react-async";
+import { PaperCard } from "@/components/PaperCard";
+import { TagListResult } from "@quizzy/common/types";
+import { useSelection } from "@/utils/react";
+import { useAsyncMemo } from "@/utils/react-async";
 import { Quizzy } from "@/data";
 import { usePapers } from "@/data/atoms";
 import {

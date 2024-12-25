@@ -1,0 +1,41 @@
+{
+  "name": "@quizzy/common",
+  "version": "1.0.0",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "src",
+    "dist"
+  ],
+  "exports": {
+    ".": "./dist/index.js",
+    "./types": "./dist/types/index.js",
+    "./utils": "./dist/utils/index.js",
+    "./db": "./dist/db/index.js",
+    "./db/*": "./dist/db/*.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "@types/random-js": "^2.0.0",
+    "@types/tiny-segmenter": "^0.2.0"
+  },
+  "dependencies": {
+    "base64-js": "^1.5.1",
+    "franc": "^6.2.0",
+    "idb": "^8.0.1",
+    "jieba-wasm": "^2.2.0",
+    "quick-lru": "^7.0.0",
+    "@quizzy/common": "^1.0.0",
+    "random-js": "^2.1.0",
+    "stopwords-ja": "^0.2.0",
+    "tiny-segmenter": "^0.2.0",
+    "trie-search": "^2.1.0",
+    "uuid": "^11.0.3"
+  }
+}

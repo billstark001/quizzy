@@ -4,11 +4,8 @@
   "scripts": {
     "test": "test"
   },
-  "dependencies": {
-    "base64-js": "^1.5.1",
-    "uuid": "^9.0.1"
-  },
-  "devDependencies": {
-    "@types/uuid": "^9.0.8"
-  }
+  "workspaces": [
+    "quizzy-common",
+    "quizzy-base"
+  ]
 }

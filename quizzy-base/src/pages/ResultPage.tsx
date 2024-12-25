@@ -1,15 +1,15 @@
-import { QuestionDisplay } from "#/components/QuestionDisplay";
-import Sheet, { Column, withSheetRow } from "#/components/Sheet";
-import { Question, QuizResultRecordRow } from "#/types";
-import { ID } from "#/types/technical";
-import { useDisclosureWithData } from "#/utils/disclosure";
+import { QuestionDisplay } from "@/components/QuestionDisplay";
+import Sheet, { Column, withSheetRow } from "@/components/Sheet";
+import { Question, QuizResultRecordRow } from "@quizzy/common/types";
+import { ID } from "@quizzy/common/types";
+import { useDisclosureWithData } from "@/utils/disclosure";
 import { Quizzy } from "@/data";
-import { useAsyncEffect, useAsyncMemo } from "#/utils/react-async";
+import { useAsyncEffect, useAsyncMemo } from "@/utils/react-async";
 import { Box, Button, Divider, Modal, ModalBody, ModalCloseButton, ModalContent, ModalHeader, ModalOverlay, VStack } from "@chakra-ui/react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useParams } from "react-router-dom";
-import { StatPanel } from "#/components/StatPanel";
+import { StatPanel } from "@/components/StatPanel";
 
 export type ResultPageParams = {
   rid: ID;

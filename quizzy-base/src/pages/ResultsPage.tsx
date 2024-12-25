@@ -1,17 +1,17 @@
 
-import Sheet, { withSheetRow, Column } from "#/components/Sheet";
-import { QuizResult, Stat } from "#/types";
-import { dispDuration } from "#/utils/time";
+import Sheet, { withSheetRow, Column } from "@/components/Sheet";
+import { QuizResult, Stat } from "@quizzy/common/types";
+import { dispDuration } from "@/utils/time";
 import { Quizzy } from "@/data";
-import { useAsyncEffect } from "#/utils/react-async";
+import { useAsyncEffect } from "@/utils/react-async";
 import { Button, Checkbox, CheckboxProps, Divider, HStack, VStack } from "@chakra-ui/react";
 import { atom, useAtom } from "jotai";
 import { DateTime } from "luxon";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import { useSelection } from "#/utils/react";
+import { useSelection } from "@/utils/react";
 import { useCallback } from "react";
-import { openDialog } from "#/utils";
+import { openDialog } from "@/utils";
 
 
 const resultsAtom = atom<readonly QuizResult[]>([]);

@@ -1,4 +1,4 @@
-import { PaperCard } from "#/components/PaperCard";
+import { PaperCard } from "@/components/PaperCard";
 import { usePapers } from "@/data/atoms";
 import { Button, HStack, VStack, Wrap } from "@chakra-ui/react";
 

@@ -1,14 +1,13 @@
 
-import Sheet, { withSheetRow, Column } from "#/components/Sheet";
-import { Stat, StatUnit, stringifyUnit } from "#/types";
+import Sheet, { withSheetRow, Column } from "@/components/Sheet";
+import { Stat, StatUnit, stringifyUnit } from "@quizzy/common/types";
 import { Quizzy } from "@/data";
-import { useAsyncEffect } from "#/utils/react-async";
+import { useAsyncEffect } from "@/utils/react-async";
 import { Button, HStack } from "@chakra-ui/react";
 import { atom, useAtom } from "jotai";
 import { DateTime } from "luxon";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-
 
 const statsAtom = atom<readonly Stat[]>([]);
 

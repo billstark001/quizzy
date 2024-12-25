@@ -1,5 +1,5 @@
-import { withHandler } from "#/utils";
-import { downloadFile, uploadFile } from "#/utils/html";
+import { withHandler } from "@/utils";
+import { downloadFile, uploadFile } from "@/utils/html";
 import { QuizzyRaw } from "@/data";
 import { Button, Divider, HStack, Switch, VStack } from "@chakra-ui/react";
 import { useState } from "react";
