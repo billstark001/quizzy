@@ -26,13 +26,16 @@
     "@types/tiny-segmenter": "^0.2.0"
   },
   "dependencies": {
+    "@quizzy/common": "^1.0.0",
     "base64-js": "^1.5.1",
     "franc": "^6.2.0",
+    "i18next": "^24.2.0",
+    "i18next-browser-languagedetector": "^8.0.2",
     "idb": "^8.0.1",
     "jieba-wasm": "^2.2.0",
     "quick-lru": "^7.0.0",
-    "@quizzy/common": "^1.0.0",
     "random-js": "^2.1.0",
+    "react-i18next": "^15.2.0",
     "stopwords-ja": "^0.2.0",
     "tiny-segmenter": "^0.2.0",
     "trie-search": "^2.1.0",
