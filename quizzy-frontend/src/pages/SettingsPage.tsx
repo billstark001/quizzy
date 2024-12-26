@@ -58,14 +58,14 @@ export const SettingsPage = () => {
 
   return <VStack alignItems='flex-start' width='100%'>
     <HStack>
-      <Button onClick={() => refreshIndices(force)}>{t('btn.setting.refreshIndices')}</Button>
+      <Button onClick={() => refreshIndices(force)}>{t('page.settings.btn.refreshIndices')}</Button>
       <Switch isChecked={force} onChange={(e) => setForce(e.target.checked)}>force</Switch>
-      <Button onClick={deleteUnlinked}>{t('btn.setting.deleteUnlinked')}</Button>
+      <Button onClick={deleteUnlinked}>{t('page.settings.btn.deleteUnlinked')}</Button>
     </HStack>
     <Divider />
     <HStack>
-      <Button onClick={importData}>{t('btn.setting.importData')}</Button>
-      <Button onClick={exportData}>{t('btn.setting.exportData')}</Button>
+      <Button onClick={importData}>{t('page.settings.btn.importData')}</Button>
+      <Button onClick={exportData}>{t('page.settings.btn.exportData')}</Button>
     </HStack>
     <Divider />
   </VStack>;

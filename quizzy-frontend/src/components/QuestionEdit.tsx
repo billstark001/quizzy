@@ -75,15 +75,15 @@ export const ChoiceQuestionOptionEdit = (props: ChoiceQuestionOptionEditProps) =
     </ChoiceBox>
     <Input value={option?.content} onChange={(e) => onChange?.(index, { content: e.target.value })} />
     <Switch isChecked={option ? !!option.shouldChoose : undefined} onChange={(e) => onChange?.(index, { shouldChoose: !!e.target.checked })} />
-    <IconButton aria-label={t('page.edit.editButton')}
+    <IconButton aria-label={t('common.btn.edit')}
       onMouseDown={() => setDraggable(true)}
       onMouseUp={() => setDraggable(false)}
       onMouseLeave={() => setDraggable(false)}
     ><DragHandleIcon /></IconButton>
-    <IconButton aria-label={t('page.edit.editButton')}
+    <IconButton aria-label={t('common.btn.edit')}
       onClick={() => onEvent?.({ index, type: 'add', target: ref.current! })}
     ><AddIcon /></IconButton>
-    <IconButton aria-label={t('page.edit.editButton')}
+    <IconButton aria-label={t('common.btn.edit')}
       onClick={() => onEvent?.({ index, type: 'delete', target: ref.current! })}
     ><DeleteIcon /></IconButton>
   </HStack>;
@@ -199,9 +199,9 @@ export const QuestionEdit = () => {
       {/* type */}
       <Box>{t('page.edit.type')}</Box>
       <Select {...edit('type')}>
-        <option value=''>{t('page.edit.typeSelect')}</option>
+        <option value=''>{t('common.select.default')}</option>
         {['choice', 'blank', 'text'].map(x => <option key={x}
-          value={x}>{t('question.type.' + x)}</option>)}
+          value={x}>{t('meta.question.type.' + x)}</option>)}
       </Select>
 
       {/* tags */}
@@ -242,7 +242,7 @@ export const QuestionEdit = () => {
 
       {question.type === 'choice' && <>
         <VStack alignItems='flex-start'>
-          <Box>{t('page.edit.choice')}</Box>
+          <Box>{t('page.edit.choice._')}</Box>
           <Button leftIcon={<AddIcon />} onClick={() => {
             onChangeImmediate({ options: [{ content: '' }, ...question.options] })
           }}>{t('page.edit.choice.addTop')}</Button>

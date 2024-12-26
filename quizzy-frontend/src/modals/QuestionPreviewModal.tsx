@@ -14,7 +14,7 @@ export const QuestionPreviewModal = (props: Omit<ModalProps, 'children'> & {
     <ModalContent>
       <ModalCloseButton />
       <ModalHeader>
-        {t('page.edit.preview.header')}
+        {t('modal.questionPreview.header')}
       </ModalHeader>
       <ModalBody>
         <QuestionPanel
@@ -26,7 +26,7 @@ export const QuestionPreviewModal = (props: Omit<ModalProps, 'children'> & {
       </ModalBody>
       <ModalFooter>
         <Button onClick={() => dPreview.onClose()}>
-          {t('btn.close')}
+          {t('common.btn.close')}
         </Button>
       </ModalFooter>
     </ModalContent>

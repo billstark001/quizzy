@@ -80,8 +80,8 @@ export const WrappedHandlerRoot = (props: WrappedHandlerRootProps) => {
 
   const { t } = useTranslation();
   const _h = (success: boolean) => success
-    ? t('notify.success.header')
-    : t('notify.error.header');
+    ? t('common.notify.success.header')
+    : t('common.notify.error.header');
 
   const toast = useToast({
     isClosable: true,
@@ -125,7 +125,7 @@ export const WrappedHandlerRoot = (props: WrappedHandlerRootProps) => {
       notifySuccess() {
         return {
           title: _h(true),
-          description: t('notify.success.desc.default'),
+          description: t('common.notify.success.desc'),
           status: 'success',
         } as UseToastOptions;
       },
@@ -169,7 +169,7 @@ export const WrappedHandlerRoot = (props: WrappedHandlerRootProps) => {
 
         <AlertDialogFooter>
           <Button colorScheme='red' onClick={disclosure.onClose} ml={3}>
-            {t('notify.error.dismiss')}
+            {t('common.btn.dismiss')}
           </Button>
         </AlertDialogFooter>
       </AlertDialogContent>

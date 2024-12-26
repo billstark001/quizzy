@@ -39,10 +39,10 @@ const EditButton = withSheetRow<Question, { preview?: (item?: Question) => void 
 
   return <>
     <Button onClick={() => preview?.(item)}>
-      {t('page.question.preview')}
+      {t('common.btn.preview')}
     </Button>
     <Button onClick={nav}>
-      {t('page.question.edit')}
+      {t('common.btn.edit')}
     </Button>
   </>;
 });

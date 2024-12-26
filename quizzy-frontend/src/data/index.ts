@@ -1,8 +1,8 @@
 import { QuizzyEditCache } from "@quizzy/common/db/edit-cache";
 import { IDBController } from "@quizzy/common/db/idb";
-import toWrapped from "@/impl/wrapped";
+import toWrapped from "./wrapped-controller";
 import { withHandler } from "@/utils";
-import { WrappedQuizzyEditCache } from "@/impl/wrapped-cache";
+import { WrappedQuizzyEditCache } from "./wrapped-cache";
 
 
 export const QuizzyRaw = await IDBController.connect();

@@ -146,8 +146,8 @@ export const PaperEditPage = (props: { paper?: string }) => {
     if (cachedState?.question || cachedState?.paper) {
       standaloneToast({
         status: 'info',
-        title: t('page.edit.dataLoaded.title'),
-        description: t('page.edit.dataLoaded.desc'),
+        title: t('page.edit.toast.dataLoaded.title'),
+        description: t('page.edit.toast.dataLoaded.desc'),
       });
     }
     lastQuestionTotalStep.current = 0;
@@ -307,7 +307,7 @@ export const PaperEditPage = (props: { paper?: string }) => {
       </EditorContextProvider>
       <HStack justifyContent='space-between'>
         <Box>{t('page.edit.nowEditing', { questionIndex })}</Box>
-        <IconButton colorScheme='blue' aria-label={t('page.question.questions')} icon={<DragHandleIcon />}
+        <IconButton colorScheme='blue' aria-label={t('page.edit.selectQuestions')} icon={<DragHandleIcon />}
           onClick={() => {
             selectQuestionPreview(1);
             questionMap.current = {};

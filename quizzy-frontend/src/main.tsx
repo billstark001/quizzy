@@ -4,6 +4,8 @@ import App from './App.tsx';
 import './index.css';
 import { ChakraProvider, ColorModeScript, extendTheme } from '@chakra-ui/react';
 
+import './data/lang-entry';
+
 const config = {
   initialColorMode: 'system',
   useSystemColorMode: true,

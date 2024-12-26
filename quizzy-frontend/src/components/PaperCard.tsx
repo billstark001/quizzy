@@ -68,13 +68,13 @@ export const PaperCard = (props: PaperCardProps) => {
           onClick={() => onSelect?.(!selected)}
         />}
         <Button variant='solid' colorScheme='blue' onClick={onStart}>
-          {t('card.paper.start')}
+          {t('common.btn.start')}
         </Button>
         {onRevise && <Button variant='ghost' colorScheme='blue' onClick={onRevise}>
-          {t('card.paper.revise')}
+          {t('common.btn.revise')}
         </Button>}
         {onEdit && <Button variant='ghost' colorScheme='blue' onClick={onEdit}>
-          {t('card.paper.edit')}
+          {t('common.btn.edit')}
         </Button>}
       </ButtonGroup>
     </CardFooter>

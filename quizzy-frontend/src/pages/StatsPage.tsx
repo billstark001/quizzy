@@ -27,13 +27,13 @@ const GotoButton = withSheetRow<Stat, _K>((props) => {
     <Button onClick={() => {
       navigate('/stat/' + item.id);
     }} colorScheme="blue">
-      {t('btn.goto')}
+      {t('common.btn.view')}
     </Button>
     <Button onClick={async () => {
       await Quizzy.deleteStat(item.id);
       await refresh();
     }} colorScheme='red'>
-      {t('btn.delete')}
+      {t('common.btn.delete')}
     </Button>
   </HStack>;
 });

@@ -260,7 +260,7 @@ export const QuestionSelectionModal = (props: QuestionSelectionModalProps) => {
     <ModalOverlay />
     <ModalContent onKeyDown={isEditing ? editPatch.onKeyInput : undefined}>
       <ModalHeader>
-        {header ?? t('modal.select.header')}
+        {header ?? t('modal.questionSelect.header')}
       </ModalHeader>
       <ModalCloseButton />
       <ModalBody>
@@ -281,7 +281,7 @@ export const QuestionSelectionModal = (props: QuestionSelectionModalProps) => {
                 />)}
               </SortableContext>
               {!editOrder.length && <Button onClick={() => add(0)}>
-                {t('modal.select.addFirst')}
+                {t('modal.questionSelect.btn.addFirst')}
               </Button>}
             </DndContext>
             </> : <>
@@ -299,10 +299,10 @@ export const QuestionSelectionModal = (props: QuestionSelectionModalProps) => {
         </HStack>
       </ModalBody>
       <ModalFooter as={HStack} justifyContent='space-between'>
-        <Button onClick={modalProps.onClose}>{t('modal.general.btn.close')}</Button>
+        <Button onClick={modalProps.onClose}>{t('common.btn.close')}</Button>
         <HStack>
           {allowEdit && <Switch isChecked={isEditing} onChange={isEditing ? endEdit : startEdit} />}
-          <Button onClick={onSelectClick}>{t('modal.select.btn.select')}</Button>
+          <Button onClick={onSelectClick}>{t('common.btn.select')}</Button>
         </HStack>
       </ModalFooter>
     </ModalContent>

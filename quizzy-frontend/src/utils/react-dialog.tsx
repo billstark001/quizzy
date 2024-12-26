@@ -15,7 +15,8 @@ export type DialogDefinition<T = boolean> = {
 };
 
 
-export type DialogType = 'normal' | 'alert' | 'alert-confirm' | 'ok-cancel' | 'load-discard' | 'save-discard';
+export type DialogType = 'normal' | 'alert' | 
+'alert-confirm' | 'ok-cancel' | 'load-discard' | 'save-discard';
 export type DialogOpener = {
   (desc: ReactNode, type?: DialogType, id?: string): Promise<boolean>;
   <T = boolean>(option: Readonly<DialogDefinition<T>>): Promise<T>;
@@ -33,21 +34,21 @@ const getOptionsDefinition = (
   t: ReturnType<typeof useTranslation>['t'], type: DialogType
 ): _O<boolean>[] =>
   type === 'load-discard' ? [
-    [false, t('dialog.option.discard'), { colorScheme: 'red' }],
-    [true, t('dialog.option.load'), { colorScheme: 'green' }]
+    [false, t('common.btn.discard'), { colorScheme: 'red' }],
+    [true, t('common.btn.load'), { colorScheme: 'green' }]
   ] : type === 'save-discard' ? [
-    [false, t('dialog.option.discard'), { colorScheme: 'red' }],
-    [true, t('dialog.option.save'), { colorScheme: 'green' }]
+    [false, t('common.btn.discard'), { colorScheme: 'red' }],
+    [true, t('common.btn.save'), { colorScheme: 'green' }]
   ] : type === 'alert-confirm' ? [
-    [false, t('dialog.option.cancel')],
-    [true, t('dialog.option.confirm'), { colorScheme: 'red' }]
+    [false, t('common.btn.cancel')],
+    [true, t('common.btn.confirm'), { colorScheme: 'red' }]
   ] : type === 'ok-cancel' ? [
-    [false, t('dialog.option.cancel', { colorScheme: 'red' })],
-    [true, t('dialog.option.ok'), { colorScheme: 'blue' }]
+    [false, t('common.btn.cancel', { colorScheme: 'red' })],
+    [true, t('common.btn.ok'), { colorScheme: 'blue' }]
   ] : type === 'alert' ? [
-    [true, t('dialog.option.dismiss'), { colorScheme: 'red' }]
+    [true, t('common.btn.dismiss'), { colorScheme: 'red' }]
   ] : [
-    [true, t('dialog.option.dismiss')],
+    [true, t('common.btn.dismiss')],
   ];
 
 function getOptionDefinition<T = boolean>(o: _O<T>): {
@@ -123,8 +124,8 @@ export const AsyncDialog = (props: Partial<AlertDialogProps> & {
         ? desc as DialogDefinition
         : {
           id: idIn,
-          title: t(`dialog.title.${type || 'normal'}`),
-          desc: desc ?? t(`dialog.title.${type || 'normal'}`),
+          title: t(`common.dialog.title.${type || 'normal'}`),
+          desc: desc ?? t(`common.dialog.title.${type || 'normal'}`),
           options: getOptionsDefinition(t, type || 'normal'),
           closeOption: false,
         };
@@ -156,7 +157,7 @@ export const AsyncDialog = (props: Partial<AlertDialogProps> & {
     const options = data.options?.length
       ? data.options
       : type ? getOptionsDefinition(t, type)
-        : [[false, t('dialog.option.dismiss')] as _O<boolean>];
+        : [[false, t('common.btn.dismiss')] as _O<boolean>];
     const closeOption = data.closeOption
       ?? getOptionDefinition(options[0]).key;
 
@@ -171,7 +172,7 @@ export const AsyncDialog = (props: Partial<AlertDialogProps> & {
         <AlertDialogContent>
           <AlertDialogCloseButton onClick={() => closeDialog(id, closeOption)} />
           <AlertDialogHeader fontSize='lg' fontWeight='bold'>
-            {title ?? t(`dialog.title.${type || 'normal'}`)}
+            {title ?? t(`common.dialog.title.${type || 'normal'}`)}
           </AlertDialogHeader>
 
           <AlertDialogBody>

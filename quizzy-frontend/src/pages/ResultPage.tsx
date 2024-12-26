@@ -110,7 +110,7 @@ export const ResultPage = () => {
 
       <ModalOverlay />
       <ModalContent my={5}>
-        <ModalHeader>{t('page.result.modal.header')}</ModalHeader>
+        <ModalHeader>{t('page.result.modal.question.header')}</ModalHeader>
         <ModalCloseButton />
         <ModalBody pb={5}>
           <QuestionDisplay isResult

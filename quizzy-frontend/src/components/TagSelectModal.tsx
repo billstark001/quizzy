@@ -95,7 +95,7 @@ export const TagSelectModal = (props: Omit<ModalProps, 'children' | 'onSelect'> 
     <ModalOverlay />
     <ModalContent>
       <ModalCloseButton />
-      <ModalHeader>{t('page.edit.modal.tag.title')}</ModalHeader>
+      <ModalHeader>{t('modal.tagSelect.header')}</ModalHeader>
       <ModalBody as={VStack} alignItems='stretch'>
         <Input value={currentTag} onChange={(e) => {
           setCurrentTag(e.target.value);
@@ -109,8 +109,8 @@ export const TagSelectModal = (props: Omit<ModalProps, 'children' | 'onSelect'> 
         </Wrap>}
       </ModalBody>
       <ModalFooter justifyContent='space-between'>
-        <Button colorScheme='red' onClick={onClose}>{t('btn.cancel')}</Button>
-        <Button colorScheme='blue' onClick={submitTag}>{t('btn.save')}</Button>
+        <Button colorScheme='red' onClick={onClose}>{t('common.btn.cancel')}</Button>
+        <Button colorScheme='blue' onClick={submitTag}>{t('common.btn.save')}</Button>
       </ModalFooter>
     </ModalContent>
   </Modal>;
