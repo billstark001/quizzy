@@ -1,7 +1,6 @@
 import { ChoiceQuestion, ChoiceQuestionOption, Question } from "@quizzy/common/types";
 import { useDisclosureWithData } from "@/utils/disclosure";
 import { numberToLetters } from "@quizzy/common/utils";
-import { AddIcon, DeleteIcon, DragHandleIcon } from "@chakra-ui/icons";
 import {
   Box, BoxProps, Button, Code, Grid, HStack, IconButton,
   Input, Select, Switch,
@@ -11,6 +10,8 @@ import { FocusEventHandler, useCallback, useEffect, useRef, useState } from "rea
 import { useTranslation } from "react-i18next";
 import { useEditorContext } from "@/utils/react-patch";
 import TagSelectModal, { TagSelectState } from "./TagSelectModal";
+import { MdAdd, MdDelete } from "react-icons/md";
+import { RxDragHandleDots2 } from "react-icons/rx";
 
 export const getChangedArray = <T,>(arr: readonly T[], index: number, value: T) => {
   return arr.map((x, i) => i == index ? value : x);
@@ -79,13 +80,13 @@ export const ChoiceQuestionOptionEdit = (props: ChoiceQuestionOptionEditProps) =
       onMouseDown={() => setDraggable(true)}
       onMouseUp={() => setDraggable(false)}
       onMouseLeave={() => setDraggable(false)}
-    ><DragHandleIcon /></IconButton>
+    ><RxDragHandleDots2 /></IconButton>
     <IconButton aria-label={t('common.btn.edit')}
       onClick={() => onEvent?.({ index, type: 'add', target: ref.current! })}
-    ><AddIcon /></IconButton>
+    ><MdAdd /></IconButton>
     <IconButton aria-label={t('common.btn.edit')}
       onClick={() => onEvent?.({ index, type: 'delete', target: ref.current! })}
-    ><DeleteIcon /></IconButton>
+    ><MdDelete /></IconButton>
   </HStack>;
 };
 
@@ -215,7 +216,7 @@ export const QuestionEdit = () => {
           onClick={() => dTag.onOpen()}
           aria-label={t('page.edit.addButton')}
           size='xs'
-          icon={<AddIcon />}
+          icon={<MdAdd />}
         />
       </Wrap>
 
@@ -230,7 +231,7 @@ export const QuestionEdit = () => {
           onClick={() => dTag.onOpen({ isCategory: true })}
           aria-label={t('page.edit.addButton')}
           size='xs'
-          icon={<AddIcon />}
+          icon={<MdAdd />}
         />
       </Wrap>
 
@@ -243,7 +244,7 @@ export const QuestionEdit = () => {
       {question.type === 'choice' && <>
         <VStack alignItems='flex-start'>
           <Box>{t('page.edit.choice._')}</Box>
-          <Button leftIcon={<AddIcon />} onClick={() => {
+          <Button leftIcon={<MdAdd />} onClick={() => {
             onChangeImmediate({ options: [{ content: '' }, ...question.options] })
           }}>{t('page.edit.choice.addTop')}</Button>
           <HStack>

@@ -7,7 +7,7 @@ import {
   ListItem,
   useCallbackRef
 } from "@chakra-ui/react";
-import { SearchIcon } from "@chakra-ui/icons";
+import { IoSearch } from "react-icons/io5";
 import { ChangeEvent, KeyboardEvent, useCallback, useEffect, useRef, useState } from "react";
 import { debounce, DebounceReturn } from "@/utils/debounce";
 import { useAsyncMemo } from "@/utils/react-async";
@@ -70,7 +70,7 @@ export const SearchBox = <T extends DatabaseIndexed>(props: SearchBoxProps<T>) =
     }}>
       <InputGroup>
         <InputLeftElement>
-          <SearchIcon color="gray.300" />
+          <IoSearch color="lightgray" />
         </InputLeftElement>
         <Input
           value={searchTerm}

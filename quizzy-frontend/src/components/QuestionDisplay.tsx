@@ -3,7 +3,7 @@ import { BaseQuestionPanel, BlankQuestionPanelProps, ChoiceQuestionPanelProps, Q
 import { Answers, BlankAnswers, ChoiceAnswers, ChoiceQuestion, Question, TextAnswers } from "@quizzy/common/types";
 import { formatMilliseconds } from "@/utils/time";
 import { QuestionSelectionModal } from "@/components/QuestionSelectionModal";
-import { DragHandleIcon } from "@chakra-ui/icons";
+import { RxDragHandleDots2 } from "react-icons/rx";
 import { Box, Button, HStack, IconButton, Progress, StackProps, useDisclosure, VStack } from "@chakra-ui/react";
 import { Dispatch, ElementType, ReactNode, SetStateAction, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -151,7 +151,7 @@ export const QuestionDisplay = (props: QuestionDisplayProps) => {
         }
       >{t('page.question.prev')}</Button>
       <Box flex={1} minWidth={0}></Box>
-      <IconButton colorScheme='blue' aria-label={t('page.question.questions')} icon={<DragHandleIcon />} 
+      <IconButton colorScheme='blue' aria-label={t('page.question.questions')} icon={<RxDragHandleDots2 />} 
         onClick={() => {
           setQuestionSelect(currentQuestion);
           q.onOpen();

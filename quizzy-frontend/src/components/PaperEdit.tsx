@@ -1,6 +1,6 @@
 import { QuizPaper } from "@quizzy/common/types";
 import { useDisclosureWithData } from "@/utils/disclosure";
-import { AddIcon } from "@chakra-ui/icons";
+import { IoAddOutline } from "react-icons/io5";
 import {
   Box, Grid, HStack, IconButton,
   Input, InputProps, Tag, Wrap
@@ -40,7 +40,7 @@ export const PaperEdit = () => {
           onClick={() => dTag.onOpen()}
           aria-label={t('page.edit.addButton')}
           size='xs'
-          icon={<AddIcon />}
+          icon={<IoAddOutline />}
         />
       </Wrap>
 
@@ -55,7 +55,7 @@ export const PaperEdit = () => {
           onClick={() => dTag.onOpen({ isCategory: true })}
           aria-label={t('page.edit.addButton')}
           size='xs'
-          icon={<AddIcon />}
+          icon={<IoAddOutline />}
         />
       </Wrap>
 

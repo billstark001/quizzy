@@ -1,5 +1,5 @@
 import { QuizPaper } from "@quizzy/common/types";
-import { CheckIcon } from "@chakra-ui/icons";
+import { AiOutlineCheck } from "react-icons/ai";
 import {
   Card, Heading, CardBody, Stack, Text, Image,
   Button, ButtonGroup, CardFooter, Divider, useColorMode,
@@ -63,7 +63,7 @@ export const PaperCard = (props: PaperCardProps) => {
     <CardFooter>
       <ButtonGroup as={Wrap} spacing='2' justifyContent='flex-end'>
         {useSelect && <IconButton 
-          icon={<CheckIcon />} aria-label="check"
+          icon={<AiOutlineCheck />} aria-label="check"
           colorScheme={selected ? 'blue' : undefined}
           onClick={() => onSelect?.(!selected)}
         />}

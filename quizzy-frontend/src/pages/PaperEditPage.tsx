@@ -12,7 +12,7 @@ import { uuidV4B64 } from "@quizzy/common/utils";
 import { Quizzy, QuizzyCache, QuizzyCacheRaw, QuizzyRaw } from "@/data";
 import QuestionPreviewModal from "@/modals/QuestionPreviewModal";
 import { useAsyncMemo } from "@/utils/react-async";
-import { DragHandleIcon } from "@chakra-ui/icons";
+import { RxDragHandleDots2 } from "react-icons/rx";
 import { Box, Button, Divider, HStack, IconButton, useCallbackRef, useDisclosure, VStack } from "@chakra-ui/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -307,7 +307,7 @@ export const PaperEditPage = (props: { paper?: string }) => {
       </EditorContextProvider>
       <HStack justifyContent='space-between'>
         <Box>{t('page.edit.nowEditing', { questionIndex })}</Box>
-        <IconButton colorScheme='blue' aria-label={t('page.edit.selectQuestions')} icon={<DragHandleIcon />}
+        <IconButton colorScheme='blue' aria-label={t('page.edit.selectQuestions')} icon={<RxDragHandleDots2 />}
           onClick={() => {
             selectQuestionPreview(1);
             questionMap.current = {};

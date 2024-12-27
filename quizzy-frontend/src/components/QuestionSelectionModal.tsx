@@ -1,5 +1,8 @@
 import { usePatch } from "@/utils/react-patch";
-import { AddIcon, MinusIcon, QuestionIcon } from "@chakra-ui/icons";
+
+import { FiMinus } from "react-icons/fi";
+import { MdAdd } from "react-icons/md";
+import { AiOutlineQuestionCircle } from "react-icons/ai";
 import {
   Box, Button, HStack, IconButton, IconButtonProps, Modal, ModalBody, ModalCloseButton, ModalContent,
   ModalFooter, ModalHeader, ModalOverlay, ModalProps, Switch, useCallbackRef, Wrap
@@ -126,7 +129,7 @@ const RenderButton = (props: RenderButtonProps) => {
     {isEditing && <>
       <IconButton
         {...smallIconProps}
-        icon={<MinusIcon />} aria-label="remove" colorScheme="red"
+        icon={<FiMinus />} aria-label="remove" colorScheme="red"
         onClick={(e) => {
           e.stopPropagation();
           e.preventDefault();
@@ -135,7 +138,7 @@ const RenderButton = (props: RenderButtonProps) => {
       />
       <IconButton
         {...smallIconCenterProps}
-        icon={<QuestionIcon />} aria-label="view" colorScheme="blue"
+        icon={<AiOutlineQuestionCircle />} aria-label="view" colorScheme="blue"
         onClick={(e) => {
           e.stopPropagation();
           e.preventDefault();
@@ -144,7 +147,7 @@ const RenderButton = (props: RenderButtonProps) => {
       />
       <IconButton
         {...smallIconRightProps}
-        icon={<AddIcon />} aria-label="add" colorScheme="green"
+        icon={<MdAdd />} aria-label="add" colorScheme="green"
         onClick={(e) => {
           e.stopPropagation();
           e.preventDefault();

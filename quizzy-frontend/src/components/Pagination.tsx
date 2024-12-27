@@ -8,7 +8,9 @@ import {
   NumberInput,
   NumberInputField,
 } from "@chakra-ui/react";
-import { ArrowLeftIcon, ArrowRightIcon, CheckIcon, ChevronLeftIcon, ChevronRightIcon } from "@chakra-ui/icons";
+import { 
+  AiFillStepBackward, AiFillStepForward, AiOutlineCheck,  
+  AiFillCaretLeft, AiFillCaretRight } from "react-icons/ai";
 
 export type PaginationProps = HTMLChakraProps<'div'> & {
   currentPage: number;
@@ -94,26 +96,26 @@ export const Pagination: React.FC<PaginationProps> = (props) => {
     <HStack spacing={2} justifyContent='center' {...divProps}>
       <IconButton
         aria-label="first"
-        icon={<ArrowLeftIcon />}
+        icon={<AiFillStepBackward />}
         onClick={() => handlePageChange(1)} 
         isDisabled={currentPageRaw <= 1}
       />
       <IconButton
         aria-label="prev"
-        icon={<ChevronLeftIcon />}
+        icon={<AiFillCaretLeft />}
         onClick={() => handlePageChange(currentPage - 1)}
         isDisabled={currentPageRaw <= 1}
       />
       {renderPageNumbers()}
       <IconButton
         aria-label="next"
-        icon={<ChevronRightIcon />}
+        icon={<AiFillCaretRight />}
         onClick={() => handlePageChange(currentPage + 1)}
         isDisabled={currentPageRaw >= totalPages}
       />
       <IconButton
         aria-label="last"
-        icon={<ArrowRightIcon />}
+        icon={<AiFillStepForward />}
         onClick={() => handlePageChange(totalPages)}
         isDisabled={currentPageRaw >= totalPages}
       />
@@ -135,7 +137,7 @@ export const Pagination: React.FC<PaginationProps> = (props) => {
       </Box>
       <IconButton
         aria-label="goto"
-        icon={<CheckIcon />}
+        icon={<AiOutlineCheck />}
         onClick={() => {
           const p = Number(gotoPage);
           if (!Number.isNaN(p)) {

@@ -3,7 +3,6 @@ import ChakraUIRenderer from "@/thirdparty/chakra-ui-markdown-renderer";
 import { BaseQuestion, BLANK_PREFIX, BlankQuestion, ChoiceQuestion, Question, TextQuestion } from "@quizzy/common/types";
 import { ID } from "@quizzy/common/types";
 import { numberToLetters } from "@quizzy/common/utils";
-import { AddIcon, MinusIcon } from "@chakra-ui/icons";
 import {
   Box,
   Text,
@@ -16,6 +15,9 @@ import {
 } from "@chakra-ui/react";
 import { createContext, Dispatch, SetStateAction, useCallback, useContext, useMemo, useState } from "react";
 import ReactMarkdown from "react-markdown";
+
+import { FiMinus } from "react-icons/fi";
+import { MdAdd } from "react-icons/md";
 
 
 type _S = {
@@ -92,7 +94,7 @@ export const BaseQuestionPanel = (props: BaseQuestionPanelProps) => {
             backgroundColor: 'gray.600',
           }}
         >
-          {expandState ? <MinusIcon /> : <AddIcon />}
+          {expandState ? <FiMinus /> : <MdAdd />}
         </Box>
       </HStack>
       {expandState && <Box w='100%' flex={1}>

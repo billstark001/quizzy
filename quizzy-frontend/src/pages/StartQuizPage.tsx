@@ -6,9 +6,7 @@ import { Quizzy } from "@/data";
 import { usePapers } from "@/data/atoms";
 import {
   Button,
-  Modal, ModalBody, ModalCloseButton,
-  ModalContent, ModalFooter, ModalHeader,
-  ModalOverlay, ModalProps,
+  HStack,
   Tab,
   TabList,
   TabPanel,
@@ -30,9 +28,7 @@ const defaultTagListResult = (): TagListResult => ({
   paperTags: [],
 });
 
-export const StartQuizModal = (props: Omit<ModalProps, 'children'> & {
-
-}) => {
+export const StartQuizPage = () => {
 
   const { t } = useTranslation();
 
@@ -124,28 +120,17 @@ export const StartQuizModal = (props: Omit<ModalProps, 'children'> & {
     </TabPanels>
   </Tabs>;
 
-  return <Modal
-    closeOnOverlayClick={false}
-    size='4xl'
-    {...props}
-  >
-    <ModalOverlay />
-    <ModalContent>
-      <ModalCloseButton />
-      <ModalHeader>{t('modal.startQuiz.header')}</ModalHeader>
-      <ModalBody>
-        {tabs}
-      </ModalBody>
-      <ModalFooter>
-        <Button
-          colorScheme="blue" isDisabled={startRandomDisabled}
-          onClick={() => startRandomWithTab(selectionByTab[tabIndex].getAllSelected())}
-        >
-          {t('modal.startQuiz.btn.startRandom')}
-        </Button>
-      </ModalFooter>
-    </ModalContent>
-  </Modal>;
+  return <VStack alignItems='stretch'>
+    {tabs}
+    <HStack>
+      <Button
+        colorScheme="blue" isDisabled={startRandomDisabled}
+        onClick={() => startRandomWithTab(selectionByTab[tabIndex].getAllSelected())}
+      >
+        {t('modal.startQuiz.btn.startRandom')}
+      </Button>
+    </HStack>
+  </VStack>;
 };
 
-export default StartQuizModal;
+export default StartQuizPage;
