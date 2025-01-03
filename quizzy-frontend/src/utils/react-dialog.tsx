@@ -44,7 +44,7 @@ const getOptionsDefinition = (
     [true, t('common.btn.confirm'), { colorScheme: 'red' }]
   ] : type === 'ok-cancel' ? [
     [false, t('common.btn.cancel', { colorScheme: 'red' })],
-    [true, t('common.btn.ok'), { colorScheme: 'blue' }]
+    [true, t('common.btn.ok'), { colorScheme: 'purple' }]
   ] : type === 'alert' ? [
     [true, t('common.btn.dismiss'), { colorScheme: 'red' }]
   ] : [

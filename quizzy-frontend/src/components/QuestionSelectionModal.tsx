@@ -101,7 +101,7 @@ const RenderButton = (props: RenderButtonProps) => {
 
   let indexButton = <Button
     w={12}
-    colorScheme={preview === indexOfPaper ? 'blue' : undefined}
+    colorScheme={preview === indexOfPaper ? 'purple' : undefined}
     onClick={() => onSelectPreview?.(indexOfPaper)}
     border={selected === indexOfPaper ? '1px solid' : 'none'}
     borderColor='gray.500'

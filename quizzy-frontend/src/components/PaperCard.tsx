@@ -64,16 +64,16 @@ export const PaperCard = (props: PaperCardProps) => {
       <ButtonGroup as={Wrap} spacing='2' justifyContent='flex-end'>
         {useSelect && <IconButton 
           icon={<AiOutlineCheck />} aria-label="check"
-          colorScheme={selected ? 'blue' : undefined}
+          colorScheme={selected ? 'purple' : undefined}
           onClick={() => onSelect?.(!selected)}
         />}
-        <Button variant='solid' colorScheme='blue' onClick={onStart}>
+        <Button variant='solid' colorScheme='purple' onClick={onStart}>
           {t('common.btn.start')}
         </Button>
-        {onRevise && <Button variant='ghost' colorScheme='blue' onClick={onRevise}>
+        {onRevise && <Button variant='ghost' colorScheme='purple' onClick={onRevise}>
           {t('common.btn.revise')}
         </Button>}
-        {onEdit && <Button variant='ghost' colorScheme='blue' onClick={onEdit}>
+        {onEdit && <Button variant='ghost' colorScheme='purple' onClick={onEdit}>
           {t('common.btn.edit')}
         </Button>}
       </ButtonGroup>

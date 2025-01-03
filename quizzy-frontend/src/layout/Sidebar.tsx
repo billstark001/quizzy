@@ -24,13 +24,14 @@ import {
   DrawerOverlay,
   useColorMode,
 } from '@chakra-ui/react'
-import { PropsWithChildren, ReactNode, useCallback, useEffect, useRef, useState } from 'react'
+import { PropsWithChildren, ReactNode, useContext, useEffect, useRef } from 'react'
 import {
   FiMenu,
   FiSun,
   FiChevronDown,
 } from 'react-icons/fi';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { LayoutContext, LogoEnvironmentContext } from './layout-context';
 
 export interface LinkItemProps {
   name: ReactNode;
@@ -44,7 +45,6 @@ export interface LinkItemProps {
 interface MobileProps extends FlexProps {
   logo?: ReactNode
   onOpen: () => void
-  onToggleExpand: () => void
 }
 
 interface SidebarProps extends BoxProps {
@@ -55,13 +55,13 @@ interface SidebarProps extends BoxProps {
   mobile?: boolean;
 }
 
-const SIDEBAR_SIZE_FOLDED_PX = 100;
+const SIDEBAR_SIZE_FOLDED_PX = 80;
 const SIDEBAR_SIZE_EXPANDED_PX = 240;
 const SIDEBAR_SIZE_MOBILE_PX = 300;
 
 
-const SidebarContent = ({ 
-  logo, items, onClose, collapsed, mobile, ...rest 
+const SidebarContent = ({
+  logo, items, onClose, collapsed, mobile, ...rest
 }: SidebarProps) => {
   collapsed = !!collapsed;
   const isMobile = useScreenSize() === 'mobile';
@@ -74,10 +74,10 @@ const SidebarContent = ({
       borderRightColor={useColorModeValue('gray.200', 'gray.700')}
       boxShadow={collapsed ? '0 0 15px #00000020' : undefined}
       w={`${mobile
-          ? SIDEBAR_SIZE_MOBILE_PX
-          : collapsed
-            ? SIDEBAR_SIZE_FOLDED_PX
-            : SIDEBAR_SIZE_EXPANDED_PX
+        ? SIDEBAR_SIZE_MOBILE_PX
+        : collapsed
+          ? SIDEBAR_SIZE_FOLDED_PX
+          : SIDEBAR_SIZE_EXPANDED_PX
         }px`}
       pos="fixed"
       h="full"
@@ -131,7 +131,7 @@ const NavItem = ({ link, children, collapsed, ...rest }: NavItemProps) => {
         transition='all 0.1s ease'
         align="center"
         justifyContent={collapsed ? 'center' : undefined}
-        p={3} mx={4} my={1}
+        p={3} mx={collapsed ? '10px' : '16px'} my={'4px'}
         borderLeft={!collapsed && isSelected
           ? '10px solid'
           : undefined
@@ -141,24 +141,20 @@ const NavItem = ({ link, children, collapsed, ...rest }: NavItemProps) => {
           : undefined
         }
         boxShadow={collapsed && isSelected
-          ? '0 0 20px #00000020'
+          ? '0 0 20px #6664'
           : undefined
         }
         borderRadius="lg"
-        // borderLeftRadius={isSelected
-        //   ? '0'
-        //   : undefined
-        // }
         h='60px'
         role="group"
         cursor="pointer"
         _hover={{
-          bg: 'cyan.400',
-          borderColor: 'cyan.600',
+          bg: 'purple.400',
+          borderColor: 'purple.600',
           color: 'white',
         }}
         {...rest}>
-        <Box 
+        <Box
           transition='all 0.1s ease'
           {...(collapsed ? {
             fontSize: '2xl',
@@ -173,10 +169,11 @@ const NavItem = ({ link, children, collapsed, ...rest }: NavItemProps) => {
   )
 }
 
-const HeaderNavBar = ({ logo, onOpen, onToggleExpand, ...rest }: MobileProps) => {
+const HeaderNavBar = ({ logo, onOpen, ...rest }: MobileProps) => {
   const screenSize = useScreenSize();
   const { toggleColorMode } = useColorMode();
-  
+  const { toggleCollapsed } = useContext(LayoutContext);
+
   return (
     <Flex
       px={{ base: 4, md: 4 }}
@@ -191,7 +188,7 @@ const HeaderNavBar = ({ logo, onOpen, onToggleExpand, ...rest }: MobileProps) =>
       <IconButton
         display='flex'
         // justifySelf='flex-start'
-        onClick={screenSize === 'mobile' ? onOpen : onToggleExpand}
+        onClick={screenSize === 'mobile' ? onOpen : toggleCollapsed}
         variant="ghost"
         size='lg'
         aria-label="open menu"
@@ -205,9 +202,9 @@ const HeaderNavBar = ({ logo, onOpen, onToggleExpand, ...rest }: MobileProps) =>
       </Box>
 
       <HStack spacing={{ base: '0', md: '6' }}>
-        <IconButton 
-          size="lg" variant="ghost" aria-label="open menu" 
-          onClick={toggleColorMode} icon={<FiSun />} 
+        <IconButton
+          size="lg" variant="ghost" aria-label="open menu"
+          onClick={toggleColorMode} icon={<FiSun />}
         />
         <Flex alignItems={'center'}>
           <Menu>
@@ -256,62 +253,69 @@ export type SidebarWithHeaderProps = PropsWithChildren<{
 }>;
 
 export const SidebarWithHeader = (props: SidebarWithHeaderProps) => {
-  const { isOpen, onOpen, onClose } = useDisclosure()
+  const { isOpen, onOpen, onClose } = useDisclosure();
   const { logo, items, children } = props;
-
-  const [collapsed, setCollapsed] = useState(false);
-  const onToggleExpand = useCallback(() => setCollapsed(x => !x), [setCollapsed]);
 
   const finalFocusRef = useRef<any>(null);
 
-  const screenSize = useScreenSize();
+  const { collapsed, isMobile } = useContext(LayoutContext);
+
   useEffect(() => {
-    if (screenSize === 'mobile') {
+    if (isMobile) {
 
       return;
     }
     onClose();
-  }, [screenSize]);
+  }, [isMobile]);
+
+  const coreContent = <Box
+    h="100vh"
+    w='100vw'
+    transition='padding-left 0.3s ease'
+    pl={{
+      base: 0,
+      md: `${collapsed ? SIDEBAR_SIZE_FOLDED_PX : SIDEBAR_SIZE_EXPANDED_PX}px`,
+    }}
+  >
+    <HeaderNavBar
+      logo={logo}
+      onOpen={onOpen}
+    />
+    <Box
+      w='100%'
+      maxW='1280px'
+      h='calc(100vh - 80px)'
+      overflow='scroll'
+      p={4}
+      mx='auto'
+    >
+      {children}
+    </Box>
+  </Box>
 
   return (
-    <Box minH="100vh">
-      <SidebarContent logo={logo} items={items} collapsed={collapsed} display={{ base: 'none', md: 'block' }} />
+    <Box h="100vh">
+      <LogoEnvironmentContext.Provider value='sidebar'>
+        <SidebarContent logo={logo} items={items} collapsed={collapsed} display={{ base: 'none', md: 'block' }} />
+      </LogoEnvironmentContext.Provider>
 
-      <Drawer
-        isOpen={isOpen}
-        placement="left"
-        onClose={onClose}
-        onOverlayClick={onClose}
-        size='xs'
-        finalFocusRef={finalFocusRef}
-      >
-        <DrawerOverlay />
-        <DrawerContent background='transparent' boxShadow='none' onClick={onClose}>
-          <SidebarContent logo={logo} items={items} onClose={onClose} mobile />
-        </DrawerContent>
-      </Drawer>
+      <LogoEnvironmentContext.Provider value='menu'>
+        <Drawer
+          isOpen={isOpen}
+          placement="left"
+          onClose={onClose}
+          onOverlayClick={onClose}
+          size='xs'
+          finalFocusRef={finalFocusRef}
+        >
+          <DrawerOverlay />
+          <DrawerContent background='transparent' boxShadow='none' onClick={onClose}>
+            <SidebarContent logo={logo} items={items} onClose={onClose} mobile />
+          </DrawerContent>
+        </Drawer>
+      </LogoEnvironmentContext.Provider>
+      {coreContent}
 
-      <HeaderNavBar 
-        logo={logo}
-        onOpen={onOpen} onToggleExpand={onToggleExpand} 
-        pl={{ 
-          base: '16px', 
-          md: `${16 + (collapsed ? SIDEBAR_SIZE_FOLDED_PX : SIDEBAR_SIZE_EXPANDED_PX)}px`,
-        }}
-      />
-      <Box
-        w='100vw'
-        h='calc(100vh - 80px)'
-        transition='all 0.3s ease'
-        overflow='scroll'
-        pl={{ 
-          base: '16px', 
-          md: `${16 + (collapsed ? SIDEBAR_SIZE_FOLDED_PX : SIDEBAR_SIZE_EXPANDED_PX)}px`,
-        }}
-        p={4}
-      >
-        {children}
-      </Box>
     </Box>
   )
 };

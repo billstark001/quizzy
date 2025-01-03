@@ -110,7 +110,7 @@ export const TagSelectModal = (props: Omit<ModalProps, 'children' | 'onSelect'> 
       </ModalBody>
       <ModalFooter justifyContent='space-between'>
         <Button colorScheme='red' onClick={onClose}>{t('common.btn.cancel')}</Button>
-        <Button colorScheme='blue' onClick={submitTag}>{t('common.btn.save')}</Button>
+        <Button colorScheme='purple' onClick={submitTag}>{t('common.btn.save')}</Button>
       </ModalFooter>
     </ModalContent>
   </Modal>;

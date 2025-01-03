@@ -39,7 +39,7 @@ const ResumeButton = withSheetRow<QuizRecord, _K>((props) => {
         id: item.id,
       });
       navigate('/quiz?' + params.toString());
-    }} colorScheme='blue'>
+    }} colorScheme='purple'>
       {t('common.btn.continue')}
     </Button>
     <Button onClick={async () => {

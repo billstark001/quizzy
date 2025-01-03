@@ -144,19 +144,19 @@ export const QuestionDisplay = (props: QuestionDisplayProps) => {
       currentPage={currentQuestion} totalPages={totalQuestions} setPage={onQuestionChanged} />
     <HStack justifyContent='space-between' width='100%'>
       <Button colorScheme='red' onClick={onExit}>{t('page.question.exit')}</Button>
-      <Button colorScheme='blue' 
+      <Button colorScheme='purple' 
         onClick={
           onPrev ? () => onPrev(currentQuestion) :
           () => currentQuestion > 1 && onQuestionChanged?.(currentQuestion - 1)
         }
       >{t('page.question.prev')}</Button>
       <Box flex={1} minWidth={0}></Box>
-      <IconButton colorScheme='blue' aria-label={t('page.question.questions')} icon={<RxDragHandleDots2 />} 
+      <IconButton colorScheme='purple' aria-label={t('page.question.questions')} icon={<RxDragHandleDots2 />} 
         onClick={() => {
           setQuestionSelect(currentQuestion);
           q.onOpen();
         }} />
-      <Button colorScheme='blue'
+      <Button colorScheme='purple'
         onClick={
           onNext ? () => onNext(currentQuestion) :
           () => currentQuestion < totalQuestions && onQuestionChanged?.(currentQuestion + 1)
