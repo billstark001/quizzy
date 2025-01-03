@@ -5,9 +5,10 @@ import { formatMilliseconds } from "@/utils/time";
 import { QuestionSelectionModal } from "@/components/QuestionSelectionModal";
 import { RxDragHandleDots2 } from "react-icons/rx";
 import { Box, Button, HStack, IconButton, Progress, StackProps, useDisclosure, VStack } from "@chakra-ui/react";
-import { Dispatch, ElementType, ReactNode, SetStateAction, useState } from "react";
+import { Dispatch, ElementType, ReactNode, SetStateAction, useContext, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { getTagStyle } from "@/utils/react";
+import { LayoutContext } from "@/layout/layout-context";
 
 
 export type QuestionDisplayProps = {
@@ -120,7 +121,7 @@ export const QuestionDisplay = (props: QuestionDisplayProps) => {
   return <VStack alignItems='stretch' minH='700px'>
     <HStack w='100%' alignItems='flex-end'>
       <Box as='header'>{examTitle}</Box>
-      <Box>{t('page.question.count', { current: currentQuestion, total: totalQuestions })}</Box>
+      <Box>{t('panel.question.count', { current: currentQuestion, total: totalQuestions })}</Box>
       <Box flex={1} />
       <HStack>
         {hasBoth && <Progress hasStripe maxW='200px' minW='100px' value={timeRatio * 100} />}
@@ -143,15 +144,15 @@ export const QuestionDisplay = (props: QuestionDisplayProps) => {
       nearPages={3}
       currentPage={currentQuestion} totalPages={totalQuestions} setPage={onQuestionChanged} />
     <HStack justifyContent='space-between' width='100%'>
-      <Button colorScheme='red' onClick={onExit}>{t('page.question.exit')}</Button>
+      <Button colorScheme='red' onClick={onExit}>{t('panel.question.btn.exit')}</Button>
       <Button colorScheme='purple' 
         onClick={
           onPrev ? () => onPrev(currentQuestion) :
           () => currentQuestion > 1 && onQuestionChanged?.(currentQuestion - 1)
         }
-      >{t('page.question.prev')}</Button>
+      >{t('panel.question.btn.prev')}</Button>
       <Box flex={1} minWidth={0}></Box>
-      <IconButton colorScheme='purple' aria-label={t('page.question.questions')} icon={<RxDragHandleDots2 />} 
+      <IconButton colorScheme='purple' aria-label={t('panel.question.btn.questions')} icon={<RxDragHandleDots2 />} 
         onClick={() => {
           setQuestionSelect(currentQuestion);
           q.onOpen();
@@ -161,8 +162,8 @@ export const QuestionDisplay = (props: QuestionDisplayProps) => {
           onNext ? () => onNext(currentQuestion) :
           () => currentQuestion < totalQuestions && onQuestionChanged?.(currentQuestion + 1)
         }
-      >{t('page.question.next')}</Button>
-      <Button colorScheme='teal' onClick={onSubmit}>{t('page.question.submit')}</Button>
+      >{t('panel.question.btn.next')}</Button>
+      <Button colorScheme='teal' onClick={onSubmit}>{t('panel.question.btn.submit')}</Button>
     </HStack>
     <QuestionSelectionModal 
       preview={questionSelect} total={totalQuestions} 

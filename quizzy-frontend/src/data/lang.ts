@@ -98,7 +98,21 @@ export const langRes: LanguageResource = {
     settings: ['Settings', '設定', '设置'],
   },
 
+  panel: {
+    question: {
+      count: '# {{current}} / {{total}}',
+
+      btn: {
+        prev: ['Previous', '前へ', '上一问'],
+        next: ['Next', '次へ', '下一问'],
+        exit: ['Exit', '戻る', '退出'],
+        submit: ['Submit', '提出', '提交'],
+      }
+    }
+  },
+
   page: {
+
     edit: {
       toast: {
         dataLoaded: {
