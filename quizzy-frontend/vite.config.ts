@@ -31,4 +31,8 @@ export default defineConfig({
       '@': resolve(__dirname, 'src'),
     }
   },
+  server: {
+    port: 4200,
+    host: true,
+  }
 });

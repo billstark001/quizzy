@@ -1,6 +1,13 @@
 import { useScreenSize } from "@/utils/responsive";
+import { useDisclosure } from '@chakra-ui/react';
 import { createContext, SetStateAction, useCallback, useState } from "react";
 
+type _D = {
+  isOpen: boolean;
+  onOpen: () => void;
+  onClose: () => void;
+  onToggle: () => void;
+};
 
 export type LayoutContextScheme = {
   collapsed: boolean;
@@ -9,6 +16,7 @@ export type LayoutContextScheme = {
   immersive: boolean;
   setImmersive: (c: SetStateAction<boolean>) => void;
   toggleImmersive: () => void;
+  sidebarDisclosure: _D;
   isMobile: boolean;
 };
 
@@ -23,6 +31,8 @@ export const useLayoutContextScheme = (): LayoutContextScheme => {
 
   const screenSize = useScreenSize();
 
+  const sidebarDisclosure = useDisclosure();
+
   return {
     collapsed,
     setCollapsed,
@@ -30,6 +40,7 @@ export const useLayoutContextScheme = (): LayoutContextScheme => {
     immersive,
     setImmersive,
     toggleImmersive,
+    sidebarDisclosure,
     isMobile: screenSize === 'mobile',
   };
 };
@@ -41,6 +52,12 @@ export const LayoutContext = createContext<LayoutContextScheme>({
   immersive: false,
   setImmersive: () => void 0,
   toggleImmersive: () => void 0,
+  sidebarDisclosure: {
+    isOpen: false,
+    onOpen: () => void 0,
+    onClose: () => void 0,
+    onToggle: () => void 0,
+  },
   isMobile: false,
 });
 

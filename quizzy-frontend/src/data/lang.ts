@@ -88,6 +88,16 @@ export const langRes: LanguageResource = {
     }
   },
 
+  nav: {
+    root: ['Home', 'ホーム', '主页'],
+    startQuiz: ['New Quiz', '新規クイズ', '新测验'],
+    continueQuiz: ['Continue', '継続クイズ', '继续测验'],
+    results: ['Results', '結果', '结果'],
+    stats: ['Stats', '統計データ', '统计数据'],
+    edit: ['Edit Quizzes', 'クイズ編集', '编辑试卷与试题'],
+    settings: ['Settings', '設定', '设置'],
+  },
+
   page: {
     edit: {
       toast: {

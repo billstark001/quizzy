@@ -13,7 +13,6 @@ import {
   Text,
   Drawer,
   DrawerContent,
-  useDisclosure,
   BoxProps,
   FlexProps,
   Menu,
@@ -117,6 +116,7 @@ const NavItem = ({ link, children, collapsed, ...rest }: NavItemProps) => {
   const { name, icon, to, onClick, selected } = link;
   const navigate = useNavigate();
   const { pathname } = useLocation();
+  const { sidebarDisclosure, isMobile } = useContext(LayoutContext);
   const isSelected = (selected === 'auto' || !selected)
     ? detectIsSelected(pathname, to ?? '/')
     : typeof selected === 'function'
@@ -124,7 +124,12 @@ const NavItem = ({ link, children, collapsed, ...rest }: NavItemProps) => {
       : selected;
   return (
     <Box
-      onClick={onClick ?? (to ? () => navigate(to) : undefined)}
+      onClick={onClick ?? (to ? () => {
+        navigate(to);
+        if (isMobile) {
+          sidebarDisclosure.onClose();
+        }
+      } : undefined)}
       style={{ textDecoration: 'none' }}
       _focus={{ boxShadow: 'none' }}>
       <Flex
@@ -253,12 +258,12 @@ export type SidebarWithHeaderProps = PropsWithChildren<{
 }>;
 
 export const SidebarWithHeader = (props: SidebarWithHeaderProps) => {
-  const { isOpen, onOpen, onClose } = useDisclosure();
   const { logo, items, children } = props;
 
   const finalFocusRef = useRef<any>(null);
 
-  const { collapsed, isMobile } = useContext(LayoutContext);
+  const { collapsed, isMobile, sidebarDisclosure } = useContext(LayoutContext);
+  const { isOpen, onOpen, onClose } = sidebarDisclosure;
 
   useEffect(() => {
     if (isMobile) {
