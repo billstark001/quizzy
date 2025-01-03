@@ -77,7 +77,7 @@ export const StartQuizPage = () => {
   );
   const getRenderedTags = (t?: string[], isTag = true, isPaper = false) => t?.map(x => <Tag
     key={x} cursor='pointer' onClick={() => (isTag ? sTags : sCategories).toggleSelected(x)}
-    colorScheme={(isTag ? sTags : sCategories).isSelected(x) ? 'blue' : undefined}
+    colorScheme={(isTag ? sTags : sCategories).isSelected(x) ? 'purple' : undefined}
     border={isPaper ? '1px solid gray' : undefined}
     transition='all 0.3s ease'
     userSelect='none'
@@ -124,7 +124,7 @@ export const StartQuizPage = () => {
     {tabs}
     <HStack>
       <Button
-        colorScheme="blue" isDisabled={startRandomDisabled}
+        colorScheme="purple" isDisabled={startRandomDisabled}
         onClick={() => startRandomWithTab(selectionByTab[tabIndex].getAllSelected())}
       >
         {t('modal.startQuiz.btn.startRandom')}

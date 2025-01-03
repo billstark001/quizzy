@@ -307,7 +307,7 @@ export const PaperEditPage = (props: { paper?: string }) => {
       </EditorContextProvider>
       <HStack justifyContent='space-between'>
         <Box>{t('page.edit.nowEditing', { questionIndex })}</Box>
-        <IconButton colorScheme='blue' aria-label={t('page.edit.selectQuestions')} icon={<RxDragHandleDots2 />}
+        <IconButton colorScheme='purple' aria-label={t('page.edit.selectQuestions')} icon={<RxDragHandleDots2 />}
           onClick={() => {
             selectQuestionPreview(1);
             questionMap.current = {};

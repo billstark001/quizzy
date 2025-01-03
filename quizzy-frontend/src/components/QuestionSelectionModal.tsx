@@ -138,7 +138,7 @@ const RenderButton = (props: RenderButtonProps) => {
       />
       <IconButton
         {...smallIconCenterProps}
-        icon={<AiOutlineQuestionCircle />} aria-label="view" colorScheme="blue"
+        icon={<AiOutlineQuestionCircle />} aria-label="view" colorScheme="purple"
         onClick={(e) => {
           e.stopPropagation();
           e.preventDefault();

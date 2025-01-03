@@ -56,7 +56,7 @@ export const Pagination: React.FC<PaginationProps> = (props) => {
   const _btn = (i: number, selected: boolean, key?: number | string) => <Button
     key={key ?? i}
     onClick={() => handlePageChange(i)}
-    colorScheme={selected ? "blue" : "gray"}
+    colorScheme={selected ? "purple" : "gray"}
   >
     {i}
   </Button>
