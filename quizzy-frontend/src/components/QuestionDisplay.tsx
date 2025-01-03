@@ -5,10 +5,9 @@ import { formatMilliseconds } from "@/utils/time";
 import { QuestionSelectionModal } from "@/components/QuestionSelectionModal";
 import { RxDragHandleDots2 } from "react-icons/rx";
 import { Box, Button, HStack, IconButton, Progress, StackProps, useDisclosure, VStack } from "@chakra-ui/react";
-import { Dispatch, ElementType, ReactNode, SetStateAction, useContext, useState } from "react";
+import { Dispatch, ElementType, ReactNode, SetStateAction, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { getTagStyle } from "@/utils/react";
-import { LayoutContext } from "@/layout/layout-context";
 
 
 export type QuestionDisplayProps = {
