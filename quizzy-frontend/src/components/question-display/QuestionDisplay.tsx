@@ -1,5 +1,4 @@
 import Pagination from "@/components/Pagination";
-import { BaseQuestionPanel, BlankQuestionPanelProps, ChoiceQuestionPanelProps, QuestionPanel, QuestionPanelProps, TextQuestionPanelProps } from "@/components/QuestionPanel";
 import { Answers, BlankAnswers, ChoiceAnswers, ChoiceQuestion, Question, TextAnswers } from "@quizzy/common/types";
 import { formatMilliseconds } from "@/utils/time";
 import { QuestionSelectionModal } from "@/components/QuestionSelectionModal";
@@ -8,6 +7,10 @@ import { Box, Button, HStack, IconButton, Progress, StackProps, useDisclosure, V
 import { Dispatch, ElementType, ReactNode, SetStateAction, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { getTagStyle } from "@/utils/react";
+import BaseQuestionPanel from "./BaseQuestionPanel";
+import { BlankQuestionPanelProps, TextQuestionPanelProps } from "./BlankQuestionPanel";
+import { ChoiceQuestionPanelProps } from "./ChoiceQuestionPanel";
+import { QuestionPanelProps, QuestionPanel } from "./QuestionPanel";
 
 
 export type QuestionDisplayProps = {

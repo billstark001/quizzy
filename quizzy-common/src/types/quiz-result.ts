@@ -1,4 +1,4 @@
-import { Answers } from "./answer";
+import { Answers, AnswersEvaluation } from "./answer";
 import { StatBase } from "./stats";
 import { DatabaseIndexed, ID } from "./technical";
 
@@ -23,7 +23,7 @@ export type QuizResult = DatabaseIndexed & {
   timeUsed: number;
 
   answers: Record<ID, Answers>;
-  correct: Record<ID, Answers>;
+  correct: Record<ID, AnswersEvaluation>;
 
   // name, score, weight
   records: QuizResultRecordRow[];

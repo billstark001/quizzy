@@ -1,4 +1,4 @@
-import { QuestionEdit } from "@/components/QuestionEdit";
+import { QuestionEdit } from "@/components/question-edit/QuestionEdit";
 import { defaultQuestion, Question } from "@quizzy/common/types";
 import { openDialog, withHandler } from "@/utils";
 import { useDisclosureWithData } from "@/utils/disclosure";

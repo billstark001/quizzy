@@ -1,4 +1,4 @@
-import { Answers, Question, QuizPaper, QuizRecord, QuizResultRecordRow, QuizResult, AnswerStatus } from "../types";
+import { Answers, Question, QuizPaper, QuizRecord, QuizResultRecordRow, QuizResult, AnswerStatus, BlankAnswersEvaluation, AnswersEvaluation } from "../types";
 import { ID } from "../types/technical";
 import { uuidV4B64 } from "../utils/string";
 import { numberToLetters } from "../utils/string";
@@ -16,7 +16,7 @@ export const createQuizResult = (
 ) => {
 
   // answers
-  const correctAnswers: Record<string, Answers> = {};
+  const correctAnswers: Record<string, AnswersEvaluation> = {};
 
   // scores
   let score = 0;
@@ -68,23 +68,51 @@ export const createQuizResult = (
 
     } else if (question.type === 'blank') {
       const blanks = question.blanks ?? [];
-      const correctAnswer: Answers = {
+      // build correct answer scheme
+      const correctAnswer: BlankAnswersEvaluation = {
         type: 'blank',
-        answer: Object.fromEntries(blanks.map((b, i) => [
-          getOptionOrBlankId(b, i, question),
-          b.answer ?? ''
-        ] as [ID, string])),
+        answer: {},
+        answerRegExp: {},
+      };
+      for (let i = 0; i < blanks.length; ++i) {
+        const b = blanks[i];
+        const { answer, answerIsRegExp, answerFlag } = b;
+        const id = getOptionOrBlankId(b, i, question);
+        if (answer == null) {
+          continue; // this means there is no correct answer for this question
+        }
+        if (answerIsRegExp) {
+          correctAnswer.answerRegExp[id] = [answer, answerFlag];
+        } else {
+          correctAnswer.answer[id] = answer;
+        }
       }
       correctAnswers[qid] = correctAnswer;
 
-      // TODO better evaluators
+      // evaluate the answer
       const userAnswer = record.answers[qid];
       const noAnswer = userAnswer?.type !== 'blank'
         || Object.keys(userAnswer.answer).length === 0;
-      const wrongAnswer = !noAnswer
-        && Object.keys(correctAnswer.answer).findIndex(
-          (k) => (correctAnswer.answer[k] ?? '') !== (userAnswer.answer[k] ?? '')
-        ) !== -1;
+      let wrongAnswer = false;
+      if (!noAnswer) {
+        // exact match
+        for (const k in correctAnswer.answer) {
+          const userCurrentAnswer = (userAnswer.answer as any)[k] ?? '';
+          if (correctAnswer.answer[k] !== userCurrentAnswer) {
+            wrongAnswer = true;
+            break;
+          }
+        }
+        // regex match
+        for (const k in correctAnswer.answerRegExp) {
+          const userCurrentAnswer = (userAnswer.answer as any)[k] ?? '';
+          const correctAnswerRegExp = new RegExp(...correctAnswer.answerRegExp[k]);
+          if (!correctAnswerRegExp.test(userCurrentAnswer)) {
+            wrongAnswer = true;
+            break;
+          }
+        }
+      }
       status = noAnswer ? 'no-answer' : wrongAnswer ? 'wrong' : 'correct';
 
       // create records

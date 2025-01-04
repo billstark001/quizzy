@@ -11,6 +11,8 @@ export type BlankQuestionBlank = {
   id?: ID;
   key: string;
   answer?: string;
+  answerIsRegExp?: boolean;
+  answerFlag?: string;
 };
 
 export type QuestionType = 'choice' | 'blank' | 'text';
@@ -42,6 +44,7 @@ type _BlankQuestion = {
 };
 
 export const BLANK_PREFIX = '@blank:';
+export const blankPattern = /\[\[@blank:\s*([^\]]+)\]\]/g;
 
 type _TextQuestion = {
   type: 'text';

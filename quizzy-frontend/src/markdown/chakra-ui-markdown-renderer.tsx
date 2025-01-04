@@ -60,6 +60,8 @@ interface Defaults extends Components {
   heading?: Components['h1'];
 }
 
+export const PreContext = React.createContext(false);
+
 export const defaults: Defaults = {
   p: props => {
     const { children } = props;
@@ -78,10 +80,11 @@ export const defaults: Defaults = {
     );
   },
   code: props => {
-    const { inline, children, className } = props;
+    const inline = !React.useContext(PreContext);
+    const { children, className } = props;
 
     if (inline) {
-      return <Code p={2} children={children} />;
+      return <Code px={2} py={1} children={children} />;
     }
 
     return (
@@ -187,7 +190,11 @@ export const defaults: Defaults = {
   },
   pre: props => {
     const { children } = props;
-    return <chakra.pre {...getCoreProps(props)}>{children}</chakra.pre>;
+    return <chakra.pre {...getCoreProps(props)}>
+      <PreContext.Provider value={true}>
+        {children}
+      </PreContext.Provider>
+    </chakra.pre>;
   },
   table: Table,
   thead: Thead,

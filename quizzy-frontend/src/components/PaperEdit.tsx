@@ -7,7 +7,7 @@ import {
 } from "@chakra-ui/react";
 import { useTranslation } from "react-i18next";
 import { useEditorContext } from "@/utils/react-patch";
-import { Textarea2 } from "./QuestionEdit";
+import { Textarea2 } from "./question-edit/QuestionEdit";
 import TagSelectModal, { TagSelectState } from "./TagSelectModal";
 
 

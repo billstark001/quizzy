@@ -1,6 +1,6 @@
 import { PaperEdit } from "@/components/PaperEdit";
-import { QuestionEdit } from "@/components/QuestionEdit";
-import { BaseQuestionPanel } from "@/components/QuestionPanel";
+import { QuestionEdit } from "@/components/question-edit/QuestionEdit";
+import { BaseQuestionPanel } from "@/components/question-display/BaseQuestionPanel";
 import { QuestionSelectionModal } from "@/components/QuestionSelectionModal";
 import { defaultQuestion, defaultQuizPaper, Question, QuizPaper } from "@quizzy/common/types";
 import { ID } from "@quizzy/common/types";

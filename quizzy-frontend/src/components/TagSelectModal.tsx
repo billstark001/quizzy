@@ -6,10 +6,10 @@ import {
   Wrap
 } from "@chakra-ui/react";
 import { useState, useCallback, useEffect, useRef } from "react";
-import { getChangedArray } from "./QuestionEdit";
 import { useTranslation } from "react-i18next";
 import { Quizzy } from "@/data";
 import { debounce, DebounceReturn } from "@/utils/debounce";
+import { getChangedArray } from "@/utils/array";
 
 export type TagSelectState = {
   tagIndex?: number,

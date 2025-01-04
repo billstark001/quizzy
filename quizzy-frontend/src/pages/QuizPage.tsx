@@ -1,4 +1,4 @@
-import { QuestionDisplay } from "@/components/QuestionDisplay";
+import { QuestionDisplay } from "@/components/question-display/QuestionDisplay";
 import { Answers, Question, QuizRecord, QuizRecordEvent } from "@quizzy/common/types";
 import { openDialog } from "@/utils";
 import { Quizzy } from "@/data";
