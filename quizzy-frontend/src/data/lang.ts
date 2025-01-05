@@ -108,6 +108,14 @@ export const langRes: LanguageResource = {
         exit: ['Exit', '戻る', '退出'],
         submit: ['Submit', '提出', '提交'],
       }
+    },
+    optionEdit: {
+
+    },
+    blankEdit: {
+      key: ['Key:', 'キー：', '键：'],
+      answerIsRegExp: ['Use Regex', '正規式を使用', '使用正则表达式'],
+      answerFlag: ['Flags:', 'フラグ：', '标志：'],
     }
   },
 

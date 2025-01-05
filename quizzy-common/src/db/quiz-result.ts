@@ -94,6 +94,7 @@ export const createQuizResult = (
       const noAnswer = userAnswer?.type !== 'blank'
         || Object.keys(userAnswer.answer).length === 0;
       let wrongAnswer = false;
+
       if (!noAnswer) {
         // exact match
         for (const k in correctAnswer.answer) {
@@ -132,7 +133,7 @@ export const createQuizResult = (
       const userAnswer = (typeof record.answers[qid]?.answer === 'string'
         ? record.answers[qid]?.answer
         : String(record.answers[qid]?.answer ?? '')).trim();
-      
+
       correctAnswers[qid] = correctAnswer;
       const noAnswer = !question.answer?.replace(/\s\n\r/g, '');
       const isCorrect = noAnswer

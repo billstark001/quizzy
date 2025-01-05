@@ -11,6 +11,8 @@ import { useEditorContext } from "@/utils/react-patch";
 import TagSelectModal, { TagSelectState } from "../TagSelectModal";
 import { MdAdd } from "react-icons/md";
 import { ChoiceQuestionOptionsEdit } from "./ChoiceQuestionOptionsEdit";
+import { normalizeOptionOrBlankArray } from "@quizzy/common/db/question-id";
+import { BlankQuestionBlanksEdit } from "./BlankQuestionBlankEdit";
 
 
 const _adjustHeight = (t: HTMLTextAreaElement) => {
@@ -102,7 +104,11 @@ export const QuestionEdit = () => {
         <VStack alignItems='flex-start'>
           <Box>{t('page.edit.choice._')}</Box>
           <Button leftIcon={<MdAdd />} onClick={() => {
-            onChangeImmediate({ options: [{ content: '' }, ...question.options] })
+            onChangeImmediate({ 
+              options: normalizeOptionOrBlankArray(
+                [{ content: '' }, ...(question.options ?? [])]
+              ) 
+            })
           }}>{t('page.edit.choice.addTop')}</Button>
           <HStack>
             <Box>{t('page.edit.choice.multiple')}</Box>
@@ -110,6 +116,20 @@ export const QuestionEdit = () => {
           </HStack>
         </VStack>
         <ChoiceQuestionOptionsEdit question={question} />
+      </>}
+
+      {question.type === 'blank' && <>
+        <VStack alignItems='flex-start'>
+          <Box>{t('page.edit.blank._')}</Box>
+          <Button leftIcon={<MdAdd />} onClick={() => {
+            onChangeImmediate({ 
+              blanks: normalizeOptionOrBlankArray(
+                [{ key: 'key-0' }, ...(question.blanks ?? [])]
+              ) 
+            })
+          }}>{t('page.edit.choice.addTop')}</Button>
+        </VStack>
+        <BlankQuestionBlanksEdit question={question} />
       </>}
 
 

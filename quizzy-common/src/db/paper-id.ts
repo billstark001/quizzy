@@ -15,7 +15,7 @@ export const toCompleted = async (
   if (!paper.id) {
     let retry = 100;
     do {
-      paper.id = uuidV4B64();
+      paper.id = uuidV4B64(12);
       retry--;
     } while (retry > 0 && (await hasId?.(paper.id!)));
   } else if (await hasId?.(paper.id!)) {
@@ -33,7 +33,7 @@ export const toCompleted = async (
       // create a new one for it
       let retry = 100;
       do {
-        q.id = uuidV4B64();
+        q.id = uuidV4B64(16);
         retry--;
       } while (retry > 0 && (questionIds.has(q.id!) || hasQuestionId?.(q.id!)));
     }

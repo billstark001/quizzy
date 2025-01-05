@@ -1,7 +1,6 @@
-import { ChoiceQuestion, ChoiceQuestionOption } from "@quizzy/common/types";
-import { numberToLetters } from "@quizzy/common/utils";
+import { BlankQuestionBlank, BlankQuestion } from "@quizzy/common/types";
 import {
-  Box, BoxProps, Code, HStack, IconButton,
+  Box, HStack, IconButton,
   Input, Switch,
   VStack
 } from "@chakra-ui/react";
@@ -29,33 +28,18 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { normalizeOptionOrBlankArray } from "@quizzy/common/db/question-id";
 
-const ChoiceBox = ({ children, ...props }: BoxProps) => (
-  <Box
-    minH="3em"
-    minW="3em"
-    borderRadius="0.7em"
-    display="flex"
-    justifyContent="center"
-    alignItems="center"
-    mr="0.5em"
-    {...props}
-  >
-    {children}
-  </Box>
-);
-
-type OptionEditProps = {
-  option?: ChoiceQuestionOption;
+type BlankEditProps = {
+  option?: BlankQuestionBlank;
   index: number;
   id: string;
-  onChange?: (index: number, value: Partial<ChoiceQuestionOption>) => void;
+  onChange?: (index: number, value: Partial<BlankQuestionBlank>) => void;
   onBlur?: FocusEventHandler<HTMLDivElement>;
   onAdd?: (index: number) => void;
   onDelete?: (index: number) => void;
 };
 
-const OptionEdit = (props: OptionEditProps) => {
-  const { option, index, id, onChange, onBlur, onAdd, onDelete } = props;
+const BlankEdit = (props: BlankEditProps) => {
+  const { option: blank, index, id, onChange, onBlur, onAdd, onDelete } = props;
   const { t } = useTranslation();
 
   const {
@@ -74,7 +58,7 @@ const OptionEdit = (props: OptionEditProps) => {
   };
 
   return (
-    <HStack
+    <VStack
       ref={setNodeRef}
       w="100%"
       p="0.5em"
@@ -82,49 +66,64 @@ const OptionEdit = (props: OptionEditProps) => {
       border="1px solid"
       borderColor="gray.400"
       borderRadius="1em"
+      alignItems='stretch'
       style={style}
       onBlur={onBlur}
     >
-      <ChoiceBox>
-        <Code m="auto" background="transparent" fontSize="xl">
-          {numberToLetters(index + 1)}
-        </Code>
-      </ChoiceBox>
+
       <Input
-        value={option?.content}
-        onChange={(e) => onChange?.(index, { content: e.target.value })}
+        value={blank?.answer}
+        onChange={(e) => onChange?.(index, { answer: e.target.value })}
       />
-      <Switch
-        isChecked={option ? !!option.shouldChoose : undefined}
-        onChange={(e) =>
-          onChange?.(index, { shouldChoose: !!e.target.checked })
-        }
-      />
-      <IconButton
-        aria-label={t("common.btn.edit")}
-        {...attributes}
-        {...listeners}
-      >
-        <RxDragHandleDots2 />
-      </IconButton>
-      <IconButton
-        aria-label={t("common.btn.edit")}
-        onClick={() => onAdd?.(index)}
-      >
-        <MdAdd />
-      </IconButton>
-      <IconButton
-        aria-label={t("common.btn.edit")}
-        onClick={() => onDelete?.(index)}
-      >
-        <MdDelete />
-      </IconButton>
-    </HStack>
+
+      <HStack justifyContent='stretch'>
+        <HStack>
+        <Box whiteSpace='nowrap'>{t('panel.blankEdit.key')}</Box>
+          <Input
+            value={blank?.key}
+            onChange={(e) => onChange?.(index, { key: e.target.value })}
+          />
+          <Box whiteSpace='nowrap'>{t('panel.blankEdit.answerIsRegExp')}</Box>
+          <Switch
+            isChecked={blank ? !!blank.answerIsRegExp : undefined}
+            onChange={(e) =>
+              onChange?.(index, { answerIsRegExp: !!e.target.checked })
+            }
+          />
+          <Box whiteSpace='nowrap'>{t('panel.blankEdit.answerFlag')}</Box>
+          <Input
+            value={blank?.answerFlag}
+            onChange={(e) => onChange?.(index, { answerFlag: e.target.value })}
+          />
+        </HStack>
+
+        <IconButton
+          aria-label={t("common.btn.edit")}
+          {...attributes}
+          {...listeners}
+        >
+          <RxDragHandleDots2 />
+        </IconButton>
+        <IconButton
+          aria-label={t("common.btn.edit")}
+          onClick={() => onAdd?.(index)}
+        >
+          <MdAdd />
+        </IconButton>
+        <IconButton
+          aria-label={t("common.btn.edit")}
+          onClick={() => onDelete?.(index)}
+        >
+          <MdDelete />
+        </IconButton>
+      </HStack>
+
+    </VStack>
   );
 };
 
-export const ChoiceQuestionOptionsEdit = (props: {
-  question: ChoiceQuestion;
+export const BlankQuestionBlanksEdit = (props: {
+  question: BlankQuestion;
 }) => {
   const { question } = props;
   const {
@@ -132,7 +131,7 @@ export const ChoiceQuestionOptionsEdit = (props: {
     onChangeImmediate,
     fakeValue,
     clearDebouncedChanges,
-  } = useEditorContext<ChoiceQuestion>();
+  } = useEditorContext<BlankQuestion>();
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -151,44 +150,44 @@ export const ChoiceQuestionOptionsEdit = (props: {
         const newIndex = parseInt(over.id as string);
 
         const newOptionList = normalizeOptionOrBlankArray(arrayMove(
-          question.options,
+          question.blanks,
           oldIndex,
           newIndex
         ));
-        onChangeImmediate({ options: newOptionList });
+        onChangeImmediate({ blanks: newOptionList });
       }
     },
     [question, onChangeImmediate]
   );
 
   const onChange = useCallback(
-    (index: number, value: Partial<ChoiceQuestionOption>) => {
-      const newOptionList = question.options.map((x) => ({ ...x }));
+    (index: number, value: Partial<BlankQuestionBlank>) => {
+      const newOptionList = question.blanks.map((x) => ({ ...x }));
       newOptionList[index] = { ...newOptionList[index], ...value };
-      onChangeDebounced({ options: newOptionList });
+      onChangeDebounced({ blanks: newOptionList });
     },
     [question, onChangeDebounced]
   );
 
   const handleAdd = useCallback(
     (index: number) => {
-      const newOptionList = question.options.map((x) => ({ ...x }));
-      newOptionList.splice(index + 1, 0, { content: "" });
-      onChangeImmediate({ options: normalizeOptionOrBlankArray(newOptionList) });
+      const newOptionList = question.blanks.map((x) => ({ ...x }));
+      newOptionList.splice(index + 1, 0, { key: 'key-' + (index + 1), answer: "" });
+      onChangeImmediate({ blanks: normalizeOptionOrBlankArray(newOptionList) });
     },
     [question, onChangeImmediate]
   );
 
   const handleDelete = useCallback(
     (index: number) => {
-      const newOptionList = question.options.map((x) => ({ ...x }));
+      const newOptionList = question.blanks.map((x) => ({ ...x }));
       newOptionList.splice(index, 1);
-      onChangeImmediate({ options: normalizeOptionOrBlankArray(newOptionList) });
+      onChangeImmediate({ blanks: normalizeOptionOrBlankArray(newOptionList) });
     },
     [question, onChangeImmediate]
   );
 
-  const items = (fakeValue ?? question).options ?? [];
+  const items = (fakeValue ?? question).blanks ?? [];
 
   return (
     <DndContext
@@ -202,7 +201,7 @@ export const ChoiceQuestionOptionsEdit = (props: {
       >
         <VStack>
           {items.map((option, index) => (
-            <OptionEdit
+            <BlankEdit
               key={option.id || `item-${index}`}
               id={String(index)}
               option={option}
