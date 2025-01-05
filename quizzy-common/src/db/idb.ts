@@ -289,13 +289,34 @@ export class IDBController extends IDBCore implements QuizzyController {
     const promises: Promise<void>[] = [];
     for (const storeId of stores) {
       const store = tx.objectStore(storeId);
-      const ids: ID[] = await store.index('deleted').getAllKeys() as ID[];
-      count += ids.length;
-      ids.forEach(id => promises.push(store.delete(id)));
+      let cursor = await store.openCursor();
+      while (cursor != null) {
+        const { id, deleted } = cursor.value;
+        if (deleted) {
+          promises.push(store.delete(id));
+          ++count;
+        }
+        cursor = await cursor.continue();
+      }
     }
     await Promise.all(promises);
     await tx.done;
     return count;
+  }
+
+  async normalizeQuestions() {
+    const questions = await this.listQuestions();
+    const questionsToCommit: Question[] = [];
+    for (const question of questions) {
+      const changed = normalizeQuestion(question);
+      if (changed) {
+        questionsToCommit.push(question);
+      }
+    }
+    const tx = this.db.transaction(STORE_KEY_QUESTIONS, 'readwrite');
+    await Promise.all(questionsToCommit.map(x => tx.store.put(x)));
+    await tx.done;
+    return questionsToCommit.length;
   }
 
   // records

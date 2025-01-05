@@ -2,36 +2,59 @@ import { QuizzyController } from "@quizzy/common/types";
 import { WithHandlerOptions, withHandlerRaw } from "@/utils/react-msg";
 
 const keys: Readonly<{[key in keyof QuizzyController]: undefined}> = Object.freeze({
-  'importQuestions': undefined, 
-  'importQuizPapers': undefined, 
-  'importCompleteQuizPapers': undefined, 
-  'getQuizPaper': undefined, 
-  'getQuizPaperNames': undefined, 
-  'getQuestions': undefined, 
-  'listQuizPapers': undefined, 
-  'listQuestions': undefined, 
-  'importQuizRecords': undefined, 
-  'getQuizRecord': undefined, 
-  'listQuizRecords': undefined, 
-  'startQuiz': undefined, 
-  'updateQuiz': undefined, 
-  'deleteQuizRecord': undefined, 
-  'importQuizResults': undefined, 
-  'getQuizResult': undefined, 
-  'listQuizResults': undefined, 
-  'deleteQuizResult': undefined, 
+  // general
+
+  'importData': undefined,
+  'exportData': undefined,
+
+  // papers & questions
+
+  'importQuestions': undefined,
+  'importQuizPapers': undefined,
+  'importCompleteQuizPapers': undefined,
+
+  'getQuizPaper': undefined,
+  'getQuizPaperNames': undefined,
+  'getQuestions': undefined,
+
+  'listQuizPapers': undefined,
+  'listQuestions': undefined,
+
   'updateQuestion': undefined,
   'updateQuizPaper': undefined,
   'deleteQuestion': undefined,
   'deleteQuizPaper': undefined,
+
   'findQuestion': undefined,
   'findQuizPaper': undefined,
   'findQuestionByTags': undefined,
   'findQuizPaperByTags': undefined,
+
+  // tags
+  
   'findTags': undefined,
   'listTags': undefined,
-  'importData': undefined,
-  'exportData': undefined,
+
+  // records
+
+  'importQuizRecords': undefined,
+  'getQuizRecord': undefined,
+
+  'listQuizRecords': undefined,
+
+  'startQuiz': undefined,
+  'updateQuiz': undefined,
+  'deleteQuizRecord': undefined,
+
+  // results
+
+  'importQuizResults': undefined,
+  'getQuizResult': undefined,
+  'listQuizResults': undefined,
+  'deleteQuizResult': undefined,
+
+  // stats
+
   'generateStats': undefined,
   'listStats': undefined,
   'getStat': undefined,

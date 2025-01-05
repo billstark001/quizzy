@@ -159,6 +159,8 @@ export const langRes: LanguageResource = {
       btn: {
         refreshIndices: ['Refresh Search Indices', '検索インデックスを更新', '刷新搜索索引'],
         deleteUnlinked: ['Delete Unlinked Questions', 'リンクされていない問題を削除', '删除未链接的问题'],
+        deleteLogicallyDeleted: ['Delete Logically Deleted Records', '論理削除のデータを徹底的に削除', '删除仅逻辑删除的数据'],
+        normalizeQuestions: ['Normalize Questions', '問題を標準化', '问题归一化'],
         importData: ['Import Exported Data', 'エクスポートしたデータをインポート', '导入已导出的数据'],
         exportData: ['Export Data to JSON File', 'JSONファイルにエクスポート', '导出数据到JSON文件'],
       },

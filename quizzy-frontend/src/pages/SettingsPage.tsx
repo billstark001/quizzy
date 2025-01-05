@@ -1,40 +1,48 @@
 import { withHandler } from "@/utils";
 import { downloadFile, uploadFile } from "@/utils/html";
 import { QuizzyRaw } from "@/data";
-import { Box, Button, Divider, HStack, Select, Switch, VStack } from "@chakra-ui/react";
+import { Box, Button, Divider, HStack, Select, Switch, VStack, Wrap } from "@chakra-ui/react";
 import { useRef, useState } from "react";
 
 import { useTranslation } from "react-i18next";
 import i18n, { getSystemLanguage } from "@/data/lang-entry";
 
+const _u = {
+  async: true,
+  cache: false,
+  notifySuccess(count: number) {
+    return i18n.t('page.settings.toast.recordsUpdated', { count });
+  },
+};
+
+const _d = {
+  async: true,
+  cache: false,
+  notifySuccess(count: number) {
+    return i18n.t('page.settings.toast.recordsDeleted', { count });
+  },
+};
 
 const refreshIndices = withHandler(
-  async (force: boolean) => {
-    const count = await QuizzyRaw.refreshSearchIndices(force, true);
-    return count;
-  },
-  {
-    async: true,
-    cache: false,
-    notifySuccess(count) {
-      return i18n.t('page.settings.toast.recordsUpdated', { count });
-    },
-  }
+  QuizzyRaw.refreshSearchIndices.bind(QuizzyRaw),
+  _u,
 );
 
 const deleteUnlinked = withHandler(
-  async () => {
-    const count = await QuizzyRaw.deleteUnlinked();
-    return count;
-  },
-  {
-    async: true,
-    cache: false,
-    notifySuccess(count) {
-      return i18n.t('page.settings.toast.recordsDeleted', { count });
-    },
-  }
-)
+  QuizzyRaw.deleteUnlinked.bind(QuizzyRaw), 
+  _d,
+);
+
+const deleteLogicallyDeleted = withHandler(
+  QuizzyRaw.deleteLogicallyDeleted.bind(QuizzyRaw),
+  _d,
+);
+
+const normalizeQuestions = withHandler(
+  QuizzyRaw.normalizeQuestions.bind(QuizzyRaw),
+  _u,
+);
+
 
 const exportData = withHandler(
   async () => {
@@ -66,18 +74,28 @@ export const SettingsPage = () => {
   const langSelectRef = useRef<HTMLSelectElement>(null);
 
   return <VStack alignItems='stretch' width='100%'>
-    <HStack>
-      <Button onClick={() => refreshIndices(force)}>{t('page.settings.btn.refreshIndices')}</Button>
-      <Switch isChecked={force} onChange={(e) => setForce(e.target.checked)}>
-        {t('page.settings.switch.forceRefresh')}
-      </Switch>
-      <Button onClick={deleteUnlinked}>{t('page.settings.btn.deleteUnlinked')}</Button>
-    </HStack>
+    <Wrap>
+      <HStack>
+        <Button onClick={() => refreshIndices(force, true)}>{t('page.settings.btn.refreshIndices')}</Button>
+        <Switch isChecked={force} onChange={(e) => setForce(e.target.checked)}>
+          {t('page.settings.switch.forceRefresh')}
+        </Switch>
+      </HStack>
+      <Button onClick={() => deleteUnlinked(true)}>
+        {t('page.settings.btn.deleteUnlinked')}
+      </Button>
+      <Button onClick={deleteLogicallyDeleted}>
+        {t('page.settings.btn.deleteLogicallyDeleted')}
+      </Button>
+      <Button onClick={normalizeQuestions}>
+        {t('page.settings.btn.normalizeQuestions')}
+      </Button>
+    </Wrap>
     <Divider />
-    <HStack>
+    <Wrap>
       <Button onClick={importData}>{t('page.settings.btn.importData')}</Button>
       <Button onClick={exportData}>{t('page.settings.btn.exportData')}</Button>
-    </HStack>
+    </Wrap>
     <Divider />
     <HStack>
       <Box>{t('page.settings.selectLanguage')}</Box>

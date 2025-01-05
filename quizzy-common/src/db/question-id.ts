@@ -14,16 +14,18 @@ export const normalizeOptionOrBlankArrayInPlace = <
   T extends Partial<DatabaseIndexed>
 >(o: T[]) => {
   o = o ?? [];
+  let changed = false;
   const ids = new Set<ID>();
   for (const item of o) {
     let retry = 100;
     while (retry > 0 && (!item.id || ids.has(item.id))) {
       item.id = uuidV4B64(6);
+      changed = true;
       --retry;
     }
     ids.add(item.id!);
   }
-  return o;
+  return changed;
 };
 
 export const normalizeOptionOrBlankArray = <
@@ -47,25 +49,36 @@ export const normalizeOptionOrBlankArray = <
 
 export const normalizeQuestion = (q: Question, qid = false) => {
 
-  if (qid) {
-    q.id = q.id || uuidV4B64(16);
-  }
+  let changed = false;
 
-  const ids = new Set<ID>();
+  if (qid && !q.id) {
+    changed = true;
+    q.id = uuidV4B64(16);
+  }
 
   if (!validTypes.includes(q.type)) {
     q.type = 'choice';
+    changed = true;
   }
 
   // the IDs should be ensured non-conflict locally
   if (q.type === 'choice') {
-    q.options = q.options ?? [];
-    normalizeOptionOrBlankArrayInPlace(q.options);
+    if (!q.options) {
+      changed = true;
+      q.options = [];
+    }
+    const c = normalizeOptionOrBlankArrayInPlace(q.options);
+    changed = changed || c;
   } else if (q.type === 'blank') {
-    q.blanks = q.blanks ?? [];
-    normalizeOptionOrBlankArrayInPlace(q.blanks);
+    if (!q.blanks) {
+      changed = true;
+      q.blanks = [];
+    }
+    const c = normalizeOptionOrBlankArrayInPlace(q.blanks);
+    changed = changed || c;
   } else if (q.type === 'text') {
     q.answer = q.answer ?? '';
   }
 
+  return changed;
 }
