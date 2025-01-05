@@ -24,9 +24,9 @@ export const getAllMultiEntryValues = async <
   indexName: IndexNames<T, StoreNames<T>>,
 ): Promise<string[]> => {
   const uniqueValues = new Set<string>();
+  const tx = db.transaction(storeName);
 
-  let cursor = await db
-    .transaction(storeName)
+  let cursor = await tx
     .store
     .index(indexName)
     .openKeyCursor();
@@ -35,6 +35,8 @@ export const getAllMultiEntryValues = async <
     uniqueValues.add(cursor.key as string);
     cursor = await cursor.continue();
   }
+
+  await tx.done;
 
   return Array.from(uniqueValues);
 };

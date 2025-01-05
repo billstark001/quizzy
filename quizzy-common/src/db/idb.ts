@@ -1,18 +1,28 @@
-import { CompleteQuizPaperDraft, Question, QuizPaper, QuizRecord, QuizRecordEvent, QuizRecordInitiation, QuizRecordOperation, QuizRecordTactics, QuizzyController, QuizzyData, StartQuizOptions, Stat, StatBase, TagListResult, TagSearchResult, UpdateQuizOptions } from "../types";
+import { 
+  CompleteQuizPaperDraft, Question, QuizPaper, 
+  QuizRecord, QuizRecordEvent, QuizRecordInitiation, 
+  QuizRecordOperation, QuizRecordTactics, 
+  QuizzyController, QuizzyData, StartQuizOptions, 
+  Stat, StatBase, TagListResult, TagSearchResult, 
+  UpdateQuizOptions 
+} from "../types";
 import { IDBPDatabase } from "idb";
 import { separatePaperAndQuestions, toCompleted } from "./paper-id";
 import { uuidV4B64 } from "../utils/string";
 import { QuizResult } from "../types/quiz-result";
 import { createQuizResult } from "./quiz-result";
-import { DatabaseIndexed, ID, KeywordIndexed, sanitizeIndices, SearchResult } from "../types/technical";
-import { applyPatch, Patch } from "../utils/patch";
-import { generateKeywords } from "./keywords";
-import QuickLRU from "quick-lru";
-import { DatabaseUpdateDefinition, getAllMultiEntryValues, openDatabase } from "../utils/idb";
-import { buildTrieTree, loadTrieTree } from "./search";
+import { ID, sanitizeIndices, SearchResult } from "../types/technical";
+import { Patch } from "../utils/patch";
+import { 
+  DatabaseUpdateDefinition, 
+  getAllMultiEntryValues, 
+  openDatabase 
+} from "../utils/idb";
 import { startQuiz, updateQuiz } from "./quiz";
 import { initWeightedState } from "../utils/random-seq";
 import { createStatFromQuizResults } from "./stats";
+import { normalizeQuestion } from "./question-id";
+import IDBCore, { Bm25Cache, BuildBm25CacheOptions, trieSearchByQuery } from "./idb-core";
 
 
 export const DB_KEY = 'Quizzy';
@@ -26,27 +36,6 @@ const STORE_KEY_STATS = 'stats';
 
 const STORE_KEY_GENERAL = 'general';
 
-type Bm25Cache = {
-  wordAppeared: Record<string, number>;
-  tagAppeared: Record<string, number>;
-  averageDocLength: number;
-  averageDocLengthTag: number;
-  totalDocs: number;
-  idf: Record<string, number>;
-  idfTag: Record<string, number>;
-  trie: any,
-  trieSize: number,
-  trieTags: any,
-  trieSizeTags: number,
-};
-
-const _ts = (query: string, cachePapers?: Bm25Cache, isTag?: boolean) =>
-  cachePapers?.[isTag ? 'trieTags' : 'trie']
-    ? loadTrieTree(
-      cachePapers?.[isTag ? 'trieTags' : 'trie'],
-      cachePapers?.[isTag ? 'trieSizeTags' : 'trieSize'])
-      .searchFunc(query)
-    : [];
 
 const updaters: Record<number, DatabaseUpdateDefinition> = {
   [0]: (db) => {
@@ -93,15 +82,10 @@ const updaters: Record<number, DatabaseUpdateDefinition> = {
   },
 } as const;
 
-export class IDBController implements QuizzyController {
+export class IDBController extends IDBCore implements QuizzyController {
 
-  private readonly db: IDBPDatabase;
-  private readonly cache: QuickLRU<string, [string, number][]>;
   private constructor(db: IDBPDatabase) {
-    this.db = db;
-    this.cache = new QuickLRU({
-      maxSize: 100,
-    });
+    super(db, STORE_KEY_GENERAL);
   }
 
   static async connect() {
@@ -129,279 +113,8 @@ export class IDBController implements QuizzyController {
     };
   }
 
-  // utils
-
-  private async _load<T>(key: string): Promise<T | undefined> {
-    const obj = await this.db.get(STORE_KEY_GENERAL, key);
-    return obj?.value as T;
-  }
-
-  private async _dump<T>(key: string, value: T) {
-    return await this.db.put(STORE_KEY_GENERAL, { id: key, value });
-  }
-
-  private async _import<T extends DatabaseIndexed>(store: string, items: T[]): Promise<ID[]> {
-    const tx = this.db.transaction(store, 'readwrite');
-    const ids: ID[] = [];
-    const promises: Promise<any>[] = [];
-    for (const q of items) {
-      promises.push(tx.store.add(q));
-      ids.push(q.id);
-    }
-    await Promise.all(promises);
-    await tx.done;
-    return ids;
-  }
-
-  private async _export<T extends DatabaseIndexed>(
-    store: string,
-  ): Promise<T[]> {
-    const tx = this.db.transaction(store, 'readonly');
-    const ret: T[] = await tx.store.getAll() as T[];
-    await tx.done;
-    return ret;
-  }
-
-  private async _delete<T extends DatabaseIndexed>(
-    store: string, id: ID, hard = false,
-  ): Promise<boolean> {
-    const original = await this.db.get(store, id) as T;
-    if (!original) {
-      // inexistent record
-      return false;
-    }
-    if (!hard) {
-      original.deleted = true;
-      original.lastUpdate = Date.now();
-      await this.db.put(store, original);
-    } else {
-      await this.db.delete(store, id);
-    }
-    // invalidate cache
-    this.cache.clear();
-    return true;
-  }
-
-  private async _update<T extends DatabaseIndexed & KeywordIndexed>(
-    store: string, id: ID, patch: Patch<T>,
-    invalidateKeywordsCache = false,
-  ): Promise<ID> {
-    const original = await this.db.get(store, id) as T;
-    if (!original) { // doesn't exist, create
-      patch.id = id;
-      patch.lastUpdate = Date.now();
-      await this._import(store, [patch as T]);
-      return id;
-    }
-    // apply patch
-    const modified = applyPatch(original, patch);
-    modified.id = id;
-    modified.lastUpdate = Date.now();
-    // invalidate cache
-    if (invalidateKeywordsCache) {
-      delete modified.keywords;
-      delete modified.keywordsFrequency;
-      delete modified.tagsFrequency;
-      delete modified.keywordsUpdatedTime;
-    }
-    // optimistic lock
-    const tx = this.db.transaction(store, 'readwrite');
-    const another = await tx.store.get(id) as T;
-    if (another?.lastUpdate !== original.lastUpdate) {
-      throw new Error('Data modified.');
-    }
-    await tx.store.put(modified);
-    await tx.done;
-
-    // invalidate cache
-    this.cache.clear();
-
-    return id;
-  }
-
-  private async _getKeywords(query: string, __: string) {
-    if (!query) {
-      return [];
-    }
-    const [orig, _] = generateKeywords(query);
-    return orig;
-  }
-
-  private async _buildScore<T extends DatabaseIndexed & KeywordIndexed>(
-    key: string,
-    store: string, query: string[], useTag: boolean,
-    k1 = 1.5, b = 0.75, threshold = 1e-10,
-  ) {
-    const { idf, idfTag, averageDocLength, averageDocLengthTag, trie, trieSize, trieTags, trieSizeTags } = await this._load<Bm25Cache>('bm25_' + store)
-      ?? { idf: {}, idfTag: {}, averageDocLength: 0, averageDocLengthTag: 0, trie: {}, trieTags: {}, trieSize: 0, trieSizeTags: 0 } as Bm25Cache;
-
-    const trieTree = loadTrieTree(!useTag ? trie : trieTags, !useTag ? trieSize : trieSizeTags);
-    const tx = this.db.transaction(store, 'readonly');
-    const scores: Record<string, number> = {};
-
-    const l = useTag ? averageDocLengthTag : averageDocLength;
-    const _idf = useTag ? idfTag : idf;
-
-    let cursor = await tx.store.openCursor();
-    let expandedQuery = new Set<string>();
-    for (const qi of query) {
-      expandedQuery.add(qi);
-      for (const qj of trieTree.searchFunc(qi)) {
-        expandedQuery.add(qj);
-      }
-    }
-    while (cursor != null) {
-      const doc = cursor.value as T;
-      const cacheList = useTag ? [...doc.tags ?? [], ...doc.categories ?? []] : doc.keywords;
-      // TODO implement caching
-      const docLength = cacheList?.length || 1;
-      const freq = (useTag ? doc.tagsFrequency : doc.keywordsFrequency) ?? {};
-      let score = 0;
-      for (const qi of expandedQuery) {
-        const f_qi = freq[qi] ?? 0;
-        const localTerm = (_idf[qi] ?? 0)
-          * (f_qi * (k1 + 1))
-          / (f_qi + k1 * (1 - b + b * docLength / l));
-        score += localTerm;
-      }
-      if (score > threshold) {
-        scores[doc.id] = score;
-      }
-      cursor = await cursor.continue();
-    }
-    await tx.done;
-
-    const scoresSorted = Object.entries(scores);
-    scoresSorted.sort((a, b) => b[1] - a[1]); // descending
-
-    this.cache.set(key, scoresSorted);
-    return scoresSorted;
-  }
-
-  private async _search<T extends DatabaseIndexed & KeywordIndexed>(
-    store: string, query: string, keywords: string[], useTag: boolean,
-    count?: number, page?: number,
-    k1 = 1.5, b = 0.75, threshold = 1e-10,
-  ): Promise<SearchResult<T>> {
-
-    const queryCacheKey = JSON.stringify([store, keywords, useTag, k1, b, threshold]);
-    const scores = this.cache.has(queryCacheKey)
-      ? this.cache.get(queryCacheKey)
-      : await this._buildScore(queryCacheKey, store, keywords, useTag, k1, b, threshold);
-
-    count = Math.max(count ?? 1, 1);
-    page = Math.max(page ?? 0, 0); // 0-based
-
-    const result: T[] = [];
-    for (let i = page * count; i < (page + 1) * count; ++i) {
-      const currentResult = await this.db.get(store, scores?.[i]?.[0] ?? '');
-      if (currentResult != null) {
-        result.push(sanitizeIndices(currentResult, true));
-      }
-    }
-
-    return {
-      query,
-      keywords,
-      result,
-      totalPages: Math.ceil((scores?.length ?? 0) / count)
-    };
-  }
-
-  private async _buildIndices<T extends DatabaseIndexed & KeywordIndexed>(
-    store: string,
-    force?: boolean,
-    excludedKeys?: (keyof T)[],
-  ): Promise<ID[]> {
-    const tx = this.db.transaction(store, 'readwrite');
-    const updated: ID[] = [];
-
-    // build bm25 cache
-    // TODO add incremental building
-    const wordAppeared: Record<string, number> = {};
-    const tagAppeared: Record<string, number> = {};
-    let totalLength = 0;
-    let totalLengthTag = 0;
-    let totalDocs = 0;
-
-    // filter all re-indexing required
-    let cursor = await tx.store.openCursor();
-    let excludedKeysSet = new Set(excludedKeys);
-    while (cursor) {
-      const object = cursor.value as T;
-      // check if re-indexing is needed
-      if (force || (!object.deleted && (
-        object.keywords == null || object.keywordsUpdatedTime == null ||
-        (object.lastUpdate != null && object.keywordsUpdatedTime < object.lastUpdate)
-      ))) {
-        // update it in-place
-        // this will not affect the database, for sure
-        const [words, freq] = generateKeywords(
-          Object.entries(object)
-            .filter(([k]) => !excludedKeysSet.has(k as any))
-            .map(([, v]) => v)
-        );
-        object.keywordsUpdatedTime = Date.now();
-        object.keywordsFrequency = freq;
-        object.keywords = words;
-
-        // tags
-        const tagFreq: Record<string, number> = {};
-        for (const tag of object.tags ?? []) {
-          tagFreq[tag] = 1;
-        }
-        for (const tag of object.categories ?? []) {
-          tagFreq[tag] = 4;
-        }
-        object.tagsFrequency = tagFreq;
-
-        await cursor.update(object);
-        updated.push(object.id);
-      }
-
-      for (const key of Object.keys(object.keywordsFrequency ?? {})) {
-        wordAppeared[key] = (wordAppeared[key] || 0) + 1;
-      }
-      for (const key of Object.keys(object.tagsFrequency ?? {})) {
-        tagAppeared[key] = (tagAppeared[key] || 0) + 1;
-      }
-      totalLength += object.keywords?.length ?? 0;
-      totalLengthTag += (object.tags?.length ?? 0) + (object.categories?.length ?? 0);
-      totalDocs += 1;
-
-      cursor = await cursor.continue();
-    }
-    await tx.done;
-
-    // build trie trees
-    const { root: trie, size: trieSize, } = buildTrieTree(Object.keys(wordAppeared));
-    const { root: trieTags, size: trieSizeTags, } = buildTrieTree(Object.keys(tagAppeared));
-
-    // write the cache into database
-    const idf: Record<string, number> = Object.fromEntries(
-      Object.entries(wordAppeared).map(
-        ([k, n]) => [k, Math.max(1e-8, Math.log((totalDocs - n + 0.5) / (n + 0.5)))]
-      )
-    );
-    const idfTag: Record<string, number> = Object.fromEntries(
-      Object.entries(tagAppeared).map(
-        ([k, n]) => [k, Math.max(1e-8, Math.log((totalDocs - n + 0.5) / (n + 0.5)))]
-      )
-    );
-    const averageDocLength = totalLength / (totalDocs || 1);
-    const averageDocLengthTag = totalLengthTag / (totalDocs || 1);
-    const bm25Body: Bm25Cache = {
-      wordAppeared, tagAppeared,
-      averageDocLength, averageDocLengthTag,
-      totalDocs, idf, idfTag,
-      trie, trieSize, trieTags, trieSizeTags,
-    };
-    await this._dump('bm25_' + store, bm25Body);
-
-    return updated;
-  }
-
   async importQuestions(...questions: Question[]): Promise<ID[]> {
+    questions.forEach(q => normalizeQuestion(q));
     return this._import(STORE_KEY_QUESTIONS, questions);
   }
 
@@ -411,33 +124,36 @@ export class IDBController implements QuizzyController {
 
 
   async findQuestion(query: string, count?: number, page?: number): Promise<SearchResult<Question>> {
+    await this.refreshSearchIndices();
     const queryKeywords = await this._getKeywords(query, STORE_KEY_QUESTIONS);
     return this._search(STORE_KEY_QUESTIONS, query, queryKeywords, false, count, page);
   }
   async findQuizPaper(query: string, count?: number, page?: number): Promise<SearchResult<QuizPaper>> {
+    await this.refreshSearchIndices();
     const queryKeywords = await this._getKeywords(query, STORE_KEY_PAPERS);
     return this._search(STORE_KEY_PAPERS, query, queryKeywords, false, count, page);
   }
   async findQuestionByTags(query: string, count?: number, page?: number): Promise<SearchResult<Question>> {
+    await this.refreshSearchIndices();
     const queryKeywords = query.split(' ').filter(x => !!x);
     queryKeywords[0] !== query && queryKeywords.splice(0, 0, query);
     return this._search(STORE_KEY_QUESTIONS, query, queryKeywords, true, count, page);
   }
   async findQuizPaperByTags(query: string, count?: number, page?: number): Promise<SearchResult<QuizPaper>> {
+    await this.refreshSearchIndices();
     const queryKeywords = query.split(' ').filter(x => !!x);
     queryKeywords[0] !== query && queryKeywords.splice(0, 0, query);
     return this._search(STORE_KEY_PAPERS, query, queryKeywords, true, count, page);
   }
 
   async findTags(query: string, _?: number, __?: number): Promise<TagSearchResult> {
-    // TODO cache trie trees
-    const cachePapers = await this._load<Bm25Cache>('bm25_' + STORE_KEY_PAPERS);
-    const cacheQuestions = await this._load<Bm25Cache>('bm25_' + STORE_KEY_QUESTIONS);
+    const cachePapers = await this._loadBm25Cache(STORE_KEY_PAPERS);
+    const cacheQuestions = await this._loadBm25Cache(STORE_KEY_QUESTIONS);
     return {
-      paper: _ts(query, cachePapers, false),
-      paperTags: _ts(query, cachePapers, true),
-      question: _ts(query, cacheQuestions, false),
-      questionTags: _ts(query, cacheQuestions, true),
+      paper: trieSearchByQuery(query, cachePapers, false),
+      paperTags: trieSearchByQuery(query, cachePapers, true),
+      question: trieSearchByQuery(query, cacheQuestions, false),
+      questionTags: trieSearchByQuery(query, cacheQuestions, true),
     };
   }
 
@@ -458,10 +174,13 @@ export class IDBController implements QuizzyController {
     };
   }
 
+  // TODO manual replacement if conflict detected
   async importCompleteQuizPapers(...papers: CompleteQuizPaperDraft[]): Promise<string[]> {
     const purePapers: QuizPaper[] = [];
+    const hasPaperId = (id: ID) => this.db.get(STORE_KEY_PAPERS, id).then(x => x != null && !x.deleted);
+    const hasQuestionId = (id: ID) => this.db.get(STORE_KEY_PAPERS, id).then(x => x != null && !x.deleted);
     for (const _paper of papers) {
-      const paper = await toCompleted(_paper, (id) => this.db.get(STORE_KEY_PAPERS, id).then(x => x != null));
+      const paper = await toCompleted(_paper, hasPaperId, hasQuestionId);
       const [purePaper, questions] = separatePaperAndQuestions(paper);
       purePapers.push(purePaper);
       await this.importQuestions(...questions);
@@ -485,20 +204,24 @@ export class IDBController implements QuizzyController {
 
   async getQuestions(ids: ID[]): Promise<(Question | undefined)[]> {
     const ret: (Question | undefined)[] = [];
+    const tx = this.db.transaction(STORE_KEY_QUESTIONS, 'readonly');
     for (const id of ids) {
-      const _ret = await this.db.get(STORE_KEY_QUESTIONS, id);
+      const _ret = await tx.store.get(id);
       _ret && sanitizeIndices(_ret, true);
       ret.push(_ret);
     }
+    await tx.done;
     return ret;
   }
 
-  listQuizPaperIds(): Promise<ID[]> {
-    return this.db.getAllKeys(STORE_KEY_PAPERS) as Promise<ID[]>;
+  async listQuizPapers(): Promise<QuizPaper[]> {
+    const ret: QuizPaper[] = await this.db.getAll(STORE_KEY_PAPERS);
+    return ret.filter(x => x && !x.deleted);
   }
 
-  listQuestionsIds(): Promise<ID[]> {
-    return this.db.getAllKeys(STORE_KEY_QUESTIONS) as Promise<ID[]>;
+  async listQuestions(): Promise<Question[]> {
+    const ret: Question[] = await this.db.getAll(STORE_KEY_QUESTIONS);
+    return ret.filter(x => x && !x.deleted);
   }
 
 
@@ -518,15 +241,22 @@ export class IDBController implements QuizzyController {
 
   // search
 
-  async refreshSearchIndices(force?: boolean) {
-    let count = 0;
-    count += (await this._buildIndices<Question>(STORE_KEY_QUESTIONS, force, ['id', 'keywords'])).length;
-    count += (await this._buildIndices<QuizPaper>(STORE_KEY_PAPERS, force, ['id', 'questions', 'keywords'])).length;
-    await this.cache.clear();
-    return count;
+  async refreshSearchIndices(
+    forceReindexing = false, 
+    forceReindexingForPreparation = false,
+    ignoreDeleted = true
+  ) {
+    const options: BuildBm25CacheOptions<QuizPaper> = {
+      forceReindexing, ignoreDeleted, excludedKeys: ['id', 'questions', 'keywords'],
+    }
+    return await this._prepareForSearch(
+      [STORE_KEY_QUESTIONS, STORE_KEY_PAPERS],
+      options,
+      forceReindexingForPreparation,
+    );
   }
 
-  async deleteUnlinked() {
+  async deleteUnlinked(logical = true) {
     let count = 0;
     const tx = this.db.transaction([STORE_KEY_PAPERS, STORE_KEY_QUESTIONS, STORE_KEY_RECORDS, STORE_KEY_RESULTS], 'readwrite');
     const allQuestions = await tx.objectStore(STORE_KEY_QUESTIONS).getAll() as Question[];
@@ -546,8 +276,24 @@ export class IDBController implements QuizzyController {
     }
     for (const id of deleteNeededQuestions) {
       count += 1;
-      tx.objectStore(STORE_KEY_QUESTIONS).delete(id);
+      this._delete(STORE_KEY_QUESTIONS, id, logical, tx);
     }
+    await tx.done;
+    return count;
+  }
+
+  async deleteLogicallyDeleted() {
+    let count = 0;
+    const stores: readonly string[] = [STORE_KEY_PAPERS, STORE_KEY_QUESTIONS, STORE_KEY_RECORDS, STORE_KEY_RESULTS, STORE_KEY_STATS];
+    const tx = this.db.transaction(stores, 'readwrite');
+    const promises: Promise<void>[] = [];
+    for (const storeId of stores) {
+      const store = tx.objectStore(storeId);
+      const ids: ID[] = await store.index('deleted').getAllKeys() as ID[];
+      count += ids.length;
+      ids.forEach(id => promises.push(store.delete(id)));
+    }
+    await Promise.all(promises);
     await tx.done;
     return count;
   }
@@ -562,18 +308,14 @@ export class IDBController implements QuizzyController {
     return await this.db.get(STORE_KEY_RECORDS, id);
   }
 
-  listQuizRecords(quizPaperId?: ID): Promise<QuizRecord[]> {
+  async listQuizRecords(quizPaperId?: ID): Promise<QuizRecord[]> {
+    let ret: QuizRecord[];
     if (!quizPaperId) {
-      return this.db.getAll(STORE_KEY_RECORDS);
+      ret = await this.db.getAll(STORE_KEY_RECORDS);
+    } else {
+      ret = await this.db.getAllFromIndex(STORE_KEY_RECORDS, 'paperId', quizPaperId);
     }
-    return this.db.getAllFromIndex(STORE_KEY_RECORDS, 'paperId', quizPaperId);
-  }
-
-  listQuizRecordIds(quizPaperId?: ID): Promise<ID[]> {
-    if (!quizPaperId) {
-      return this.db.getAllKeys(STORE_KEY_RECORDS) as Promise<ID[]>;
-    }
-    return this.db.getAllKeysFromIndex(STORE_KEY_RECORDS, 'paperId', quizPaperId) as Promise<ID[]>;
+    return ret.filter(x => x && !x.deleted);
   }
 
   async parseTactics(t: Readonly<QuizRecordTactics>): Promise<QuizRecordInitiation | undefined> {
@@ -709,7 +451,7 @@ export class IDBController implements QuizzyController {
     await _sr.add(result);
 
     // delete original record
-    await tx.objectStore(STORE_KEY_RECORDS).delete(id);
+    await this._delete(STORE_KEY_RECORDS, id, true, tx);
 
     await tx.done;
     return result.id;
@@ -731,18 +473,14 @@ export class IDBController implements QuizzyController {
     return this.db.get(STORE_KEY_RESULTS, id);
   }
 
-  listQuizResultIds(quizPaperId?: ID): Promise<ID[]> {
+  async listQuizResults(quizPaperId?: ID): Promise<QuizResult[]> {
+    let ret: QuizResult[];
     if (!quizPaperId) {
-      return this.db.getAllKeys(STORE_KEY_RESULTS) as Promise<ID[]>;
+      ret = await this.db.getAll(STORE_KEY_RESULTS);
+    } else {
+      ret = await this.db.getAllFromIndex(STORE_KEY_RESULTS, 'paperId', quizPaperId);
     }
-    return this.db.getAllKeysFromIndex(STORE_KEY_RESULTS, 'paperId', quizPaperId) as Promise<ID[]>;
-  }
-
-  listQuizResults(quizPaperId?: ID): Promise<QuizResult[]> {
-    if (!quizPaperId) {
-      return this.db.getAll(STORE_KEY_RESULTS);
-    }
-    return this.db.getAllFromIndex(STORE_KEY_RESULTS, 'paperId', quizPaperId);
+    return ret.filter(x => x && !x.deleted);
   }
 
   // stats
@@ -768,7 +506,7 @@ export class IDBController implements QuizzyController {
     };
     const stat = await createStatFromQuizResults(results, getQuestion);
     if (results.length === 1) {
-      // concurrent problem is not a concern
+      // concurrency problem is not a concern
       // since results are never modified
       const res = results[0];
       res.stat = stat;
@@ -786,7 +524,8 @@ export class IDBController implements QuizzyController {
   }
 
   async listStats(): Promise<Stat[]> {
-    return await this.db.getAll(STORE_KEY_STATS);
+    const ret = await this.db.getAll(STORE_KEY_STATS);
+    return ret.filter(x => x && !x.deleted);
   }
 
   async getStat(id: ID): Promise<Stat | undefined> {

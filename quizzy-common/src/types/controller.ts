@@ -52,8 +52,8 @@ export interface QuizzyController {
   getQuizPaperNames(...ids: ID[]): Promise<(string | undefined)[]>;
   getQuestions(ids: ID[]): Promise<(Question | undefined)[]>;
 
-  listQuizPaperIds(): Promise<ID[]>;
-  listQuestionsIds(): Promise<ID[]>;
+  listQuizPapers(): Promise<QuizPaper[]>;
+  listQuestions(): Promise<Question[]>;
 
   updateQuestion(id: ID, patch: Patch<Question>): Promise<ID>;
   updateQuizPaper(id: ID, paper: Patch<QuizPaper>): Promise<ID>;
@@ -76,7 +76,6 @@ export interface QuizzyController {
   getQuizRecord(id: ID): Promise<QuizRecord | undefined>;
 
   listQuizRecords(quizPaperId?: ID): Promise<QuizRecord[]>;
-  listQuizRecordIds(quizPaperId?: ID): Promise<ID[]>;
 
   startQuiz(tactics: Readonly<QuizRecordTactics>, options?: Readonly<StartQuizOptions>): Promise<QuizRecord>;
   updateQuiz(
@@ -89,7 +88,6 @@ export interface QuizzyController {
 
   importQuizResults(...results: QuizResult[]): Promise<ID[]>;
   getQuizResult(id: ID): Promise<QuizResult | undefined>;
-  listQuizResultIds(quizPaperId?: ID): Promise<ID[]>;
   listQuizResults(quizPaperId?: ID): Promise<QuizResult[]>;
   deleteQuizResult(id: ID): Promise<boolean>;
 

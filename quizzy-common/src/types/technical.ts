@@ -16,6 +16,7 @@ export type KeywordIndexed = {
   keywordsFrequency?: Record<string, number>;
   tagsFrequency?: Record<string, number>;
   keywordsUpdatedTime?: number;
+  keywordsCacheInvalidated?: boolean;
 };
 
 export type SearchResult<T> = {

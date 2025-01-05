@@ -16,14 +16,7 @@ export const usePapers = () => {
   const navigate = useNavigate();
 
   const refresh = async () => {
-    const ids = await Quizzy.listQuizPaperIds();
-    const paperList: QuizPaper[] = [];
-    for (const id of ids) {
-      const p = await Quizzy.getQuizPaper(id);
-      if (p) {
-        paperList.push(p);
-      }
-    }
+    const paperList = await Quizzy.listQuizPapers();
     setPapers(paperList);
   };
 

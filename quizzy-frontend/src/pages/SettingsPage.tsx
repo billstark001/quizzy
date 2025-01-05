@@ -10,7 +10,7 @@ import i18n, { getSystemLanguage } from "@/data/lang-entry";
 
 const refreshIndices = withHandler(
   async (force: boolean) => {
-    const count = await QuizzyRaw.refreshSearchIndices(force);
+    const count = await QuizzyRaw.refreshSearchIndices(force, true);
     return count;
   },
   {
