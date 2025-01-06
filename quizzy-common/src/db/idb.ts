@@ -23,6 +23,7 @@ import { initWeightedState } from "../utils/random-seq";
 import { createStatFromQuizResults } from "./stats";
 import { normalizeQuestion } from "./question-id";
 import IDBCore, { Bm25Cache, BuildBm25CacheOptions, trieSearchByQuery } from "./idb-core";
+import { Bookmark, BookmarkBase, BookmarkType, defaultBookmark, defaultBookmarkType } from "../types/bookmark";
 
 
 export const DB_KEY = 'Quizzy';
@@ -33,6 +34,9 @@ const STORE_KEY_RECORDS = 'records';
 const STORE_KEY_QUESTIONS = 'questions';
 const STORE_KEY_RESULTS = 'results';
 const STORE_KEY_STATS = 'stats';
+const STORE_KEY_TAGS = 'tags';
+const STORE_KEY_BOOKMARK_TYPES = 'bookmark_types';
+const STORE_KEY_BOOKMARKS = 'bookmarks';
 
 const STORE_KEY_GENERAL = 'general';
 
@@ -80,6 +84,24 @@ const updaters: Record<number, DatabaseUpdateDefinition> = {
     statStore.createIndex('allCategories', 'allCategories', { multiEntry: true });
     statStore.createIndex('results', 'results', { multiEntry: true });
   },
+  [1]: (db) => {
+    // create new stores
+    const _id: IDBObjectStoreParameters = { keyPath: 'id', };
+    const tagStore = db.createObjectStore(STORE_KEY_TAGS, _id);
+    const bookmarkTypeStore = db.createObjectStore(STORE_KEY_BOOKMARK_TYPES, _id);
+    const bookmarkStore = db.createObjectStore(STORE_KEY_BOOKMARKS, _id);
+    for (const store of [tagStore, bookmarkTypeStore, bookmarkStore]) {
+      store.createIndex('deleted', 'deleted');
+      store.createIndex('lastUpdate', 'lastUpdate');
+    }
+    // tag
+    tagStore.createIndex('mainName', 'mainName', { unique: true });
+    tagStore.createIndex('alternatives', 'alternatives', { multiEntry: true });
+    // bookmark
+    bookmarkTypeStore.createIndex('name', 'name', { unique: true });
+    bookmarkStore.createIndex('item-category', ['typeId', 'itemId', 'category'], { unique: true });
+    bookmarkStore.createIndex('createTime', 'createTime');
+  }
 } as const;
 
 export class IDBController extends IDBCore implements QuizzyController {
@@ -113,6 +135,109 @@ export class IDBController extends IDBCore implements QuizzyController {
     };
   }
 
+  // bookmark types
+  // just standard CRUD
+
+  async createBookmarkType(t?: Partial<BookmarkType>) {
+    const bt = defaultBookmarkType(t);
+    let retry = 100;
+    while (retry > 0 && (!bt.id || await this.db.get(STORE_KEY_BOOKMARK_TYPES, bt.id))) {
+      bt.id = uuidV4B64(12);
+      retry--;
+    }
+    return await this.db.add(STORE_KEY_BOOKMARK_TYPES, bt) as ID;
+  }
+
+  async getBookmarkType(id: ID) {
+    if (!id) {
+      return undefined;
+    }
+    return await this.db.get(STORE_KEY_BOOKMARK_TYPES, id) as BookmarkType | undefined;
+  }
+
+  async listBookmarkTypes() {
+    const bookmarks: BookmarkType[] = await this.db.getAll(STORE_KEY_BOOKMARK_TYPES);
+    return bookmarks.filter(x => x && !x.deleted);
+  }
+
+  updateBookmarkType(id: ID, t: Partial<BookmarkType>) {
+    return this._update(STORE_KEY_BOOKMARK_TYPES, id, t);
+  }
+
+  deleteBookmarkType(id: ID) {
+    return this._delete(STORE_KEY_BOOKMARK_TYPES, id, true);
+  }
+
+  // bookmarks
+
+  // TODO the operations of bookmarks base on the item-category index.
+  // add, delete, update, get should all be indexed by this index.
+  // TODO also change the question fetching api's to append bookmark info.
+
+  async addBookmark(payload: BookmarkBase): Promise<ID> {
+    const tx = this.db.transaction(STORE_KEY_BOOKMARKS, 'readwrite');
+    // first check if exists, and return the existent one
+    const index = [payload.typeId, payload.itemId, payload.category];
+    const existentBookmark = await tx.store.index('item-category')
+      .get(index) as Bookmark | undefined;
+    if (existentBookmark && existentBookmark.note !== payload.note) {
+      const lastUpdate = Date.now();
+      const id = await tx.store.put({ 
+        ...existentBookmark, 
+        note: payload.note, 
+        lastUpdate, 
+        deleted: false,
+      });
+      await tx.done;
+      return id as ID;
+    }
+    // else, create a new one
+    let retry = 100;
+    let id = '';
+    while (retry > 0 && (!id || await tx.store.get(id))) {
+      id = uuidV4B64(16);
+      retry--;
+    }
+    const bookmark = defaultBookmark(payload);
+    bookmark.id = id;
+    delete bookmark.deleted;
+    bookmark.lastUpdate = Date.now();
+    return await tx.store.add(bookmark) as ID;
+  }
+
+  // tags
+
+  async findTags(query: string, _?: number, __?: number): Promise<TagSearchResult> {
+    const cachePapers = await this._loadBm25Cache(STORE_KEY_PAPERS);
+    const cacheQuestions = await this._loadBm25Cache(STORE_KEY_QUESTIONS);
+    return {
+      paper: trieSearchByQuery(query, cachePapers, false),
+      paperTags: trieSearchByQuery(query, cachePapers, true),
+      question: trieSearchByQuery(query, cacheQuestions, false),
+      questionTags: trieSearchByQuery(query, cacheQuestions, true),
+    };
+  }
+
+  async listTags(): Promise<TagListResult> {
+    return {
+      questionCategories: await getAllMultiEntryValues(
+        this.db, STORE_KEY_QUESTIONS, 'categories',
+      ) as string[],
+      questionTags: await getAllMultiEntryValues(
+        this.db, STORE_KEY_QUESTIONS, 'tags',
+      ) as string[],
+      paperCategories: await getAllMultiEntryValues(
+        this.db, STORE_KEY_PAPERS, 'categories',
+      ) as string[],
+      paperTags: await getAllMultiEntryValues(
+        this.db, STORE_KEY_PAPERS, 'tags',
+      ) as string[],
+    };
+  }
+
+
+  // questions & papers
+
   async importQuestions(...questions: Question[]): Promise<ID[]> {
     questions.forEach(q => normalizeQuestion(q));
     return this._import(STORE_KEY_QUESTIONS, questions);
@@ -144,34 +269,6 @@ export class IDBController extends IDBCore implements QuizzyController {
     const queryKeywords = query.split(' ').filter(x => !!x);
     queryKeywords[0] !== query && queryKeywords.splice(0, 0, query);
     return this._search(STORE_KEY_PAPERS, query, queryKeywords, true, count, page);
-  }
-
-  async findTags(query: string, _?: number, __?: number): Promise<TagSearchResult> {
-    const cachePapers = await this._loadBm25Cache(STORE_KEY_PAPERS);
-    const cacheQuestions = await this._loadBm25Cache(STORE_KEY_QUESTIONS);
-    return {
-      paper: trieSearchByQuery(query, cachePapers, false),
-      paperTags: trieSearchByQuery(query, cachePapers, true),
-      question: trieSearchByQuery(query, cacheQuestions, false),
-      questionTags: trieSearchByQuery(query, cacheQuestions, true),
-    };
-  }
-
-  async listTags(): Promise<TagListResult> {
-    return {
-      questionCategories: await getAllMultiEntryValues(
-        this.db, STORE_KEY_QUESTIONS, 'categories',
-      ) as string[],
-      questionTags: await getAllMultiEntryValues(
-        this.db, STORE_KEY_QUESTIONS, 'tags',
-      ) as string[],
-      paperCategories: await getAllMultiEntryValues(
-        this.db, STORE_KEY_PAPERS, 'categories',
-      ) as string[],
-      paperTags: await getAllMultiEntryValues(
-        this.db, STORE_KEY_PAPERS, 'tags',
-      ) as string[],
-    };
   }
 
   // TODO manual replacement if conflict detected
