@@ -1,6 +1,6 @@
 import { QuestionDisplay } from "@/components/question-display/QuestionDisplay";
 import { Answers, Question, QuizRecord, QuizRecordEvent } from "@quizzy/common/types";
-import { openDialog } from "@/utils";
+import { openDialog } from "@/components/handler";
 import { Quizzy } from "@/data";
 import { useAsyncEffect } from "@/utils/react-async";
 import { ParamsDefinition, useParsedSearchParams } from "@/utils/react-router";

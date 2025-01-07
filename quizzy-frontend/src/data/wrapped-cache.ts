@@ -1,6 +1,6 @@
 import { openDatabase } from "@quizzy/common/utils";
 import { IDBPDatabase } from "idb";
-import { withHandler } from "@/utils";
+import { withHandler } from "@/components/handler";
 
 import { DB_KEY, VERSION, updaters, QuizzyEditCache } from "@quizzy/common/db/edit-cache";
 

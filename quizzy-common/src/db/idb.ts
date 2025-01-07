@@ -4,6 +4,7 @@ import {
   QuizRecordOperation, QuizRecordTactics, 
   QuizzyController, QuizzyData, StartQuizOptions, 
   Stat, StatBase, TagListResult, TagSearchResult, 
+  TICIndex, 
   UpdateQuizOptions 
 } from "../types";
 import { IDBPDatabase } from "idb";
@@ -39,6 +40,9 @@ const STORE_KEY_BOOKMARK_TYPES = 'bookmark_types';
 const STORE_KEY_BOOKMARKS = 'bookmarks';
 
 const STORE_KEY_GENERAL = 'general';
+
+
+const ticIndices: readonly ((keyof BookmarkBase) & TICIndex)[] = ['typeId', 'itemId', 'category'];
 
 
 const updaters: Record<number, DatabaseUpdateDefinition> = {
@@ -99,7 +103,11 @@ const updaters: Record<number, DatabaseUpdateDefinition> = {
     tagStore.createIndex('alternatives', 'alternatives', { multiEntry: true });
     // bookmark
     bookmarkTypeStore.createIndex('name', 'name', { unique: true });
-    bookmarkStore.createIndex('item-category', ['typeId', 'itemId', 'category'], { unique: true });
+    // 'typeId' | 'itemId' | 'category';
+    for (const i of ticIndices) {
+      bookmarkStore.createIndex(i, i);
+    }
+    bookmarkStore.createIndex('TIC', ticIndices as any, { unique: true });
     bookmarkStore.createIndex('createTime', 'createTime');
   }
 } as const;
@@ -165,16 +173,35 @@ export class IDBController extends IDBCore implements QuizzyController {
 
   // bookmarks
 
-  // TODO the operations of bookmarks base on the item-category index.
+  // TODO the operations of bookmarks base on the TIC index.
   // add, delete, update, get should all be indexed by this index.
   // TODO also change the question fetching api's to append bookmark info.
 
-  async addBookmark(payload: BookmarkBase): Promise<ID> {
+
+  getBookmark(id: ID) {
+    return this._get<Bookmark>(STORE_KEY_BOOKMARKS, id);
+  }
+
+  updateBookmark(id: ID, bookmark: Patch<Bookmark>) {
+    return this._update<Bookmark>(STORE_KEY_BOOKMARKS, id, bookmark);
+  }
+
+  deleteBookmark(id: ID) {
+    return this._delete<Bookmark>(STORE_KEY_BOOKMARKS, id);
+  }
+
+
+  protected async _tic(payload: BookmarkBase) {
     const tx = this.db.transaction(STORE_KEY_BOOKMARKS, 'readwrite');
-    // first check if exists, and return the existent one
     const index = [payload.typeId, payload.itemId, payload.category];
-    const existentBookmark = await tx.store.index('item-category')
+    const existentBookmark = await tx.store.index('TIC')
       .get(index) as Bookmark | undefined;
+    return [tx, existentBookmark] as [typeof tx, typeof existentBookmark];
+  }
+
+  async putBookmarkTIC(payload: BookmarkBase): Promise<ID> {
+    // first check if exists, and return the existent one
+    const [tx, existentBookmark] = await this._tic(payload);
     if (existentBookmark && existentBookmark.note !== payload.note) {
       const lastUpdate = Date.now();
       const id = await tx.store.put({ 
@@ -195,7 +222,30 @@ export class IDBController extends IDBCore implements QuizzyController {
     bookmark.id = id;
     delete bookmark.deleted;
     bookmark.lastUpdate = Date.now();
-    return await tx.store.add(bookmark) as ID;
+    const ret = await tx.store.add(bookmark) as ID;
+    await tx.done;
+    return ret;
+  }
+  
+  async deleteBookmarkTIC(payload: BookmarkBase) {
+    const [tx, existentBookmark] = await this._tic(payload);
+    if (!existentBookmark) {
+      await tx.done;
+      return false;
+    }
+    const ret = await this._delete<Bookmark>(STORE_KEY_BOOKMARKS, existentBookmark.id, true, tx as any);
+    await tx.done;
+    return ret;
+  }
+  
+  async getBookmarkTIC(payload: BookmarkBase) {
+    const [tx, existentBookmark] = await this._tic(payload);
+    await tx.done;
+    return existentBookmark;
+  }
+
+  listBookmarks(index?: TICIndex, value?: string) {
+    return this._list<Bookmark>(STORE_KEY_BOOKMARKS, index, value);
   }
 
   // tags
@@ -422,7 +472,7 @@ export class IDBController extends IDBCore implements QuizzyController {
   }
 
   listQuizRecords(quizPaperId?: ID): Promise<QuizRecord[]> {
-    return this._list(STORE_KEY_RECORDS, 'paperId', quizPaperId);
+    return this._list(STORE_KEY_RECORDS, quizPaperId ? 'paperId' : undefined, quizPaperId);
   }
 
   async parseTactics(t: Readonly<QuizRecordTactics>): Promise<QuizRecordInitiation | undefined> {
@@ -583,7 +633,7 @@ export class IDBController extends IDBCore implements QuizzyController {
   }
 
   listQuizResults(quizPaperId?: ID): Promise<QuizResult[]> {
-    return this._list(STORE_KEY_RESULTS, 'paperId', quizPaperId);
+    return this._list(STORE_KEY_RESULTS, quizPaperId ? 'paperId' : undefined, quizPaperId);
   }
 
   // stats

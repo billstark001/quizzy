@@ -7,6 +7,25 @@ const keys: Readonly<{[key in keyof QuizzyController]: undefined}> = Object.free
   'importData': undefined,
   'exportData': undefined,
 
+  // bookmark types
+
+  'createBookmarkType': undefined,
+  'getBookmarkType': undefined,
+  'listBookmarkTypes': undefined,
+  'updateBookmarkType': undefined,
+  'deleteBookmarkType': undefined,
+
+  // bookmarks
+
+  'getBookmark': undefined,
+  'updateBookmark': undefined,
+  'deleteBookmark': undefined,
+
+  'putBookmarkTIC': undefined,
+  'deleteBookmarkTIC': undefined,
+  'getBookmarkTIC': undefined,
+  'listBookmarks': undefined,
+
   // papers & questions
 
   'importQuestions': undefined,

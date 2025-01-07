@@ -1,5 +1,5 @@
 import { defaultQuizPaper, QuizPaper } from "@quizzy/common/types";
-import { withHandler } from "@/utils";
+import { withHandler } from "@/components/handler";
 import { uploadFile } from "@/utils/html";
 import { useAsyncEffect } from "@/utils/react-async";
 import { uuidV4B64 } from "@quizzy/common/utils";

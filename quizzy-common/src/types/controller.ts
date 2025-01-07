@@ -1,4 +1,5 @@
 import { Patch } from "../utils/patch";
+import { Bookmark, BookmarkBase, BookmarkType } from "./bookmark";
 import { Question } from "./question";
 import { CompleteQuizPaperDraft, QuizPaper } from "./quiz-paper";
 import { QuizRecord, QuizRecordEvent, QuizRecordOperation, QuizRecordTactics } from "./quiz-record";
@@ -11,7 +12,11 @@ export type StartQuizOptions = {
 };
 
 export type UpdateQuizOptions = {
-}
+
+};
+
+
+export type TICIndex = 'typeId' | 'itemId' | 'category';
 
 export type QuizzyData = {
   questions: Question[];
@@ -41,6 +46,37 @@ export interface QuizzyController {
 
   importData(data: QuizzyData): Promise<void>;
   exportData(): Promise<QuizzyData>;
+
+  // bookmark types
+
+  createBookmarkType(t?: Partial<BookmarkType>): Promise<ID>;
+  getBookmarkType(id: ID): Promise<BookmarkType | undefined>;
+  listBookmarkTypes(): Promise<BookmarkType[]>;
+  updateBookmarkType(id: ID, t: Partial<BookmarkType>): Promise<ID>;
+  deleteBookmarkType(id: ID): Promise<boolean>;
+
+  // bookmarks
+
+  getBookmark(id: ID): Promise<Bookmark | undefined>;
+  updateBookmark(id: ID, bookmark: Patch<Bookmark>): Promise<ID>;
+  deleteBookmark(id: ID): Promise<boolean>;
+
+  /**
+   * creates or updates a bookmark
+   * @param payload 
+   * @returns 
+   */
+  putBookmarkTIC(payload: BookmarkBase): Promise<ID>;
+  deleteBookmarkTIC(payload: BookmarkBase): Promise<boolean>;
+  getBookmarkTIC(payload: BookmarkBase): Promise<Bookmark | undefined>;
+
+  /**
+   * 
+   * @param index 
+   * @param value the key of given index. `undefined` -> all from 1 index
+   * @returns 
+   */
+  listBookmarks(index?: TICIndex, value?: string): Promise<Bookmark[]>;
 
   // papers & questions
 

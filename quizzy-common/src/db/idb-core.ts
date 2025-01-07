@@ -167,12 +167,17 @@ export class IDBCore {
   }
 
   /**
-   * will not create transaction, ignore all deleted elements
+   * will not (explicitly) create transaction, 
+   * ignore all deleted elements
+   * @param storeId 
+   * @param index 
+   * @param id 
+   * @returns 
    */
   protected async _list<T extends DatabaseIndexed>(storeId: string, index?: string, id?: string) {
     let ret: T[];
-    if (index && id) {
-      ret = await this.db.getAllFromIndex(storeId, index, id);
+    if (index) {
+      ret = await this.db.getAllFromIndex(storeId, index, id || undefined);
     } else {
       ret = await this.db.getAll(storeId, index);
     }

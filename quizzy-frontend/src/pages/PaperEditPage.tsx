@@ -4,7 +4,7 @@ import { BaseQuestionPanel } from "@/components/question-display/BaseQuestionPan
 import { QuestionSelectionModal } from "@/components/QuestionSelectionModal";
 import { defaultQuestion, defaultQuizPaper, Question, QuizPaper } from "@quizzy/common/types";
 import { ID } from "@quizzy/common/types";
-import { openDialog, standaloneToast, withHandler } from "@/utils";
+import { openDialog, standaloneToast, withHandler } from "@/components/handler";
 import { useDisclosureWithData } from "@/utils/disclosure";
 import { applyPatch, Patch } from "@quizzy/common/utils";
 import { EditorContextProvider, useEditor, usePatch } from "@/utils/react-patch";

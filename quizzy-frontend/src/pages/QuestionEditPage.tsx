@@ -1,6 +1,6 @@
 import { QuestionEdit } from "@/components/question-edit/QuestionEdit";
 import { defaultQuestion, Question } from "@quizzy/common/types";
-import { openDialog, withHandler } from "@/utils";
+import { openDialog, withHandler } from "@/components/handler";
 import { useDisclosureWithData } from "@/utils/disclosure";
 import { applyPatch, Patch } from "@quizzy/common/utils";
 import { EditorContextProvider, useEditor, usePatch } from "@/utils/react-patch";

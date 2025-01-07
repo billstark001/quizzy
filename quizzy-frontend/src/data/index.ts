@@ -1,7 +1,7 @@
 import { QuizzyEditCache } from "@quizzy/common/db/edit-cache";
 import { IDBController } from "@quizzy/common/db/idb";
 import toWrapped from "./wrapped-controller";
-import { withHandler } from "@/utils";
+import { withHandler } from "@/components/handler";
 import { WrappedQuizzyEditCache } from "./wrapped-cache";
 
 

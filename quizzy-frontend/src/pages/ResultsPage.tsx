@@ -11,7 +11,7 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { useSelection } from "@/utils/react";
 import { useCallback } from "react";
-import { openDialog } from "@/utils";
+import { openDialog } from "@/components/handler";
 
 
 const resultsAtom = atom<readonly QuizResult[]>([]);

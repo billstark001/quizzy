@@ -1,4 +1,4 @@
-import { withHandler } from "@/utils";
+import { withHandler } from "@/components/handler";
 import { downloadFile, uploadFile } from "@/utils/html";
 import { QuizzyRaw } from "@/data";
 import { Box, Button, Divider, HStack, Select, Switch, VStack, Wrap } from "@chakra-ui/react";
