@@ -5,6 +5,7 @@ import { CompleteQuizPaperDraft, QuizPaper } from "./quiz-paper";
 import { QuizRecord, QuizRecordEvent, QuizRecordOperation, QuizRecordTactics } from "./quiz-record";
 import { QuizResult } from "./quiz-result";
 import { Stat, StatBase } from "./stats";
+import { Tag } from "./tag";
 import { ID, SearchResult } from "./technical";
 
 export type StartQuizOptions = {
@@ -24,6 +25,9 @@ export type QuizzyData = {
   records: QuizRecord[];
   results: QuizResult[];
   stats: Stat[];
+  bookmarks: Bookmark[];
+  bookmarkTypes: BookmarkType[];
+  tags: Tag[];
   general?: any;
 };
 

@@ -124,12 +124,15 @@ export class IDBController extends IDBCore implements QuizzyController {
   }
 
   async importData(data: QuizzyData): Promise<void> {
-    await this._import(STORE_KEY_PAPERS, data.papers);
-    await this._import(STORE_KEY_QUESTIONS, data.questions);
-    await this._import(STORE_KEY_RECORDS, data.records);
-    await this._import(STORE_KEY_RESULTS, data.results);
-    await this._import(STORE_KEY_STATS, data.stats);
-    await this._import(STORE_KEY_GENERAL, data.general);
+    await this._import(STORE_KEY_PAPERS, data.papers ?? []);
+    await this._import(STORE_KEY_QUESTIONS, data.questions ?? []);
+    await this._import(STORE_KEY_RECORDS, data.records ?? []);
+    await this._import(STORE_KEY_RESULTS, data.results ?? []);
+    await this._import(STORE_KEY_STATS, data.stats ?? []);
+    await this._import(STORE_KEY_BOOKMARKS, data.bookmarks ?? []);
+    await this._import(STORE_KEY_BOOKMARK_TYPES, data.bookmarkTypes ?? []);
+    await this._import(STORE_KEY_TAGS, data.tags ?? []);
+    await this._import(STORE_KEY_GENERAL, data.general ?? []);
   }
 
   async exportData(): Promise<QuizzyData> {
@@ -139,6 +142,9 @@ export class IDBController extends IDBCore implements QuizzyController {
       records: await this._export(STORE_KEY_RECORDS),
       results: await this._export(STORE_KEY_RESULTS),
       stats: await this._export(STORE_KEY_STATS),
+      bookmarks: await this._export(STORE_KEY_BOOKMARKS),
+      bookmarkTypes: await this._export(STORE_KEY_BOOKMARK_TYPES),
+      tags: await this._export(STORE_KEY_TAGS),
       general: await this._export(STORE_KEY_GENERAL),
     };
   }
