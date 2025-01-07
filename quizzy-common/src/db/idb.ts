@@ -4,10 +4,11 @@ import {
   QuizRecordOperation, QuizRecordTactics, 
   QuizzyController, QuizzyData, StartQuizOptions, 
   Stat, StatBase, TagListResult, TagSearchResult, 
-  TICIndex, 
-  UpdateQuizOptions 
+  TICIndex, Tag, TagBase,
+  UpdateQuizOptions, 
+  defaultTag
 } from "../types";
-import { IDBPDatabase } from "idb";
+import { IDBPDatabase, IDBPTransaction } from "idb";
 import { separatePaperAndQuestions, toCompleted } from "./paper-id";
 import { uuidV4B64WithRetry } from "../utils/string";
 import { QuizResult } from "../types/quiz-result";
@@ -25,6 +26,7 @@ import { createStatFromQuizResults } from "./stats";
 import { normalizeQuestion } from "./question-id";
 import IDBCore, { Bm25Cache, BuildBm25CacheOptions, trieSearchByQuery } from "./idb-core";
 import { Bookmark, BookmarkBase, BookmarkType, defaultBookmark, defaultBookmarkType } from "../types/bookmark";
+import { createMergableTagsFinder, diffTags, mergeTags } from "./tag";
 
 
 export const DB_KEY = 'Quizzy';
@@ -100,6 +102,7 @@ const updaters: Record<number, DatabaseUpdateDefinition> = {
     }
     // tag
     tagStore.createIndex('mainName', 'mainName', { unique: true });
+    // tagStore.createIndex('type', 'type');
     tagStore.createIndex('alternatives', 'alternatives', { multiEntry: true });
     // bookmark
     bookmarkTypeStore.createIndex('name', 'name', { unique: true });
@@ -250,6 +253,146 @@ export class IDBController extends IDBCore implements QuizzyController {
   }
 
   // tags
+
+  async _matchTag(name: string, tx?: IDBPTransaction<unknown, ["tags"], "readonly">) {
+    // 
+    const hasTx = !!tx;
+    tx = tx ?? this.db.transaction(STORE_KEY_TAGS, 'readonly');
+    const store = tx.store;
+    let ret = await store.index('mainName').get(name) as Tag | undefined;
+    if (!ret) {
+      ret = await store.index('alternatives').get(name);
+    }
+    if (!hasTx) {
+      await tx.done;
+    }
+    return ret;
+  }
+
+  async getTag(payload: string | Partial<TagBase>) {
+    if (!payload 
+      || (typeof payload === 'object' && !payload.mainName?.trim())
+      || (typeof payload === 'string' && !payload?.trim())
+    ) {
+      throw new Error('Empty tag name.');
+    }
+    if (typeof payload === "string") {
+      payload = { mainName: payload };
+    }
+    const tx = this.db.transaction(STORE_KEY_TAGS, 'readwrite');
+
+    // if exists, return current
+    const currentTag = await this._matchTag(payload.mainName!, tx as any);
+    if (currentTag) {
+      await tx.done;
+      return currentTag;
+    }
+
+    // return default tag
+    const tag = defaultTag({
+      ...payload,
+      id: await uuidV4B64WithRetry(
+        (id) => this._get(STORE_KEY_TAGS, id, tx as any, false).then(x => !!x),
+        16
+      ),
+    });
+    delete tag.deleted;
+    await tx.store.add(tag);
+    await tx.done;
+    return tag;
+  }
+
+  listTags() {
+    return this._list(STORE_KEY_TAGS);
+  }
+
+  updateTag(id: ID, tag: Patch<Tag>) {
+    return this._update(STORE_KEY_TAGS, id, tag);
+  }
+
+  deleteTag(id: ID) {
+    return this._delete(STORE_KEY_TAGS, id, true);
+  }
+
+  async mergeTags(ids: ID[]) {
+    const tx = this.db.transaction(STORE_KEY_TAGS, 'readwrite');
+    const tags: Tag[] = (await Promise.all(ids.map(id => tx.store.get(id)))).filter(x => x && !x.deleted);
+    const [mainTag, otherTags] = mergeTags(tags, Date.now());
+    await tx.store.put(mainTag);
+    await Promise.all(otherTags.map(t => tx.store.put(t)));
+    await tx.done;
+    return mainTag.id;
+  }
+
+  async splitToNewTag(src: ID, alternatives: string[]) {
+    if (!alternatives?.length || !src) {
+      return undefined;
+    }
+    const tx = this.db.transaction(STORE_KEY_TAGS, 'readwrite');
+    const srcTag: Tag = await tx.store.get(src);
+    if (!srcTag) {
+      await tx.done;
+      return undefined;
+    }
+    const newTag = defaultTag({ alternatives: [...alternatives] });
+    diffTags(srcTag, newTag, Date.now());
+    newTag.mainName = newTag.alternatives[0];
+    newTag.id = await uuidV4B64WithRetry(
+      (id) => this._get(STORE_KEY_TAGS, id, tx as any, false).then(x => !!x),
+      16
+    );
+    const ret = await tx.store.put(newTag) as ID;
+    await tx.done;
+    return ret;
+  }
+
+  async getNormalizedTagList(list: string[]) {
+    const tagSet: Set<ID> = new Set();
+    const remainTags: Tag[] = [];
+    for (const tag of list) {
+      const tagObj = await this.getTag(tag);
+      if (tagSet.has(tagObj.id)) {
+        continue;
+      }
+      tagSet.add(tagObj.id);
+      remainTags.push(tagObj);
+    }
+    return remainTags;
+  }
+
+  async mergeMergableTags() {
+    const tx = this.db.transaction(STORE_KEY_TAGS, 'readwrite');
+    // find all mergable tags
+    let cursor = await tx.store.openCursor();
+    const { onNextTag, getResult } = createMergableTagsFinder();
+    const tagCache: Record<ID, Tag> = {};
+    while (cursor != null) {
+      if (cursor.value.deleted) { // ignore deleted tags
+        cursor = await cursor.continue();
+        continue;
+      }
+      tagCache[cursor.key as ID] = cursor.value;
+      onNextTag(cursor.value);
+      cursor = await cursor.continue();
+    }
+    // change & commit records
+    const mergableGroups = getResult();
+    const updateTime = Date.now();
+    const promisesMain: Promise<IDBValidKey>[] = [];
+    const promisesOthers: Promise<IDBValidKey>[] = [];
+    for (const group of mergableGroups) {
+      const tagGroup = group.map(x => tagCache[x]);
+      const [mainTag, otherTags] = mergeTags(tagGroup, updateTime);
+      promisesMain.push(tx.store.put(mainTag));
+      for (const t of otherTags) {
+        promisesOthers.push(tx.store.put(t));
+      }
+    }
+    const allMainIds = await Promise.all(promisesMain);
+    const allDeletedIds = await Promise.all(promisesOthers);
+    await tx.done;
+    return [allMainIds, allDeletedIds] as [ID[], ID[]];
+  }
 
   async generateTagHint(query: string, _?: number, __?: number): Promise<TagSearchResult> {
     const cachePapers = await this._loadBm25Cache(STORE_KEY_PAPERS);
@@ -433,7 +576,11 @@ export class IDBController extends IDBCore implements QuizzyController {
 
   async deleteLogicallyDeleted() {
     let count = 0;
-    const stores: readonly string[] = [STORE_KEY_PAPERS, STORE_KEY_QUESTIONS, STORE_KEY_RECORDS, STORE_KEY_RESULTS, STORE_KEY_STATS];
+    const stores: readonly string[] = [
+      STORE_KEY_PAPERS, STORE_KEY_QUESTIONS, STORE_KEY_RECORDS,
+      STORE_KEY_RESULTS, STORE_KEY_STATS, STORE_KEY_TAGS,
+      STORE_KEY_BOOKMARKS, STORE_KEY_BOOKMARK_TYPES,
+    ];
     const tx = this.db.transaction(stores, 'readwrite');
     const promises: Promise<void>[] = [];
     for (const storeId of stores) {

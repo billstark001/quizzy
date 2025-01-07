@@ -1,11 +1,12 @@
 import { DatabaseIndexed } from "./technical";
 
-export type Tag = {
+export type TagBase = {
   mainName: string;
   mainNames: Record<string, string | undefined>;
-  type?: 'tag' | 'category';
   alternatives: string[];
-} & DatabaseIndexed;
+};
+
+export type Tag = TagBase & DatabaseIndexed;
 
 export const defaultTag = (t?: Partial<Tag>): Tag => ({
   id: '',

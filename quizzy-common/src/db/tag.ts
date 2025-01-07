@@ -86,13 +86,13 @@ export const mergeTags = (tags: Tag[], updateTime: number): [Tag, Tag[]] => {
     return [tags[0], []];
   }
   const [mainTag, ...others] = tags;
-  const isMainTagCategory = mainTag.type === 'category';
+  // const isMainTagCategory = mainTag.type === 'category';
   const _n = {...mainTag.mainNames};
 
   for (const tag of others.reverse()) {
-    if (isMainTagCategory !== (tag.type === "category")) {
-      continue;
-    }
+    // if (isMainTagCategory !== (tag.type === "category")) {
+    //   continue;
+    // }
     // merge main names and alternatives
     Object.assign(mainTag.mainNames, tag.mainNames);
     mainTag.alternatives.push(...tag.alternatives);

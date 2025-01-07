@@ -5,4 +5,6 @@ export * from './quiz-paper';
 export * from './quiz-record';
 export * from './quiz-result';
 export * from './stats';
+export * from './bookmark';
+export * from './tag';
 export * from './technical';
