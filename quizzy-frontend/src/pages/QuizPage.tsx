@@ -19,7 +19,8 @@ const _parser: ParamsDefinition<QuizPageParams> = {
   q: 'number',
 };
 
-const _getQuestion = async (record: Readonly<QuizRecord> | undefined, qIndex: number) => (await Quizzy.getQuestions([record?.questionOrder?.[qIndex - 1] ?? '']))[0];
+const _getQuestion = async (record: Readonly<QuizRecord> | undefined, qIndex: number) => 
+  await Quizzy.getQuestion(record?.questionOrder?.[qIndex - 1] ?? '');
 
 export const QuizPage = () => {
   const [searchParams, setSearchParams] = useParsedSearchParams(_parser);

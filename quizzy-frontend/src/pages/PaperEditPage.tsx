@@ -87,7 +87,7 @@ export const PaperEditPage = (props: { paper?: string }) => {
     if (paperLogical) {
       const questionId = paperLogical.questions[(questionIndexOverride ?? questionIndex) - 1] || undefined;
       const question = questionId
-        ? (await (QuizzyRaw.getQuestions([questionId])).catch(() => void 0))?.[0] ?? undefined
+        ? (await (QuizzyRaw.getQuestion(questionId)).catch(() => void 0)) ?? undefined
         : undefined;
       return question ?? undefined;
     }
@@ -186,7 +186,7 @@ export const PaperEditPage = (props: { paper?: string }) => {
   const selectQuestionPreview = useCallback((index: number) => {
     const q = editingState.paper.questions?.[index - 1];
     setQuestionPreviewIndex(index);
-    Quizzy.getQuestions([q ?? '']).then(([question]) => setQuestionPreview(question));
+    Quizzy.getQuestion(q).then((question) => setQuestionPreview(question));
   }, [setQuestionPreviewIndex, setQuestionPreview, editingState.paper.questions]);
 
   // select different questions

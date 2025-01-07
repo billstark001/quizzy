@@ -65,10 +65,10 @@ export const ResultPage = () => {
   const totalQuestions = result?.records.length ?? 0;
 
   // hooks to update
-  useAsyncEffect(() => Quizzy.getQuestions([qid ?? ''])
-    .then(q => q.length && setQuestion(q[0])), [qid]);
-  useAsyncEffect(() => Quizzy.getQuestions([result?.records?.[pIndex - 1]?.id ?? ''])
-    .then(q => q.length && setPreview(q[0])), [result, pIndex]);
+  useAsyncEffect(() => Quizzy.getQuestion(qid ?? '')
+    .then(q => q && setQuestion(q)), [qid]);
+  useAsyncEffect(() => Quizzy.getQuestion(result?.records?.[pIndex - 1]?.id ?? '')
+    .then(q => q && setPreview(q)), [result, pIndex]);
 
   const setQIndex = (qIndex: number) => {
     return onOpen({ qid: result?.records?.[qIndex - 1]?.id ?? '', qIndex });

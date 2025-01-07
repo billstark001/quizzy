@@ -86,6 +86,7 @@ export interface QuizzyController {
 
   getQuizPaper(id: ID): Promise<QuizPaper | undefined>;
   getQuizPaperNames(...ids: ID[]): Promise<(string | undefined)[]>;
+  getQuestion(id: ID): Promise<Question | undefined>;
   getQuestions(ids: ID[]): Promise<(Question | undefined)[]>;
 
   listQuizPapers(): Promise<QuizPaper[]>;

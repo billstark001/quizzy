@@ -27,9 +27,9 @@ export const QuestionEditPage = (props: { question?: string }) => {
   const fetchQuestion = withHandler(async (): Promise<Readonly<Question> | undefined> => {
     // try to get question by id
     const question = questionIdProp
-      ? await (QuizzyRaw.getQuestions([questionIdProp]).catch(() => void 0)) ?? undefined
+      ? await (QuizzyRaw.getQuestion(questionIdProp).catch(() => void 0)) ?? undefined
       : undefined;
-    return question?.[0] ?? undefined;
+    return question ?? undefined;
   }, { def: undefined, deps: [questionIdProp], notifySuccess: undefined, });
 
   const { data: question } = useAsyncMemo(fetchQuestion, [questionIdProp]);

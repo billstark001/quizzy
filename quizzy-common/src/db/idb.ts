@@ -173,11 +173,6 @@ export class IDBController extends IDBCore implements QuizzyController {
 
   // bookmarks
 
-  // TODO the operations of bookmarks base on the TIC index.
-  // add, delete, update, get should all be indexed by this index.
-  // TODO also change the question fetching api's to append bookmark info.
-
-
   getBookmark(id: ID) {
     return this._get<Bookmark>(STORE_KEY_BOOKMARKS, id);
   }
@@ -338,6 +333,12 @@ export class IDBController extends IDBCore implements QuizzyController {
 
   async getQuizPaper(id: ID): Promise<QuizPaper | undefined> {
     const ret = await this.db.get(STORE_KEY_PAPERS, id);
+    ret && sanitizeIndices(ret, true);
+    return ret;
+  }
+
+  async getQuestion(id: ID): Promise<Question | undefined> {
+    const ret = await this.db.get(STORE_KEY_QUESTIONS, id);
     ret && sanitizeIndices(ret, true);
     return ret;
   }
@@ -575,7 +576,7 @@ export class IDBController extends IDBCore implements QuizzyController {
       event.resultId = resultId ?? event.resultId;
     } else if (event?.type === 'goto') {
       // get question
-      event.question = (await this.getQuestions([event.questionId]))[0];
+      event.question = (await this.getQuestion(event.questionId));
     }
     return [newRecord, event];
   }
@@ -653,7 +654,7 @@ export class IDBController extends IDBCore implements QuizzyController {
       if (questionCache[id]) {
         return questionCache[id];
       }
-      const promise = this.getQuestions([id]).then(x => x[0] as Question | undefined);
+      const promise = this.getQuestion(id);
       questionCache[id] = promise;
       return await promise;
     };

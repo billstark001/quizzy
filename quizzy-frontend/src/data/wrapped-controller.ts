@@ -34,6 +34,7 @@ const keys: Readonly<{[key in keyof QuizzyController]: undefined}> = Object.free
 
   'getQuizPaper': undefined,
   'getQuizPaperNames': undefined,
+  'getQuestion': undefined,
   'getQuestions': undefined,
 
   'listQuizPapers': undefined,
