@@ -52,8 +52,8 @@ const keys: Readonly<{[key in keyof QuizzyController]: undefined}> = Object.free
 
   // tags
   
-  'findTags': undefined,
-  'listTags': undefined,
+  'generateTagHint': undefined,
+  'listTagsInPapersAndQuestions': undefined,
 
   // records
 

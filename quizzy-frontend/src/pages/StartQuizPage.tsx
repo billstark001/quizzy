@@ -72,7 +72,7 @@ export const StartQuizPage = () => {
 
   // tab 1 & 2
   const { data: tagListResult } = useAsyncMemo(
-    () => Quizzy.listTags().then(x => x ?? defaultTagListResult()),
+    () => Quizzy.listTagsInPapersAndQuestions().then(x => x ?? defaultTagListResult()),
     [],
   );
   const getRenderedTags = (t?: string[], isTag = true, isPaper = false) => t?.map(x => <Tag

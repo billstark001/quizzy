@@ -65,7 +65,7 @@ export const TagSelectModal = (props: Omit<ModalProps, 'children' | 'onSelect'> 
   const [tagSearch, setTagSearch] = useState(_d);
 
   const performSearch = useCallback(async (currentTag: string) => {
-    const result = currentTag ? await Quizzy.findTags(currentTag) : undefined;
+    const result = currentTag ? await Quizzy.generateTagHint(currentTag) : undefined;
     const l = result
       ? result.paper.length + result.paperTags.length + result.question.length + result.questionTags.length
       : 0;

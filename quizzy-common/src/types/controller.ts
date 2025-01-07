@@ -104,8 +104,8 @@ export interface QuizzyController {
 
   // tags
   
-  findTags(query: string, count?: number, page?: number): Promise<TagSearchResult>;
-  listTags(): Promise<TagListResult>;
+  generateTagHint(query: string, count?: number, page?: number): Promise<TagSearchResult>;
+  listTagsInPapersAndQuestions(): Promise<TagListResult>;
 
   // records
 

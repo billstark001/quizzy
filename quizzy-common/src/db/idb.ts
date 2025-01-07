@@ -245,7 +245,7 @@ export class IDBController extends IDBCore implements QuizzyController {
 
   // tags
 
-  async findTags(query: string, _?: number, __?: number): Promise<TagSearchResult> {
+  async generateTagHint(query: string, _?: number, __?: number): Promise<TagSearchResult> {
     const cachePapers = await this._loadBm25Cache(STORE_KEY_PAPERS);
     const cacheQuestions = await this._loadBm25Cache(STORE_KEY_QUESTIONS);
     return {
@@ -256,7 +256,7 @@ export class IDBController extends IDBCore implements QuizzyController {
     };
   }
 
-  async listTags(): Promise<TagListResult> {
+  async listTagsInPapersAndQuestions(): Promise<TagListResult> {
     return {
       questionCategories: await getAllMultiEntryValues(
         this.db, STORE_KEY_QUESTIONS, 'categories',
