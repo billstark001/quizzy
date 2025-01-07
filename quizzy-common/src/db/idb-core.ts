@@ -150,7 +150,13 @@ export class IDBCore {
     return true;
   }
 
-  protected async _get<T extends DatabaseIndexed>(storeId: string, id: string, tx?: _TX, returnEvenLogicallyDeleted = false) {
+  protected async _get<T extends DatabaseIndexed>(
+      storeId: string, id: string, tx?: _TX, 
+      returnEvenLogicallyDeleted = true
+  ) {
+    if (!id) {
+      return undefined;
+    }
     const ret = await (tx
       ? tx.objectStore(storeId).get(id)
       : this.db.get(storeId, id)) as (T | undefined);
@@ -158,6 +164,19 @@ export class IDBCore {
       return returnEvenLogicallyDeleted ? ret : undefined;
     }
     return ret;
+  }
+
+  /**
+   * will not create transaction, ignore all deleted elements
+   */
+  protected async _list<T extends DatabaseIndexed>(storeId: string, index?: string, id?: string) {
+    let ret: T[];
+    if (index && id) {
+      ret = await this.db.getAllFromIndex(storeId, index, id);
+    } else {
+      ret = await this.db.getAll(storeId, index);
+    }
+    return ret.filter(x => x && !x.deleted);
   }
 
   /**

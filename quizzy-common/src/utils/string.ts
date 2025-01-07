@@ -1,14 +1,40 @@
 import { fromByteArray } from "base64-js";
 import * as uuid from 'uuid';
 
-export const uuidV4B64 = (digit = 16) => {
+export const uuidV4B64 = (length = 16) => {
   const uuid1 = uuid.v4();
   const bytes = new Uint8Array(uuid1.match(/[\da-f]{2}/gi)!.map(h => parseInt(h, 16)));
   const ret = fromByteArray(bytes).replace(/[+/\-=]/g, '_');
-  return ret.substring(0, digit);
+  return ret.substring(0, length);
 };
 
-export function numberToLetters(num: number) {
+export const uuidV4B64WithRetry = async (
+  hasConflict: (id: string) => Promise<boolean>,
+  length = 16, retry = 64,
+) => {
+  let retryLeft = Math.max(retry, 1);
+  let id = '';
+  while (retryLeft > 0 && (!id || await hasConflict(id))) {
+    id = uuidV4B64(length);
+    retryLeft--;
+  }
+  return id;
+};
+
+export const uuidV4B64WithRetrySync = (
+  hasConflict: (id: string) => boolean,
+  length = 16, retry = 64,
+) => {
+  let retryLeft = Math.max(retry, 1);
+  let id = '';
+  while (retryLeft > 0 && (!id || hasConflict(id))) {
+    id = uuidV4B64(length);
+    retryLeft--;
+  }
+  return id;
+};
+
+export const numberToLetters = (num: number) => {
   if (num < 1) return '';
   let result = '';
   while (num > 0) {
@@ -17,9 +43,9 @@ export function numberToLetters(num: number) {
     num = Math.floor(num / 26);
   }
   return result;
-}
+};
 
-export function lettersToNumber(str: string) {
+export const lettersToNumber = (str: string) => {
   str = str.toUpperCase();
   let result = 0;
   for (let i = 0; i < str.length; i++) {
@@ -27,13 +53,13 @@ export function lettersToNumber(str: string) {
     result += str.charCodeAt(i) - 64;
   }
   return result;
-}
+};
 
-export function parseCommaSeparatedArray(
+export const parseCommaSeparatedArray = (
   input: string, 
   separators = ',;、；，',
   spaces = ' 　'
-): string[] {
+): string[] => {
   const result: string[] = [];
   let current: string = '';
   let escaped: boolean = false;
@@ -65,4 +91,4 @@ export function parseCommaSeparatedArray(
   }
 
   return result;
-}
+};

@@ -33,7 +33,9 @@ export const sanitizeIndices = <T extends DatabaseIndexed & KeywordIndexed>(
   retainTags: boolean = true,
 ) => {
   const ret = inPlace ? object : { ...object };
-  delete ret.deleted;
+  if (!ret.deleted) {
+    delete ret.deleted;
+  }
   // delete ret.lastUpdate;
   delete ret.keywords;
   delete ret.keywordsFrequency;

@@ -1,6 +1,6 @@
 import { CompleteQuizPaper, CompleteQuizPaperDraft, Question, QuizPaper } from "../types"
 import { ID } from "../types/technical";
-import { uuidV4B64 } from "../utils/string";
+import { uuidV4B64WithRetry } from "../utils/string";
 import { normalizeQuestion } from "./question-id";
 
 export const toCompleted = async (
@@ -13,11 +13,10 @@ export const toCompleted = async (
 
   // ensure paper ID
   if (!paper.id) {
-    let retry = 100;
-    do {
-      paper.id = uuidV4B64(12);
-      retry--;
-    } while (retry > 0 && (await hasId?.(paper.id!)));
+    paper.id = await uuidV4B64WithRetry(
+      async (id) => await hasId?.(id) ?? false,
+      12
+    );
   } else if (await hasId?.(paper.id!)) {
     throw new Error('Quiz Paper ID Conflict');
   }
@@ -27,15 +26,13 @@ export const toCompleted = async (
 
   // ensure question IDs
   const questionIds = new Set<ID>();
+  const _f = async (id: string) => 
+    questionIds.has(id) || (await hasQuestionId?.(id) ?? false);
   for (const q of paper.questions) {
     // ensure ID exists
     if (!q.id) {
       // create a new one for it
-      let retry = 100;
-      do {
-        q.id = uuidV4B64(16);
-        retry--;
-      } while (retry > 0 && (questionIds.has(q.id!) || hasQuestionId?.(q.id!)));
+      q.id = await uuidV4B64WithRetry(_f, 16);
     }
     // still conflict: throw error
     if (questionIds.has(q.id!)) {
@@ -43,7 +40,7 @@ export const toCompleted = async (
     }
     questionIds.add(q.id!);
     // normalize
-    normalizeQuestion(q as Question, false);
+    normalizeQuestion(q as Question);
   }
 
   return paper as CompleteQuizPaper;

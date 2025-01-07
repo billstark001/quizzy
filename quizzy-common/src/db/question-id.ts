@@ -1,4 +1,4 @@
-import { uuidV4B64 } from "../utils";
+import { uuidV4B64WithRetrySync } from "../utils";
 import { BlankQuestionBlank, ChoiceQuestionOption, Question, QuestionType } from "../types";
 import { DatabaseIndexed, ID } from "../types/technical";
 
@@ -16,14 +16,11 @@ export const normalizeOptionOrBlankArrayInPlace = <
   o = o ?? [];
   let changed = false;
   const ids = new Set<ID>();
+  const _f = (id: string) => ids.has(id);
   for (const item of o) {
-    let retry = 100;
-    while (retry > 0 && (!item.id || ids.has(item.id))) {
-      item.id = uuidV4B64(6);
-      changed = true;
-      --retry;
+    if (!item.id) {
+      item.id = uuidV4B64WithRetrySync(_f, 6);
     }
-    ids.add(item.id!);
   }
   return changed;
 };
@@ -33,28 +30,24 @@ export const normalizeOptionOrBlankArray = <
 >(o: T[]) => {
   const ret: T[] = [];
   const ids = new Set<ID>();
+  const _f = (id: string) => ids.has(id);
   for (const item of o) {
-    let retry = 100;
-    let optionToCommit: T | undefined = undefined;
-    while (retry > 0 && (!item.id || ids.has(item.id))) {
-      optionToCommit = optionToCommit ?? { ...item };
-      optionToCommit.id = uuidV4B64(6);
-      --retry;
+    let optionToCommit: T;
+    if (!item.id) {
+      optionToCommit = { ...item };
+      optionToCommit.id = uuidV4B64WithRetrySync(_f, 6);
+    } else {
+      optionToCommit = item;
     }
-    ids.add((optionToCommit ?? item).id!);
-    ret.push(optionToCommit ?? item);
+    ids.add(optionToCommit.id!);
+    ret.push(optionToCommit);
   }
   return ret;
 };
 
-export const normalizeQuestion = (q: Question, qid = false) => {
+export const normalizeQuestion = (q: Question) => {
 
   let changed = false;
-
-  if (qid && !q.id) {
-    changed = true;
-    q.id = uuidV4B64(16);
-  }
 
   if (!validTypes.includes(q.type)) {
     q.type = 'choice';

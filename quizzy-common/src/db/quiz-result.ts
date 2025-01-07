@@ -1,6 +1,5 @@
 import { Answers, Question, QuizPaper, QuizRecord, QuizResultRecordRow, QuizResult, AnswerStatus, BlankAnswersEvaluation, AnswersEvaluation } from "../types";
 import { ID } from "../types/technical";
-import { uuidV4B64 } from "../utils/string";
 import { numberToLetters } from "../utils/string";
 import { getOptionOrBlankId } from "./question-id";
 
@@ -164,7 +163,7 @@ export const createQuizResult = (
   }
 
   const result: QuizResult = {
-    id: resultId ?? uuidV4B64(),
+    id: resultId ?? '',
 
     paperName: (record.nameOverride ?? paper?.name) || `Result #${record.id}`,
 

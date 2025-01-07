@@ -8,7 +8,7 @@ import {
 } from "../types";
 import { IDBPDatabase } from "idb";
 import { separatePaperAndQuestions, toCompleted } from "./paper-id";
-import { uuidV4B64 } from "../utils/string";
+import { uuidV4B64WithRetry } from "../utils/string";
 import { QuizResult } from "../types/quiz-result";
 import { createQuizResult } from "./quiz-result";
 import { ID, sanitizeIndices, SearchResult } from "../types/technical";
@@ -140,24 +140,19 @@ export class IDBController extends IDBCore implements QuizzyController {
 
   async createBookmarkType(t?: Partial<BookmarkType>) {
     const bt = defaultBookmarkType(t);
-    let retry = 100;
-    while (retry > 0 && (!bt.id || await this.db.get(STORE_KEY_BOOKMARK_TYPES, bt.id))) {
-      bt.id = uuidV4B64(12);
-      retry--;
-    }
+    bt.id = await uuidV4B64WithRetry(
+      (id) => this._get(STORE_KEY_BOOKMARK_TYPES, id, undefined, false).then(x => !!x), 
+      12
+    );
     return await this.db.add(STORE_KEY_BOOKMARK_TYPES, bt) as ID;
   }
 
-  async getBookmarkType(id: ID) {
-    if (!id) {
-      return undefined;
-    }
-    return await this.db.get(STORE_KEY_BOOKMARK_TYPES, id) as BookmarkType | undefined;
+  getBookmarkType(id: ID) {
+    return this._get<BookmarkType>(STORE_KEY_BOOKMARK_TYPES, id);
   }
 
-  async listBookmarkTypes() {
-    const bookmarks: BookmarkType[] = await this.db.getAll(STORE_KEY_BOOKMARK_TYPES);
-    return bookmarks.filter(x => x && !x.deleted);
+  listBookmarkTypes() {
+    return this._list<BookmarkType>(STORE_KEY_BOOKMARK_TYPES);
   }
 
   updateBookmarkType(id: ID, t: Partial<BookmarkType>) {
@@ -192,12 +187,10 @@ export class IDBController extends IDBCore implements QuizzyController {
       return id as ID;
     }
     // else, create a new one
-    let retry = 100;
-    let id = '';
-    while (retry > 0 && (!id || await tx.store.get(id))) {
-      id = uuidV4B64(16);
-      retry--;
-    }
+    const id = await uuidV4B64WithRetry(
+      (id) => this._get(STORE_KEY_BOOKMARKS, id, tx as any, false).then(x => !!x), 
+      16
+    );
     const bookmark = defaultBookmark(payload);
     bookmark.id = id;
     delete bookmark.deleted;
@@ -312,13 +305,15 @@ export class IDBController extends IDBCore implements QuizzyController {
   }
 
   async listQuizPapers(): Promise<QuizPaper[]> {
-    const ret: QuizPaper[] = await this.db.getAll(STORE_KEY_PAPERS);
-    return ret.filter(x => x && !x.deleted);
+    const ret: QuizPaper[] = await this._list(STORE_KEY_PAPERS);
+    ret.forEach(x => sanitizeIndices(x, true));
+    return ret;
   }
 
   async listQuestions(): Promise<Question[]> {
-    const ret: Question[] = await this.db.getAll(STORE_KEY_QUESTIONS);
-    return ret.filter(x => x && !x.deleted);
+    const ret: Question[] = await this._list(STORE_KEY_QUESTIONS);
+    ret.forEach(x => sanitizeIndices(x, true));
+    return ret;
   }
 
 
@@ -418,22 +413,16 @@ export class IDBController extends IDBCore implements QuizzyController {
 
   // records
 
-  async importQuizRecords(...records: QuizRecord[]): Promise<ID[]> {
-    return await this._import(STORE_KEY_RECORDS, records);
+  importQuizRecords(...records: QuizRecord[]): Promise<ID[]> {
+    return this._import(STORE_KEY_RECORDS, records);
   }
 
-  async getQuizRecord(id: ID): Promise<QuizRecord | undefined> {
-    return await this.db.get(STORE_KEY_RECORDS, id);
+  getQuizRecord(id: ID): Promise<QuizRecord | undefined> {
+    return this.db.get(STORE_KEY_RECORDS, id);
   }
 
-  async listQuizRecords(quizPaperId?: ID): Promise<QuizRecord[]> {
-    let ret: QuizRecord[];
-    if (!quizPaperId) {
-      ret = await this.db.getAll(STORE_KEY_RECORDS);
-    } else {
-      ret = await this.db.getAllFromIndex(STORE_KEY_RECORDS, 'paperId', quizPaperId);
-    }
-    return ret.filter(x => x && !x.deleted);
+  listQuizRecords(quizPaperId?: ID): Promise<QuizRecord[]> {
+    return this._list(STORE_KEY_RECORDS, 'paperId', quizPaperId);
   }
 
   async parseTactics(t: Readonly<QuizRecordTactics>): Promise<QuizRecordInitiation | undefined> {
@@ -494,9 +483,10 @@ export class IDBController extends IDBCore implements QuizzyController {
     const t = options?.currentTime ?? Date.now();
     const record = await startQuiz(tactics, t, this.parseTactics.bind(this));
     const tx = this.db.transaction(STORE_KEY_RECORDS, 'readwrite');
-    do {
-      record.id = uuidV4B64();
-    } while (!!await tx.store.get(record.id));
+    record.id = await uuidV4B64WithRetry(
+      (id) => this._get(STORE_KEY_RECORDS, id, tx as any, false).then(x => !!x),
+      16
+    );
     await tx.store.add(record);
     await tx.done;
 
@@ -553,8 +543,6 @@ export class IDBController extends IDBCore implements QuizzyController {
         .map(q => [q.id, q]),
     );
     // create result and patches
-    const result = createQuizResult(r, quizPaper, allQuestions);
-    result.stat = await createStatFromQuizResults([result], async (id) => allQuestions[id]);
 
     // create write transactions
     const tx = this.db.transaction([
@@ -563,9 +551,12 @@ export class IDBController extends IDBCore implements QuizzyController {
 
     // put the result into the store
     const _sr = tx.objectStore(STORE_KEY_RESULTS);
-    while (!!await _sr.get(result.id)) {
-      result.id = uuidV4B64();
-    }
+    const resultId = await uuidV4B64WithRetry(
+      (id) => this._get(STORE_KEY_RESULTS, id, tx as any, false).then(x => !!x),
+      16
+    );
+    const result = createQuizResult(r, quizPaper, allQuestions, resultId);
+    result.stat = await createStatFromQuizResults([result], async (id) => allQuestions[id]);
     await _sr.add(result);
 
     // delete original record
@@ -591,14 +582,8 @@ export class IDBController extends IDBCore implements QuizzyController {
     return this.db.get(STORE_KEY_RESULTS, id);
   }
 
-  async listQuizResults(quizPaperId?: ID): Promise<QuizResult[]> {
-    let ret: QuizResult[];
-    if (!quizPaperId) {
-      ret = await this.db.getAll(STORE_KEY_RESULTS);
-    } else {
-      ret = await this.db.getAllFromIndex(STORE_KEY_RESULTS, 'paperId', quizPaperId);
-    }
-    return ret.filter(x => x && !x.deleted);
+  listQuizResults(quizPaperId?: ID): Promise<QuizResult[]> {
+    return this._list(STORE_KEY_RESULTS, 'paperId', quizPaperId);
   }
 
   // stats
@@ -634,23 +619,25 @@ export class IDBController extends IDBCore implements QuizzyController {
     const statWithId: Stat = {
       ...stat,
       time: now,
-      id: uuidV4B64(),
+      id: await uuidV4B64WithRetry(
+        (id) => this._get(STORE_KEY_STATS, id, undefined, false).then(x => !!x), 
+        16
+      ),
       results: results.map(x => x.id),
     };
     await this.db.put(STORE_KEY_STATS, statWithId);
     return statWithId;
   }
 
-  async listStats(): Promise<Stat[]> {
-    const ret = await this.db.getAll(STORE_KEY_STATS);
-    return ret.filter(x => x && !x.deleted);
+  listStats(): Promise<Stat[]> {
+    return this._list(STORE_KEY_STATS);
   }
 
-  async getStat(id: ID): Promise<Stat | undefined> {
-    return await this.db.get(STORE_KEY_STATS, id);
+  getStat(id: ID): Promise<Stat | undefined> {
+    return this.db.get(STORE_KEY_STATS, id);
   }
 
-  async deleteStat(id: ID): Promise<boolean> {
-    return await this._delete(STORE_KEY_STATS, id, true);
+  deleteStat(id: ID): Promise<boolean> {
+    return this._delete(STORE_KEY_STATS, id, true);
   }
 }
