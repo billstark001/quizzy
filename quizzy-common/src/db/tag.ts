@@ -1,5 +1,4 @@
-import { ID } from "types";
-import { defaultTag, Tag } from "types/tag";
+import { ID, defaultTag, Tag } from "../types";
 
 
 const ALTERNATIVE_SET_THRESHOLD = 256;
