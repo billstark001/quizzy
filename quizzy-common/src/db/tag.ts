@@ -13,8 +13,8 @@ export const normalizeTag = (tag: Tag) => {
     if (!tag.mainNames[lang]) {
       delete tag.mainNames[lang];
     } else {
-      tag.mainNames[lang] = tag.mainNames[lang].trim();
-      tag.alternatives.push(tag.mainNames[lang]);
+      tag.mainNames[lang] = (tag.mainNames[lang] as string).trim();
+      tag.alternatives.push(tag.mainNames[lang] as string);
     }
   }
   tag.alternatives = tag.alternatives.map(x => x.trim());

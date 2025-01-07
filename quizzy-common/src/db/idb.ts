@@ -254,7 +254,7 @@ export class IDBController extends IDBCore implements QuizzyController {
 
   // tags
 
-  async _matchTag(name: string, tx?: IDBPTransaction<unknown, ["tags"], "readonly">) {
+  protected async _matchTag(name: string, tx?: IDBPTransaction<unknown, ["tags"], "readonly">) {
     // 
     const hasTx = !!tx;
     tx = tx ?? this.db.transaction(STORE_KEY_TAGS, 'readonly');
@@ -303,7 +303,7 @@ export class IDBController extends IDBCore implements QuizzyController {
   }
 
   listTags() {
-    return this._list(STORE_KEY_TAGS);
+    return this._list<Tag>(STORE_KEY_TAGS);
   }
 
   updateTag(id: ID, tag: Patch<Tag>) {
@@ -317,6 +317,10 @@ export class IDBController extends IDBCore implements QuizzyController {
   async mergeTags(ids: ID[]) {
     const tx = this.db.transaction(STORE_KEY_TAGS, 'readwrite');
     const tags: Tag[] = (await Promise.all(ids.map(id => tx.store.get(id)))).filter(x => x && !x.deleted);
+    if (tags.length === 0) {
+      await tx.done;
+      return undefined;
+    }
     const [mainTag, otherTags] = mergeTags(tags, Date.now());
     await tx.store.put(mainTag);
     await Promise.all(otherTags.map(t => tx.store.put(t)));
@@ -744,7 +748,7 @@ export class IDBController extends IDBCore implements QuizzyController {
     const quizPaper = r.paperId ? await this.getQuizPaper(r.paperId) : undefined;
     const allQuestions: Record<ID, Question> = Object.fromEntries(
       (await this.getQuestions(r.questionOrder)).filter(q => !!q)
-        .map(q => [q.id, q]),
+        .map(q => [q!.id, q as Question]),
     );
     // create result and patches
 
@@ -797,7 +801,7 @@ export class IDBController extends IDBCore implements QuizzyController {
     const now = Date.now();
     const results = (await Promise.all(resultIds.map(
       (id) => this.db.get(STORE_KEY_RESULTS, id) as Promise<QuizResult | undefined>,
-    ))).filter(x => !!x);
+    ))).filter(x => !!x) as QuizResult[];
     if (!results.length) {
       return undefined;
     }

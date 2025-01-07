@@ -5,7 +5,7 @@ import { CompleteQuizPaperDraft, QuizPaper } from "./quiz-paper";
 import { QuizRecord, QuizRecordEvent, QuizRecordOperation, QuizRecordTactics } from "./quiz-record";
 import { QuizResult } from "./quiz-result";
 import { Stat, StatBase } from "./stats";
-import { Tag } from "./tag";
+import { Tag, TagBase } from "./tag";
 import { ID, SearchResult } from "./technical";
 
 export type StartQuizOptions = {
@@ -107,6 +107,14 @@ export interface QuizzyController {
   findQuizPaperByTags(query: string, count?: number, page?: number): Promise<SearchResult<QuizPaper>>;
 
   // tags
+
+  getTag(payload: string | Partial<TagBase>): Promise<Tag>;
+  listTags(): Promise<Tag[]>;
+  updateTag(id: ID, tag: Patch<Tag>): Promise<ID>;
+  deleteTag(id: ID): Promise<boolean>;
+  mergeTags(ids: ID[]): Promise<ID | undefined>;
+  splitToNewTag(src: ID, alternatives: string[]): Promise<ID | undefined>
+
   
   generateTagHint(query: string, count?: number, page?: number): Promise<TagSearchResult>;
   listTagsInPapersAndQuestions(): Promise<TagListResult>;
@@ -139,3 +147,11 @@ export interface QuizzyController {
   getStat(id: ID): Promise<Stat | undefined>;
   deleteStat(id: ID): Promise<boolean>;
 };
+
+// import { reflect, ReflectedClass } from 'typescript-rtti';
+// export const controllerTypeInfo = reflect<QuizzyController>()
+//   .as('interface')
+//   .reflectedInterface as Readonly<ReflectedClass<QuizzyController>>;
+
+
+

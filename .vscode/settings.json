@@ -4,6 +4,9 @@
     "nodejieba",
     "onexitcharacterreferencevalue",
     "quizzy",
-    "sourcepos"
+    "rtti",
+    "sourcepos",
+    "ttsc",
+    "ttypescript"
   ]
 }

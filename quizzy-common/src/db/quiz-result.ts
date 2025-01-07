@@ -129,9 +129,9 @@ export const createQuizResult = (
         answer: question.answer?.trim() ?? '',
       };
       // TODO better evaluators
-      const userAnswer = (typeof record.answers[qid]?.answer === 'string'
-        ? record.answers[qid]?.answer
-        : String(record.answers[qid]?.answer ?? '')).trim();
+      const userAnswer = (typeof record.answers[qid]?.answer === 'string')
+        ? (record.answers[qid]?.answer as string).trim()
+        : String(record.answers[qid]?.answer ?? '').trim();
 
       correctAnswers[qid] = correctAnswer;
       const noAnswer = !question.answer?.replace(/\s\n\r/g, '');
