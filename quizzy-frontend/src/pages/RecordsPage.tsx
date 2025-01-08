@@ -1,4 +1,4 @@
-import Sheet, { Column, withSheetRow } from "@/components/Sheet";
+import Sheet, { Column, withSheetRow } from "@/components/common/Sheet";
 import { QuizRecord } from "@quizzy/common/types";
 import { ID } from "@quizzy/common/types";
 import { dispDuration } from "@/utils/time";

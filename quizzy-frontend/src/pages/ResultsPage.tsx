@@ -1,5 +1,5 @@
 
-import Sheet, { withSheetRow, Column } from "@/components/Sheet";
+import Sheet, { withSheetRow, Column } from "@/components/common/Sheet";
 import { QuizResult, Stat } from "@quizzy/common/types";
 import { dispDuration } from "@/utils/time";
 import { Quizzy } from "@/data";

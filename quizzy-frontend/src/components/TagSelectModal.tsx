@@ -2,7 +2,7 @@ import { KeywordIndexed, TagSearchResult } from "@quizzy/common/types";
 import {
   Button, Input, Modal, ModalBody,
   ModalCloseButton, ModalContent, ModalFooter,
-  ModalHeader, ModalOverlay, ModalProps, Tag, useCallbackRef, VStack,
+  ModalHeader, ModalOverlay, ModalProps, useCallbackRef, VStack,
   Wrap
 } from "@chakra-ui/react";
 import { useState, useCallback, useEffect, useRef } from "react";
@@ -10,6 +10,7 @@ import { useTranslation } from "react-i18next";
 import { Quizzy } from "@/data";
 import { debounce, DebounceReturn } from "@/utils/debounce";
 import { getChangedArray } from "@/utils/array";
+import TagList from "./common/TagList";
 
 export type TagSelectState = {
   tagIndex?: number,
@@ -85,11 +86,13 @@ export const TagSelectModal = (props: Omit<ModalProps, 'children' | 'onSelect'> 
     debouncedSearch.current = debounce(performSearch, 500);
   }, [performSearchRef, debouncedSearch]);
 
-  const getRenderedTags = (t: string[], isTag = false, isPaper = false) => t.map(x => <Tag 
-    key={x} cursor='pointer' onClick={() => setCurrentTag(x)}
-    border={isTag ? '1px solid gray' : undefined}
-    background={isPaper ? undefined : 'transparent'}
-  >{x}</Tag>);
+  const getRenderedTags = (t: string[], isTag = false, isPaper = false) =>
+    <TagList tags={t} onClick={(_, x) => setCurrentTag(x)}
+      tagStyle={{
+        border: isTag ? '1px solid gray' : undefined,
+        backgroundColor: isPaper ? undefined : 'transparent',
+      }}
+    />;
 
   return <Modal closeOnOverlayClick={false} {...modalProps}>
     <ModalOverlay />

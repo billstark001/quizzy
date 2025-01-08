@@ -1,7 +1,8 @@
 /* eslint-disable comma-spacing */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { getTagStyle } from '@/utils/react';
-import { Box, HTMLChakraProps, Table, TableBodyProps, TableHeadProps, TableProps, TableRowProps, Tbody, Td, Th, Thead, Tr } from '@chakra-ui/react';
+import { useScreenSize } from '@/utils/responsive';
+import { Box, DividerProps, HTMLChakraProps, Table, TableBodyProps, TableHeadProps, TableProps, TableRowProps, Tbody, Td, Th, Thead, Tr, VStack } from '@chakra-ui/react';
 import { ReactNode, PropsWithChildren, ReactElement, createContext, useContext, ComponentType } from 'react';
 
 /**
@@ -34,12 +35,11 @@ export type SheetProps<T> = PropsWithChildren<{
   cellStyleHeader?: ReactElement<HTMLChakraProps<'th'>>,
   /** Style for the header row. */
   rowStyleHeader?: ReactElement<HTMLChakraProps<'tr'>>,
-  /** Custom wrapper component for the table head. */
+
   theadWrapper?: ComponentType<TableHeadProps>,
-  /** Custom wrapper component for the table body. */
   tbodyWrapper?: ComponentType<TableBodyProps>,
-  /** Custom wrapper component for table rows. */
   trWrapper?: ComponentType<TableRowWithItemProps<T>>,
+  mobileWrapper?: ComponentType<DividerProps>,
 }> & TableProps;
 
 /**
@@ -57,6 +57,8 @@ export type ColumnProps<
   header?: ReactNode,
   /** Custom render function for the cell content. */
   render?: (value: T[K], item: T, index: number) => ReactNode,
+
+  mainField?: boolean,
 }>;
 
 type RenderStage = {
@@ -65,6 +67,9 @@ type RenderStage = {
 } | {
   stage: 'body',
   style?: HTMLChakraProps<'td'>
+} | {
+  stage: 'mobile',
+  style?: HTMLChakraProps<'div'>,
 };
 
 const RenderStageContext = createContext<RenderStage>({
@@ -128,8 +133,9 @@ export const Column = <T extends object = Record<string, any>, K extends keyof T
 ) => {
   const { stage, style } = useContext(RenderStageContext);
   const [index, item] = useContext(SheetRowContext) as _I<T>;
-  const { header, field, render, children } = props;
+  const { header, field, mainField, render, children } = props;
 
+  
   if (stage === 'head') {
     return <Th {...style ?? {}}>
       {header ?? <Box>{field as string}</Box>}
@@ -147,7 +153,39 @@ export const Column = <T extends object = Record<string, any>, K extends keyof T
     fieldDisplay = fieldValue != null
       ? String(fieldValue) : undefined;
   }
+
+  if (stage === 'mobile') {
+    if (mainField) {
+      return <Box fontWeight='bold' fontSize='lg'>
+        {fieldDisplay}
+        {children}
+      </Box>;
+    }
+    return <Box>
+      {field as string}
+      {!!field && ': '} 
+      {fieldDisplay}
+      {children}
+    </Box>;
+  }
+
   return <Td {...style ?? {}}>{fieldDisplay}{children}</Td>;
+};
+
+const DefaultMobileWrapper: SheetProps<any>['mobileWrapper'] = (props) => {
+  const { children, ...rest } = props;
+
+  return <VStack 
+    alignItems='stretch' 
+    border='1px solid'
+    borderColor='gray.400' 
+    borderRadius='16px'
+    padding={4}
+    gap={4}
+    {...rest}
+  >
+    {children}
+  </VStack>;
 };
 
 /**
@@ -166,6 +204,7 @@ export const Sheet = <T extends object = Record<string, any>>(
     theadWrapper,
     tbodyWrapper,
     trWrapper,
+    mobileWrapper,
     ...tableProps
   } = props;
 
@@ -176,6 +215,9 @@ export const Sheet = <T extends object = Record<string, any>>(
   const TheadWrapper = theadWrapper ?? Thead;
   const TbodyWrapper = tbodyWrapper ?? Tbody;
   const TrWrapper = trWrapper ?? Tr;
+  const MobileWrapper = mobileWrapper ?? DefaultMobileWrapper;
+
+  const isMobile = useScreenSize() === 'mobile';
 
   const bodyRowRenderer = (item: T, index: number) => {
     const rowStyle = getTagStyle(typeof rowStyleProvider === 'function'
@@ -186,23 +228,36 @@ export const Sheet = <T extends object = Record<string, any>>(
       ? cellStyleProvider(item, index)
       : cellStyleProvider, true, Td);
 
+    const W = isMobile ? MobileWrapper : TrWrapper;
+
     return (
       <SheetRowContext.Provider value={[index, item]} key={index}>
-        <RenderStageContext.Provider value={{ stage: 'body', style: cellStyle }}>
-          <TrWrapper
+        <RenderStageContext.Provider value={{ 
+          stage: isMobile ? 'mobile' : 'body', 
+          style: cellStyle 
+        }}>
+          <W
             key={index}
             index={index}
             item={item}
-            cursor={onSelected ? 'pointer' : 'default'}
+            cursor={!isMobile && onSelected ? 'pointer' : 'default'}
             onClick={() => onSelected?.(item, index)}
             {...rowStyle}
           >
             {children}
-          </TrWrapper>
+          </W>
         </RenderStageContext.Provider>
       </SheetRowContext.Provider>
     );
   };
+
+  const tbody = data.map(bodyRowRenderer);
+
+  if (isMobile) {
+    return <VStack alignItems='stretch'>
+      {tbody}
+    </VStack>;
+  }
 
   const thead = (
     <Tr {...getTagStyle(rowStyleHeader, true, Tr)}>
@@ -211,8 +266,6 @@ export const Sheet = <T extends object = Record<string, any>>(
       </RenderStageContext.Provider>
     </Tr>
   );
-
-  const tbody = data.map(bodyRowRenderer);
 
   return (
     <Table {...tableProps}>

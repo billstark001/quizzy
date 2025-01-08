@@ -1,9 +1,9 @@
 import { Question } from "@quizzy/common/types";
 import { useDisclosureWithData } from "@/utils/disclosure";
 import {
-  Box, Button, Grid, HStack, IconButton,
+  Box, Button, HStack,
   Input, Select, Switch,
-  SwitchProps, Tag, Textarea, TextareaProps, VStack, Wrap
+  SwitchProps, Textarea, TextareaProps, VStack
 } from "@chakra-ui/react";
 import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
@@ -13,6 +13,9 @@ import { MdAdd } from "react-icons/md";
 import { ChoiceQuestionOptionsEdit } from "./ChoiceQuestionOptionsEdit";
 import { normalizeOptionOrBlankArray } from "@quizzy/common/db/question-id";
 import { BlankQuestionBlanksEdit } from "./BlankQuestionBlankEdit";
+import EditForm, { EditFormItem } from "../common/EditForm";
+import TagList, { TagButton } from "../common/TagList";
+import { IoAddOutline } from "react-icons/io5";
 
 
 const _adjustHeight = (t: HTMLTextAreaElement) => {
@@ -48,102 +51,84 @@ export const QuestionEdit = () => {
 
   const { data: editTag, ...dTag } = useDisclosureWithData<TagSelectState>({});
 
-  return <>
-    <Grid templateColumns='160px 1fr' gap={2}>
-
-      {/* title */}
-      <Box>{t('page.edit.title')}</Box>
+  return <EditForm>
+    <EditFormItem label={t('page.edit.title')}>
       <Input {...edit('title', { debounce: true })} />
-      {/* <EditButton value={editingTitle} setValue={setEditingTitle} /> */}
+    </EditFormItem>
 
-      {/* type */}
-      <Box>{t('page.edit.type')}</Box>
+    <EditFormItem label={t('page.edit.type')}>
       <Select {...edit('type')}>
         <option value=''>{t('common.select.default')}</option>
         {['choice', 'blank', 'text'].map(x => <option key={x}
           value={x}>{t('meta.question.type.' + x)}</option>)}
       </Select>
+    </EditFormItem>
 
-      {/* tags */}
-      <Box>{t('page.edit.tags')}</Box>
-      <Wrap>
-        {(question.tags ?? []).map((t, i) => <Tag key={t}
-          onDoubleClick={() => dTag.onOpen({ tagIndex: i })}
-        ><Box>{t}</Box></Tag>)}
+    <EditFormItem label={t('page.edit.tags')}>
+      <TagList tags={question.tags}
+        onDoubleClick={(_, __, i) => dTag.onOpen({ tagIndex: i })}
+      >
+        <TagButton onClick={() => dTag.onOpen()} icon={<IoAddOutline />} />
+      </TagList>
+    </EditFormItem>
 
-        <IconButton
-          onClick={() => dTag.onOpen()}
-          aria-label={t('page.edit.addButton')}
-          size='xs'
-          icon={<MdAdd />}
-        />
-      </Wrap>
+    <EditFormItem label={t('page.edit.categories')}>
+      <TagList tags={question.categories}
+        onDoubleClick={(_, __, i) =>
+          dTag.onOpen({ tagIndex: i, isCategory: true })}
+      >
+        <TagButton onClick={() =>
+          dTag.onOpen({ isCategory: true })} icon={<IoAddOutline />} />
+      </TagList>
+    </EditFormItem>
 
-      {/* categories */}
-      <Box>{t('page.edit.categories')}</Box>
-      <Wrap>
-        {(question.categories ?? []).map((t, i) => <Tag key={t}
-          onDoubleClick={() => dTag.onOpen({ tagIndex: i, isCategory: true })}
-        ><Box>{t}</Box></Tag>)}
+    <EditFormItem label={t('page.edit.content')}>
+      <Textarea2 {...edit('content', { debounce: true })} />
+    </EditFormItem>
 
-        <IconButton
-          onClick={() => dTag.onOpen({ isCategory: true })}
-          aria-label={t('page.edit.addButton')}
-          size='xs'
-          icon={<MdAdd />}
-        />
-      </Wrap>
+    {question.type === 'choice' && <EditFormItem label={
+      <VStack alignItems='flex-start'>
+        <Box>{t('page.edit.choice._')}</Box>
+        <Button leftIcon={<MdAdd />} onClick={() => {
+          onChangeImmediate({
+            options: normalizeOptionOrBlankArray(
+              [{ content: '' }, ...(question.options ?? [])]
+            )
+          })
+        }}>{t('page.edit.choice.addTop')}</Button>
+        <HStack>
+          <Box>{t('page.edit.choice.multiple')}</Box>
+          <Switch {...edit<SwitchProps>('multiple', { debounce: true, key: 'isChecked' })} />
+        </HStack>
+      </VStack>
+    }>
+      <ChoiceQuestionOptionsEdit question={question} />
+    </EditFormItem>}
 
-      {/* content */}
-      <Box>{t('page.edit.content')}</Box>
-      <HStack alignItems='flex-end' alignSelf='flex-end'>
-        <Textarea2 {...edit('content', { debounce: true })} />
-      </HStack>
+    {question.type === 'blank' && <EditFormItem label={
+      <VStack alignItems='flex-start'>
+        <Box>{t('page.edit.blank._')}</Box>
+        <Button leftIcon={<MdAdd />} onClick={() => {
+          onChangeImmediate({
+            blanks: normalizeOptionOrBlankArray(
+              [{ key: 'key-0' }, ...(question.blanks ?? [])]
+            )
+          })
+        }}>{t('page.edit.choice.addTop')}</Button>
+      </VStack>
+    }>
+      <BlankQuestionBlanksEdit question={question} />
+    </EditFormItem>}
 
-      {question.type === 'choice' && <>
-        <VStack alignItems='flex-start'>
-          <Box>{t('page.edit.choice._')}</Box>
-          <Button leftIcon={<MdAdd />} onClick={() => {
-            onChangeImmediate({ 
-              options: normalizeOptionOrBlankArray(
-                [{ content: '' }, ...(question.options ?? [])]
-              ) 
-            })
-          }}>{t('page.edit.choice.addTop')}</Button>
-          <HStack>
-            <Box>{t('page.edit.choice.multiple')}</Box>
-            <Switch {...edit<SwitchProps>('multiple', { debounce: true, key: 'isChecked' })} />
-          </HStack>
-        </VStack>
-        <ChoiceQuestionOptionsEdit question={question} />
-      </>}
-
-      {question.type === 'blank' && <>
-        <VStack alignItems='flex-start'>
-          <Box>{t('page.edit.blank._')}</Box>
-          <Button leftIcon={<MdAdd />} onClick={() => {
-            onChangeImmediate({ 
-              blanks: normalizeOptionOrBlankArray(
-                [{ key: 'key-0' }, ...(question.blanks ?? [])]
-              ) 
-            })
-          }}>{t('page.edit.choice.addTop')}</Button>
-        </VStack>
-        <BlankQuestionBlanksEdit question={question} />
-      </>}
-
-
-      {/* solution */}
-      <Box>{t('page.edit.solution')}</Box>
-      <HStack alignItems='flex-end' alignSelf='flex-end'>
-        <Textarea2 {...edit('solution', { debounce: true })} />
-      </HStack>
-    </Grid>
+    <EditFormItem label={t('page.edit.solution')}>
+      <Textarea2 {...edit('solution', { debounce: true })} />
+    </EditFormItem>
 
     <TagSelectModal
       {...dTag} {...editTag}
       object={question} onChange={onChangeImmediate}
     />
 
-  </>;
+  </EditForm>;
+
 };

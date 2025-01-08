@@ -1,7 +1,7 @@
 import { useBreakpointValue } from '@chakra-ui/react';
 
-type _S = 'mobile' | 'default';
-export const useScreenSize = (): _S => useBreakpointValue<_S>({
+export type ScreenSize = 'mobile' | 'default';
+export const useScreenSize = (): ScreenSize => useBreakpointValue<ScreenSize>({
   base: 'mobile',
   md: 'default'
 }) || 'default';

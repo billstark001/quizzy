@@ -7,7 +7,7 @@ import { QuizzyRaw } from "@/data";
 import { Question } from "@quizzy/common/types";
 import { SearchResult } from "@quizzy/common/types";
 import { useNavigate } from "react-router-dom";
-import Sheet, { Column, withSheetRow } from "@/components/Sheet";
+import Sheet, { Column, withSheetRow } from "@/components/common/Sheet";
 import Pagination from "@/components/Pagination";
 import { DateTime } from "luxon";
 import { useTranslation } from "react-i18next";

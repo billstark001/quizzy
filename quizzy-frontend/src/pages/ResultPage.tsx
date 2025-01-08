@@ -1,5 +1,5 @@
 import { QuestionDisplay } from "@/components/question-display/QuestionDisplay";
-import Sheet, { Column, withSheetRow } from "@/components/Sheet";
+import Sheet, { Column, withSheetRow } from "@/components/common/Sheet";
 import { Question, QuizResultRecordRow } from "@quizzy/common/types";
 import { ID } from "@quizzy/common/types";
 import { useDisclosureWithData } from "@/utils/disclosure";

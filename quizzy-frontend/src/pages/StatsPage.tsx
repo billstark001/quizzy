@@ -1,5 +1,5 @@
 
-import Sheet, { withSheetRow, Column } from "@/components/Sheet";
+import Sheet, { withSheetRow, Column } from "@/components/common/Sheet";
 import { Stat, StatUnit, stringifyUnit } from "@quizzy/common/types";
 import { Quizzy } from "@/data";
 import { useAsyncEffect } from "@/utils/react-async";
