@@ -79,4 +79,6 @@ export const usePapers = () => {
     create,
     upload,
   };
-}
+};
+
+export default usePapers;

@@ -1,8 +1,7 @@
 import { PaperCard } from "@/components/PaperCard";
-import { TagListResult } from "@quizzy/base/types";
 import { useSelection } from "@/utils/react";
 import { Quizzy } from "@/data";
-import { usePapers } from "@/data/atoms";
+import { usePapers } from "@/data/papers";
 import {
   Button,
   HStack,
@@ -18,15 +17,8 @@ import {
 } from "@chakra-ui/react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useQuery } from "@tanstack/react-query";
+import useTags from "@/data/tags";
 
-
-const defaultTagListResult = (): TagListResult => ({
-  questionCategories: [],
-  questionTags: [],
-  paperCategories: [],
-  paperTags: [],
-});
 
 export const StartQuizPage = () => {
 
@@ -71,10 +63,7 @@ export const StartQuizPage = () => {
   // tab 0
 
   // tab 1 & 2
-  const { data: tagListResult } = useQuery({
-    queryKey: ['tag-list'],
-    queryFn: () => Quizzy.listTagsInPapersAndQuestions().then(x => x ?? defaultTagListResult()),
-  });
+  const tags = useTags();
 
   const getRenderedTags = (t?: string[], isTag = true, isPaper = false) => t?.map(x => <Tag
     key={x} cursor='pointer' onClick={() => (isTag ? sTags : sCategories).toggleSelected(x)}
@@ -108,14 +97,14 @@ export const StartQuizPage = () => {
       </TabPanel>
       <TabPanel>
         <Wrap>
-          {getRenderedTags(tagListResult?.paperTags, true, true)}
-          {getRenderedTags(tagListResult?.questionTags)}
+          {getRenderedTags(tags.tempTagList.paperTags, true, true)}
+          {getRenderedTags(tags.tempTagList.questionTags)}
         </Wrap>
       </TabPanel>
       <TabPanel>
         <Wrap>
-          {getRenderedTags(tagListResult?.paperCategories, false, true)}
-          {getRenderedTags(tagListResult?.questionCategories, false)}
+          {getRenderedTags(tags.tempTagList.paperCategories, false, true)}
+          {getRenderedTags(tags.tempTagList.questionCategories, false)}
         </Wrap>
       </TabPanel>
     </TabPanels>
