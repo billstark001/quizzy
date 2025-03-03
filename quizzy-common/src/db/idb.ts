@@ -3,7 +3,7 @@ import {
   QuizRecord, QuizRecordEvent, QuizRecordInitiation, 
   QuizRecordOperation, QuizRecordTactics, 
   QuizzyController, QuizzyData, StartQuizOptions, 
-  Stat, StatBase, TagListResult, TagSearchResult, 
+  Stat, StatBase, TempTagListResult, TagSearchResult, 
   TICIndex, Tag, TagBase,
   UpdateQuizOptions, 
   defaultTag
@@ -409,7 +409,7 @@ export class IDBController extends IDBCore implements QuizzyController {
     };
   }
 
-  async listTagsInPapersAndQuestions(): Promise<TagListResult> {
+  async listTagsInPapersAndQuestions(): Promise<TempTagListResult> {
     return {
       questionCategories: await getAllMultiEntryValues(
         this.db, STORE_KEY_QUESTIONS, 'categories',

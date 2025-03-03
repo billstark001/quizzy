@@ -37,7 +37,7 @@ export type TagSearchResult = {
   question: string[];
   questionTags: string[];
 };
-export type TagListResult = {
+export type TempTagListResult = {
   paperCategories: string[];
   paperTags: string[];
   questionCategories: string[];
@@ -117,7 +117,7 @@ export interface QuizzyController {
 
   
   generateTagHint(query: string, count?: number, page?: number): Promise<TagSearchResult>;
-  listTagsInPapersAndQuestions(): Promise<TagListResult>;
+  listTagsInPapersAndQuestions(): Promise<TempTagListResult>;
 
   // records
 

@@ -19,20 +19,29 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import useTags from "@/data/tags";
 
+type _S = {
+  sTagsIsSelected: (id: string) => boolean;
+  sTagsToggleSelected: (id: string) => void;
+  sCategoriesIsSelected: (id: string) => boolean;
+  sCategoriesToggleSelected: (id: string) => void;
+};
 
 const RenderedTags = (props: {
   t?: string[],
   isTag?: boolean,
   isPaper?: boolean,
-  sTags: ReturnType<typeof useSelection>,
-  sCategories: ReturnType<typeof useSelection>,
-}) => {
-  const { t, isTag = true, isPaper = false, sTags, sCategories } = props;
+} & _S) => {
+  const { 
+    t, isTag = true, isPaper = false,
+    sTagsIsSelected, sTagsToggleSelected,
+    sCategoriesIsSelected, sCategoriesToggleSelected,
+  } = props;
   // TODO this is too slow
   return <>
     {t?.map(x => <Tag
-      key={x} cursor='pointer' onClick={() => (isTag ? sTags : sCategories).toggleSelected(x)}
-      colorScheme={(isTag ? sTags : sCategories).isSelected(x) ? 'purple' : undefined}
+      key={x} cursor='pointer' 
+      onClick={() => (isTag ? sTagsToggleSelected : sCategoriesToggleSelected)(x)}
+      colorScheme={(isTag ? sTagsIsSelected : sCategoriesIsSelected)(x) ? 'purple' : undefined}
       border={isPaper ? '1px solid gray' : undefined}
       transition='all 0.3s ease'
       userSelect='none'
@@ -85,6 +94,13 @@ export const StartQuizPage = () => {
   // tab 1 & 2
   const tags = useTags();
 
+  const _s = {
+    sTagsIsSelected: sTags.isSelected,
+    sTagsToggleSelected: sTags.toggleSelected,
+    sCategoriesIsSelected: sCategories.isSelected,
+    sCategoriesToggleSelected: sCategories.toggleSelected,
+  };
+
 
   // global
   const startRandomDisabled = !selectionByTab[tabIndex]?.isAnySelected;
@@ -110,18 +126,14 @@ export const StartQuizPage = () => {
       </TabPanel>
       <TabPanel>
         <Wrap>
-          <RenderedTags t={tags.tempTagList.paperTags} isPaper={true}
-            sTags={sTags} sCategories={sCategories} />
-          <RenderedTags t={tags.tempTagList.questionTags}
-            sTags={sTags} sCategories={sCategories} />
+          <RenderedTags t={tags.tempTagList.paperTags} isPaper={true} {..._s} />
+          <RenderedTags t={tags.tempTagList.questionTags} {..._s} />
         </Wrap>
       </TabPanel>
       <TabPanel>
         <Wrap>
-          <RenderedTags t={tags.tempTagList.paperCategories} isPaper={true} isTag={false}
-            sTags={sTags} sCategories={sCategories} />
-          <RenderedTags t={tags.tempTagList.questionCategories} isTag={false}
-            sTags={sTags} sCategories={sCategories} />
+          <RenderedTags t={tags.tempTagList.paperCategories} isPaper={true} isTag={false} {..._s} />
+          <RenderedTags t={tags.tempTagList.questionCategories} isTag={false} {..._s} />
         </Wrap>
       </TabPanel>
     </TabPanels>

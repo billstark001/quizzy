@@ -19,6 +19,7 @@ import StartQuizPage from './pages/StartQuizPage';
 import { Tab, TabList, TabPanel, TabPanels, Tabs } from '@chakra-ui/react';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from './data/query';
+import TagsPage from './pages/TagsPage';
 
 const EditPage = () => {
 
@@ -41,13 +42,11 @@ const EditSelectPage = () => {
       <Tab>paper</Tab>
       <Tab>question</Tab>
       <Tab>tag</Tab>
-      <Tab>category</Tab>
     </TabList>
     <TabPanels>
       <TabPanel><PaperSelectionPage /></TabPanel>
       <TabPanel><QuestionPage /></TabPanel>
-      <TabPanel></TabPanel>
-      <TabPanel></TabPanel>
+      <TabPanel><TagsPage /></TabPanel>
     </TabPanels>
   </Tabs>
 };
