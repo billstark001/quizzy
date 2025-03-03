@@ -8,7 +8,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 
 export const usePapers = () => {
-
+  
   const { data: value } = useQuery({
     queryKey: ['papers'],
     queryFn: () => Quizzy.listQuizPapers(),

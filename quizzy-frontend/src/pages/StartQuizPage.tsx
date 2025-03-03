@@ -20,6 +20,26 @@ import { useTranslation } from "react-i18next";
 import useTags from "@/data/tags";
 
 
+const RenderedTags = (props: {
+  t?: string[],
+  isTag?: boolean,
+  isPaper?: boolean,
+  sTags: ReturnType<typeof useSelection>,
+  sCategories: ReturnType<typeof useSelection>,
+}) => {
+  const { t, isTag = true, isPaper = false, sTags, sCategories } = props;
+  // TODO this is too slow
+  return <>
+    {t?.map(x => <Tag
+      key={x} cursor='pointer' onClick={() => (isTag ? sTags : sCategories).toggleSelected(x)}
+      colorScheme={(isTag ? sTags : sCategories).isSelected(x) ? 'purple' : undefined}
+      border={isPaper ? '1px solid gray' : undefined}
+      transition='all 0.3s ease'
+      userSelect='none'
+    >{x}</Tag>)}
+  </>;
+};
+
 export const StartQuizPage = () => {
 
   const { t } = useTranslation();
@@ -65,13 +85,6 @@ export const StartQuizPage = () => {
   // tab 1 & 2
   const tags = useTags();
 
-  const getRenderedTags = (t?: string[], isTag = true, isPaper = false) => t?.map(x => <Tag
-    key={x} cursor='pointer' onClick={() => (isTag ? sTags : sCategories).toggleSelected(x)}
-    colorScheme={(isTag ? sTags : sCategories).isSelected(x) ? 'purple' : undefined}
-    border={isPaper ? '1px solid gray' : undefined}
-    transition='all 0.3s ease'
-    userSelect='none'
-  >{x}</Tag>);
 
   // global
   const startRandomDisabled = !selectionByTab[tabIndex]?.isAnySelected;
@@ -97,14 +110,18 @@ export const StartQuizPage = () => {
       </TabPanel>
       <TabPanel>
         <Wrap>
-          {getRenderedTags(tags.tempTagList.paperTags, true, true)}
-          {getRenderedTags(tags.tempTagList.questionTags)}
+          <RenderedTags t={tags.tempTagList.paperTags} isPaper={true}
+            sTags={sTags} sCategories={sCategories} />
+          <RenderedTags t={tags.tempTagList.questionTags}
+            sTags={sTags} sCategories={sCategories} />
         </Wrap>
       </TabPanel>
       <TabPanel>
         <Wrap>
-          {getRenderedTags(tags.tempTagList.paperCategories, false, true)}
-          {getRenderedTags(tags.tempTagList.questionCategories, false)}
+          <RenderedTags t={tags.tempTagList.paperCategories} isPaper={true} isTag={false}
+            sTags={sTags} sCategories={sCategories} />
+          <RenderedTags t={tags.tempTagList.questionCategories} isTag={false}
+            sTags={sTags} sCategories={sCategories} />
         </Wrap>
       </TabPanel>
     </TabPanels>
