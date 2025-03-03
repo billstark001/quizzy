@@ -1,7 +1,6 @@
 import { PaperCard } from "@/components/PaperCard";
 import { TagListResult } from "@quizzy/base/types";
 import { useSelection } from "@/utils/react";
-import { useAsyncMemo } from "@/utils/react-async";
 import { Quizzy } from "@/data";
 import { usePapers } from "@/data/atoms";
 import {
@@ -19,6 +18,7 @@ import {
 } from "@chakra-ui/react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useQuery } from "@tanstack/react-query";
 
 
 const defaultTagListResult = (): TagListResult => ({
@@ -71,10 +71,11 @@ export const StartQuizPage = () => {
   // tab 0
 
   // tab 1 & 2
-  const { data: tagListResult } = useAsyncMemo(
-    () => Quizzy.listTagsInPapersAndQuestions().then(x => x ?? defaultTagListResult()),
-    [],
-  );
+  const { data: tagListResult } = useQuery({
+    queryKey: ['tag-list'],
+    queryFn: () => Quizzy.listTagsInPapersAndQuestions().then(x => x ?? defaultTagListResult()),
+  });
+
   const getRenderedTags = (t?: string[], isTag = true, isPaper = false) => t?.map(x => <Tag
     key={x} cursor='pointer' onClick={() => (isTag ? sTags : sCategories).toggleSelected(x)}
     colorScheme={(isTag ? sTags : sCategories).isSelected(x) ? 'purple' : undefined}

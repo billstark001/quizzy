@@ -17,6 +17,8 @@ import AppLayout from './layout/AppLayout';
 import StartQuizPage from './pages/StartQuizPage';
 
 import { Tab, TabList, TabPanel, TabPanels, Tabs } from '@chakra-ui/react';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { queryClient } from './data/query';
 
 const EditPage = () => {
 
@@ -38,34 +40,40 @@ const EditSelectPage = () => {
     <TabList>
       <Tab>paper</Tab>
       <Tab>question</Tab>
+      <Tab>tag</Tab>
+      <Tab>category</Tab>
     </TabList>
     <TabPanels>
       <TabPanel><PaperSelectionPage /></TabPanel>
       <TabPanel><QuestionPage /></TabPanel>
+      <TabPanel></TabPanel>
+      <TabPanel></TabPanel>
     </TabPanels>
   </Tabs>
 };
 
 export const App = () => {
-  return <HashRouter basename='/'>
-    <AppLayout>
-      <Routes>
-        <Route path='/' element={<EntryPage />} />
-        <Route path='/settings' element={<SettingsPage />} />
+  return <QueryClientProvider client={queryClient}>
+    <HashRouter basename='/'>
+      <AppLayout>
+        <Routes>
+          <Route path='/' element={<EntryPage />} />
+          <Route path='/settings' element={<SettingsPage />} />
 
-        <Route path='/start-quiz' element={<StartQuizPage />} />
-        <Route path='/edit-select' element={<EditSelectPage />} />
-        <Route path='/records' element={<RecordsPage />} />
-        <Route path='/results' element={<ResultsPage />} />
+          <Route path='/start-quiz' element={<StartQuizPage />} />
+          <Route path='/edit-select' element={<EditSelectPage />} />
+          <Route path='/records' element={<RecordsPage />} />
+          <Route path='/results' element={<ResultsPage />} />
 
-        <Route path='/quiz' element={<QuizPage />} />
-        <Route path='/edit' element={<EditPage />} />
-        <Route path='/result/:rid' element={<ResultPage />} />
-        <Route path='/stats' element={<StatsPage />} />
-        <Route path='/stat/:sid' element={<StatPage />} />
-      </Routes>
-    </AppLayout>
-  </HashRouter>;
+          <Route path='/quiz' element={<QuizPage />} />
+          <Route path='/edit' element={<EditPage />} />
+          <Route path='/result/:rid' element={<ResultPage />} />
+          <Route path='/stats' element={<StatsPage />} />
+          <Route path='/stat/:sid' element={<StatPage />} />
+        </Routes>
+      </AppLayout>
+    </HashRouter>
+  </QueryClientProvider>;
 }
 
 export default App;

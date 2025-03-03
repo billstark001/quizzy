@@ -48,6 +48,10 @@ export type QuizRecordOperation = { currentTime: number } & ({
   questionId: ID;
   answers: Answers;
   withForward?: boolean;
+} | {
+  type: 'goto';
+  id: ID;
+  target: number;
 });
 
 export type QuizRecordEvent = ({

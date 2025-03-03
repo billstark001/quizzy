@@ -2,11 +2,11 @@ import { QuestionDisplay } from "@/components/question-display/QuestionDisplay";
 import { Answers, Question, QuizRecord, QuizRecordEvent } from "@quizzy/base/types";
 import { openDialog } from "@/components/handler";
 import { Quizzy } from "@/data";
-import { useAsyncEffect } from "@/utils/react-async";
 import { ParamsDefinition, useParsedSearchParams } from "@/utils/react-router";
 import { Box, Button, VStack } from "@chakra-ui/react";
 import { SetStateAction, useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 
 export type QuizPageParams = {
@@ -29,14 +29,18 @@ export const QuizPage = () => {
 
   const navigate = useNavigate();
 
-  const [record, setRecord] = useState<QuizRecord>();
-  const [question, setQuestion] = useState<Question>();
+  const c = useQueryClient();
 
-  useAsyncEffect(async () => {
-    const record = await Quizzy.getQuizRecord(recordId ?? '');
-    setRecord(record);
-    setQuestion(await _getQuestion(record, qIndex));
-  }, [recordId]);
+  const { data: record } = useQuery({
+    queryKey: ['record', recordId ?? ''],
+    queryFn: () => Quizzy.getQuizRecord(recordId ?? ''),
+  });
+
+  const questionId = record?.questionOrder?.[qIndex - 1] ?? '';
+  const { data: question } = useQuery({
+    queryKey: ['question', questionId],
+    queryFn: () => Quizzy.getQuestion(questionId),
+  });
 
   const [previewQuestion, setPreviewQuestion] = useState<Question>();
   const onPreviewQuestionChanged = useCallback(async (qIndex: number) => {
@@ -58,7 +62,6 @@ export const QuizPage = () => {
 
   const handleEvent = useCallback(async (event?: QuizRecordEvent) => {
     if (event?.type === 'goto') {
-      setQuestion(event.question ?? await _getQuestion(record, event.questionIndex));
       setSearchParams({ q: event.questionIndex });
     } else if (event?.type === 'submit') {
       navigate('/result/' + event.resultId);
@@ -87,31 +90,37 @@ export const QuizPage = () => {
     if (typeof a === 'function') {
       a = a(currentAnswers);
     }
-    const [newRecord, event] = await Quizzy.updateQuiz({
+    const [, event] = await Quizzy.updateQuiz({
       currentTime: Date.now(),
-      id: record?.id ?? '',
+      id: recordId ?? '',
       type: 'answer',
-      questionId: question?.id ?? '',
+      questionId,
       answers: a,
     });
-    setRecord(newRecord);
+    c.invalidateQueries({ queryKey: ['record', recordId] });
     await handleEvent(event);
-  }, [currentAnswers, record, question, setRecord, setQuestion, setSearchParams, handleEvent]);
+  }, [currentAnswers, recordId, c, questionId, setSearchParams, handleEvent]);
 
 
   // question shifting
   const onQuestionChanged = useCallback(async (q: number) => {
-    setSearchParams({ q });
-    setQuestion(await _getQuestion(record, q));
+    const [, event] = await Quizzy.updateQuiz({
+      id: recordId ?? '',
+      type: 'goto',
+      currentTime: Date.now(),
+      target: q,
+    });
+    c.invalidateQueries({ queryKey: ['record', recordId] });
+    await handleEvent(event);
   }, [record]);
 
   const onNext = useCallback(async () => {
-    const [newRecord, event] = await Quizzy.updateQuiz({
+    const [, event] = await Quizzy.updateQuiz({
       id: recordId ?? '',
       type: 'forward',
       currentTime: Date.now(),
     });
-    setRecord(newRecord);
+    c.invalidateQueries({ queryKey: ['record', recordId] });
     await handleEvent(event);
   }, [recordId, handleEvent]);
 

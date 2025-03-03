@@ -3,18 +3,17 @@ import { QuizRecord } from "@quizzy/base/types";
 import { ID } from "@quizzy/base/types";
 import { dispDuration } from "@/utils/time";
 import { Quizzy } from "@/data";
-import { useAsyncEffect } from "@/utils/react-async";
 import { Button, HStack } from "@chakra-ui/react";
 import { atom, useAtom } from "jotai";
 import { DateTime } from "luxon";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 type _K = {
   refresh: () => void | Promise<void>,
 };
 
-const recordsAtom = atom<readonly QuizRecord[]>([]);
 const paperNamesAtom = atom<Readonly<Record<ID, string>>>({});
 
 const ResumeButton = withSheetRow<QuizRecord, _K>((props) => {
@@ -51,29 +50,42 @@ const ResumeButton = withSheetRow<QuizRecord, _K>((props) => {
   </HStack>
 });
 
+const getPaperNames = async (records?: QuizRecord[], current?: Record<ID, string>) => {
+  if (!records) {
+    return;
+  }
+  const papers = await Quizzy.getQuizPaperNames(...records.map(r => r.paperId ?? ''));
+  const updated: Record<ID, string> = {
+    ...current,
+  };
+  for (let i = 0; i < records.length; ++i) {
+    updated[records[i].paperId ?? ''] = papers[i] || '<none>';
+  }
+  return updated;
+};
+
 export const RecordsPage = () => {
 
-  const [records, setRecords] = useAtom(recordsAtom);
+  const { data: records } = useQuery({
+    queryKey: ['records'],
+    queryFn: () => Quizzy.listQuizRecords(),
+    refetchOnWindowFocus: false,
+    initialData: [],
+  });
+
+  const c = useQueryClient();
+
   const [paperNames, setPaperNames] = useAtom(paperNamesAtom);
-
-  // refresh records
-  const refresh = () => Quizzy.listQuizRecords().then(setRecords);
-  useAsyncEffect(refresh, []);
-
-  // fetch paper names
-  useAsyncEffect(async () => {
-    if (!records) {
-      return;
+  const { mutate: refresh } = useMutation({
+    mutationFn: async () => {
+      const names = await getPaperNames(records, paperNames);
+      return names;
+    },
+    onSuccess: (d) => {
+      c.invalidateQueries({ queryKey: ['records']});
+      d && setPaperNames(d);
     }
-    const papers = await Quizzy.getQuizPaperNames(...records.map(r => r.paperId ?? ''));
-    const record: Record<ID, string> = {
-      ...paperNames,
-    };
-    for (let i = 0; i < records.length; ++i) {
-      record[records[i].paperId ?? ''] = papers[i] || '<none>';
-    }
-    setPaperNames(record);
-  }, [records]);
+  });
 
   return <Sheet data={records}>
     <Column field='paperId' render={(x) => paperNames[x]} />

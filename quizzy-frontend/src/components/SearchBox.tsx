@@ -10,8 +10,8 @@ import {
 import { IoSearch } from "react-icons/io5";
 import { ChangeEvent, KeyboardEvent, useCallback, useEffect, useRef, useState } from "react";
 import { debounce, DebounceReturn } from "@/utils/debounce";
-import { useAsyncMemo } from "@/utils/react-async";
 import { DatabaseIndexed, SearchResult } from "@quizzy/base/types";
+import { useQuery } from "@tanstack/react-query";
 
 interface SearchBoxProps<T extends DatabaseIndexed> {
   onFreezeResult?: (result: SearchResult<T> | undefined) => void;
@@ -39,7 +39,11 @@ export const SearchBox = <T extends DatabaseIndexed>(props: SearchBoxProps<T>) =
     });
   }, [setSearchTerm, debouncedSetSearchTerm]);
 
-  const { data: searchResult } = useAsyncMemo(() => fetchSearchResult(searchTerm), [searchTerm]);
+  const { data: searchResult } = useQuery({
+    queryKey: ['search-result', searchTerm],
+    queryFn: () => fetchSearchResult(searchTerm),
+  })
+
   const filteredItems = searchResult?.result ?? [];
 
   const freezeSearchResult = useCallback(() => {

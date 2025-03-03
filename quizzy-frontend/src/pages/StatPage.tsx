@@ -1,15 +1,15 @@
 import { StatPanel } from "@/components/StatPanel";
-import { useAsyncMemo } from "@/utils/react-async";
 import { Quizzy } from "@/data";
 import { VStack } from "@chakra-ui/react";
 import { useParams } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 
 
 export const StatPage = () => {
   const { sid } = useParams();
-  const { data: stat } = useAsyncMemo(async () => {
-    const ret = await Quizzy.getStat(sid ?? '');
-    return ret || null;
+  const { data: stat } = useQuery({
+    queryKey: ['stat', sid],
+    queryFn: () => Quizzy.getStat(sid ?? ''),
   });
 
   if (!stat) {

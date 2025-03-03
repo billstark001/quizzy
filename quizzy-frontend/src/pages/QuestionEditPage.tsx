@@ -6,10 +6,10 @@ import { applyPatch, Patch } from "@quizzy/base/utils";
 import { EditorContextProvider, useEditor, usePatch } from "@/utils/react-patch";
 import { Quizzy, QuizzyCache, QuizzyCacheRaw, QuizzyRaw } from "@/data";
 import QuestionPreviewModal from "@/modals/QuestionPreviewModal";
-import { useAsyncMemo } from "@/utils/react-async";
 import { Button, Divider, HStack, useCallbackRef, VStack } from "@chakra-ui/react";
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 
 const RECORD_KEY = 'edit:question';
 
@@ -32,7 +32,10 @@ export const QuestionEditPage = (props: { question?: string }) => {
     return question ?? undefined;
   }, { def: undefined, deps: [questionIdProp], notifySuccess: undefined, });
 
-  const { data: question } = useAsyncMemo(fetchQuestion, [questionIdProp]);
+  const { data: question } = useQuery({
+    queryKey: ['question', questionIdProp],
+    queryFn: fetchQuestion,
+  });
   const questionId = question?.id;
 
   const sessionId = questionId

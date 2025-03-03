@@ -30,7 +30,7 @@ import { createMergableTagsFinder, diffTags, mergeTags } from "./tag";
 
 
 export const DB_KEY = 'Quizzy';
-export const VERSION = 1;
+export const VERSION = 2;
 
 const STORE_KEY_PAPERS = 'papers';
 const STORE_KEY_RECORDS = 'records';

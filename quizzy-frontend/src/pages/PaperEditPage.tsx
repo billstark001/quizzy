@@ -11,12 +11,12 @@ import { EditorContextProvider, useEditor, usePatch } from "@/utils/react-patch"
 import { uuidV4B64 } from "@quizzy/base/utils";
 import { Quizzy, QuizzyCache, QuizzyCacheRaw, QuizzyRaw } from "@/data";
 import QuestionPreviewModal from "@/modals/QuestionPreviewModal";
-import { useAsyncMemo } from "@/utils/react-async";
 import { RxDragHandleDots2 } from "react-icons/rx";
 import { Box, Button, Divider, HStack, IconButton, useCallbackRef, useDisclosure, VStack } from "@chakra-ui/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 
 
 type EditState = Readonly<{
@@ -78,7 +78,11 @@ export const PaperEditPage = (props: { paper?: string }) => {
     return paper ?? undefined;
   }, { def: undefined, deps: [paperIdProp], notifySuccess: undefined, });
 
-  const { data: paper } = useAsyncMemo(fetchPaper, [paperIdProp]);
+  const { data: paper } = useQuery({
+    queryKey: ['paper', paperIdProp],
+    queryFn: fetchPaper,
+  });
+
   const paperId = paper?.id;
 
   const fetchQuestion = withHandler(async (questionIndexOverride?: number, paperOverride?: QuizPaper): Promise<Readonly<Question> | undefined> => {

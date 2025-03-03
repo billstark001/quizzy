@@ -90,6 +90,29 @@ export const updateQuiz = (
     }
   }
 
+  if (oprType === 'goto') {
+    const exists = !!questionOrder[opr.target - 1];
+    if (!exists) {
+      retEvent = {
+        type: 'exhausted',
+        id: recordId,
+      };
+    } else {
+      const nextIndex = Number(opr.target);
+      ret = {
+        ...record,
+        ...updateTimePayload,
+        lastQuestion: nextIndex,
+      };
+      retEvent = {
+        type: 'goto',
+        id: recordId,
+        questionIndex: nextIndex,
+        questionId: questionOrder[nextIndex - 1],
+      };
+    }
+  }
+
   if (oprType === 'forward' || needsForward) {
     const nextIndex = (record.lastQuestion || 1) + 1;
     const retPayload = ret != null ? ret : { ...record, ...updateTimePayload };

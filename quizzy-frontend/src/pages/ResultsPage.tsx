@@ -3,18 +3,14 @@ import Sheet, { withSheetRow, Column } from "@/components/common/Sheet";
 import { QuizResult, Stat } from "@quizzy/base/types";
 import { dispDuration } from "@/utils/time";
 import { Quizzy } from "@/data";
-import { useAsyncEffect } from "@/utils/react-async";
 import { Button, Checkbox, CheckboxProps, Divider, HStack, VStack } from "@chakra-ui/react";
-import { atom, useAtom } from "jotai";
 import { DateTime } from "luxon";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { useSelection } from "@/utils/react";
 import { useCallback } from "react";
 import { openDialog } from "@/components/handler";
-
-
-const resultsAtom = atom<readonly QuizResult[]>([]);
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 type _K = {
   refresh: () => void | Promise<void>,
@@ -58,13 +54,17 @@ const Selector = withSheetRow<QuizResult, CheckboxProps & {
 
 
 export const ResultsPage = () => {
-  const [results, setResults] = useAtom(resultsAtom);
+
+  const { data: results } = useQuery({
+    queryKey: ['results'],
+    queryFn: () => Quizzy.listQuizResults(),
+    initialData: [],
+    refetchOnWindowFocus: false,
+  });
+
+  const c = useQueryClient();
 
   const s = useSelection();
-
-  // refresh results
-  const refresh = () => Quizzy.listQuizResults().then(setResults);
-  useAsyncEffect(refresh, []);
 
   // stats
 
@@ -108,7 +108,7 @@ export const ResultsPage = () => {
       <Column field='score' />
       <Column field='totalScore' />
       <Column>
-        <GotoButton refresh={refresh} />
+        <GotoButton refresh={() => c.invalidateQueries({ queryKey: ['results'] })} />
       </Column>
     </Sheet>
   </VStack>

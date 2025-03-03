@@ -1,15 +1,15 @@
 import { QuestionDisplay } from "@/components/question-display/QuestionDisplay";
 import Sheet, { Column, withSheetRow } from "@/components/common/Sheet";
-import { Question, QuizResultRecordRow } from "@quizzy/base/types";
+import { QuizResultRecordRow } from "@quizzy/base/types";
 import { ID } from "@quizzy/base/types";
 import { useDisclosureWithData } from "@/utils/disclosure";
 import { Quizzy } from "@/data";
-import { useAsyncEffect, useAsyncMemo } from "@/utils/react-async";
 import { Box, Button, Divider, Modal, ModalBody, ModalCloseButton, ModalContent, ModalHeader, ModalOverlay, VStack } from "@chakra-ui/react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useParams } from "react-router-dom";
 import { StatPanel } from "@/components/StatPanel";
+import { useQuery } from "@tanstack/react-query";
 
 export type ResultPageParams = {
   rid: ID;
@@ -40,10 +40,10 @@ const ResultDisplayButton = withSheetRow<QuizResultRecordRow, _K>((props) => {
 export const ResultPage = () => {
 
   const { rid } = useParams();
-  const { data: result } = useAsyncMemo(async () => {
-    const r = await Quizzy.getQuizResult(rid ?? '');
-    return r || null;
-  }, [rid]);
+  const { data: result } = useQuery({
+    queryKey: ['result', rid],
+    queryFn: () => Quizzy.getQuizResult(rid ?? ''),
+  });
 
   const { t } = useTranslation();
 
@@ -58,17 +58,21 @@ export const ResultPage = () => {
   const { data, onOpen, onClose } = d;
   const { qid, qIndex } = data;
 
-  const [question, setQuestion] = useState<Question>();
+  const { data: question } = useQuery({
+    queryKey: ['question', qid ?? ''],
+    queryFn: () => Quizzy.getQuestion(qid ?? ''),
+  });
+
+
+
   const [pIndex, setPIndex] = useState<number>(0);
-  const [preview, setPreview] = useState<Question>();
+  const previewQuestionId = result?.records?.[pIndex - 1]?.id ?? '';
+  const { data: preview } = useQuery({
+    queryKey: ['question', previewQuestionId],
+    queryFn: () => Quizzy.getQuestion(previewQuestionId),
+  });
 
   const totalQuestions = result?.records.length ?? 0;
-
-  // hooks to update
-  useAsyncEffect(() => Quizzy.getQuestion(qid ?? '')
-    .then(q => q && setQuestion(q)), [qid]);
-  useAsyncEffect(() => Quizzy.getQuestion(result?.records?.[pIndex - 1]?.id ?? '')
-    .then(q => q && setPreview(q)), [result, pIndex]);
 
   const setQIndex = (qIndex: number) => {
     return onOpen({ qid: result?.records?.[qIndex - 1]?.id ?? '', qIndex });
