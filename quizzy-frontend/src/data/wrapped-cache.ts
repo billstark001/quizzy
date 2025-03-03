@@ -1,8 +1,8 @@
-import { openDatabase } from "@quizzy/common/utils";
+import { openDatabase } from "@quizzy/base/utils";
 import { IDBPDatabase } from "idb";
 import { withHandler } from "@/components/handler";
 
-import { DB_KEY, VERSION, updaters, QuizzyEditCache } from "@quizzy/common/db/edit-cache";
+import { DB_KEY, VERSION, updaters, QuizzyEditCache } from "@quizzy/base/db/edit-cache";
 
 export class WrappedQuizzyEditCache extends QuizzyEditCache {
 

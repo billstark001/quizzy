@@ -1,5 +1,5 @@
 import { QuestionPanel } from "@/components/question-display/QuestionPanel";
-import { Question } from "@quizzy/common/types";
+import { Question } from "@quizzy/base/types";
 import { Button, Modal, ModalBody, ModalCloseButton, ModalContent, ModalFooter, ModalHeader, ModalOverlay, ModalProps } from "@chakra-ui/react";
 import { useTranslation } from "react-i18next";
 

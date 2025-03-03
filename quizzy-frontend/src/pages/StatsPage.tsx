@@ -1,6 +1,6 @@
 
 import Sheet, { withSheetRow, Column } from "@/components/common/Sheet";
-import { Stat, StatUnit, stringifyUnit } from "@quizzy/common/types";
+import { Stat, StatUnit, stringifyUnit } from "@quizzy/base/types";
 import { Quizzy } from "@/data";
 import { useAsyncEffect } from "@/utils/react-async";
 import { Button, HStack } from "@chakra-ui/react";

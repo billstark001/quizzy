@@ -1,4 +1,4 @@
-import { BlankQuestionBlank, BlankQuestion } from "@quizzy/common/types";
+import { BlankQuestionBlank, BlankQuestion } from "@quizzy/base/types";
 import {
   Box, HStack, IconButton,
   Input, Switch,
@@ -26,7 +26,7 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { normalizeOptionOrBlankArray } from "@quizzy/common/db/question-id";
+import { normalizeOptionOrBlankArray } from "@quizzy/base/db/question-id";
 
 type BlankEditProps = {
   option?: BlankQuestionBlank;

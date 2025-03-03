@@ -1,4 +1,4 @@
-import { QuizPaper } from "@quizzy/common/types";
+import { QuizPaper } from "@quizzy/base/types";
 import { useDisclosureWithData } from "@/utils/disclosure";
 import { IoAddOutline } from "react-icons/io5";
 import {

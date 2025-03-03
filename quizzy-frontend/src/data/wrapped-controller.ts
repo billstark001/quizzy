@@ -1,4 +1,4 @@
-import { QuizzyController } from "@quizzy/common/types";
+import { QuizzyController } from "@quizzy/base/types";
 import { WithHandlerOptions, withHandlerRaw } from "@/utils/react-msg";
 
 const keys: Readonly<{[key in keyof QuizzyController]: undefined}> = Object.freeze({

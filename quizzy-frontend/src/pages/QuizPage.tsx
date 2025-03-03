@@ -1,5 +1,5 @@
 import { QuestionDisplay } from "@/components/question-display/QuestionDisplay";
-import { Answers, Question, QuizRecord, QuizRecordEvent } from "@quizzy/common/types";
+import { Answers, Question, QuizRecord, QuizRecordEvent } from "@quizzy/base/types";
 import { openDialog } from "@/components/handler";
 import { Quizzy } from "@/data";
 import { useAsyncEffect } from "@/utils/react-async";

@@ -1,5 +1,5 @@
-import { ChoiceQuestion, ChoiceQuestionOption } from "@quizzy/common/types";
-import { numberToLetters } from "@quizzy/common/utils";
+import { ChoiceQuestion, ChoiceQuestionOption } from "@quizzy/base/types";
+import { numberToLetters } from "@quizzy/base/utils";
 import {
   Box, BoxProps, Code, HStack, IconButton,
   Input, Switch,
@@ -27,7 +27,7 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { normalizeOptionOrBlankArray } from "@quizzy/common/db/question-id";
+import { normalizeOptionOrBlankArray } from "@quizzy/base/db/question-id";
 
 const ChoiceBox = ({ children, ...props }: BoxProps) => (
   <Box

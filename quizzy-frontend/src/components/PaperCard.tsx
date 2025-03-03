@@ -1,4 +1,4 @@
-import { QuizPaper } from "@quizzy/common/types";
+import { QuizPaper } from "@quizzy/base/types";
 import { AiOutlineCheck } from "react-icons/ai";
 import {
   Card, Heading, CardBody, Stack, Text, Image,

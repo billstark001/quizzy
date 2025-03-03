@@ -1,4 +1,4 @@
-import { KeywordIndexed, TagSearchResult } from "@quizzy/common/types";
+import { KeywordIndexed, TagSearchResult } from "@quizzy/base/types";
 import {
   Button, Input, Modal, ModalBody,
   ModalCloseButton, ModalContent, ModalFooter,

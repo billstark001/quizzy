@@ -4,8 +4,8 @@ import {
 } from "@chakra-ui/react";
 import { useCallback, useState } from "react";
 import { QuizzyRaw } from "@/data";
-import { Question } from "@quizzy/common/types";
-import { SearchResult } from "@quizzy/common/types";
+import { Question } from "@quizzy/base/types";
+import { SearchResult } from "@quizzy/base/types";
 import { useNavigate } from "react-router-dom";
 import Sheet, { Column, withSheetRow } from "@/components/common/Sheet";
 import Pagination from "@/components/Pagination";

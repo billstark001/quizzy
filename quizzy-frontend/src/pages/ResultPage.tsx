@@ -1,7 +1,7 @@
 import { QuestionDisplay } from "@/components/question-display/QuestionDisplay";
 import Sheet, { Column, withSheetRow } from "@/components/common/Sheet";
-import { Question, QuizResultRecordRow } from "@quizzy/common/types";
-import { ID } from "@quizzy/common/types";
+import { Question, QuizResultRecordRow } from "@quizzy/base/types";
+import { ID } from "@quizzy/base/types";
 import { useDisclosureWithData } from "@/utils/disclosure";
 import { Quizzy } from "@/data";
 import { useAsyncEffect, useAsyncMemo } from "@/utils/react-async";

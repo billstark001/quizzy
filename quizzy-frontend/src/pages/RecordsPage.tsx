@@ -1,6 +1,6 @@
 import Sheet, { Column, withSheetRow } from "@/components/common/Sheet";
-import { QuizRecord } from "@quizzy/common/types";
-import { ID } from "@quizzy/common/types";
+import { QuizRecord } from "@quizzy/base/types";
+import { ID } from "@quizzy/base/types";
 import { dispDuration } from "@/utils/time";
 import { Quizzy } from "@/data";
 import { useAsyncEffect } from "@/utils/react-async";

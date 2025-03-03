@@ -1,7 +1,7 @@
-import { getOptionOrBlankId } from "@quizzy/common/db/question-id";
-import { ChoiceQuestion } from "@quizzy/common/types";
-import { ID } from "@quizzy/common/types";
-import { numberToLetters } from "@quizzy/common/utils";
+import { getOptionOrBlankId } from "@quizzy/base/db/question-id";
+import { ChoiceQuestion } from "@quizzy/base/types";
+import { ID } from "@quizzy/base/types";
+import { numberToLetters } from "@quizzy/base/utils";
 import {
   Box,
   Text,

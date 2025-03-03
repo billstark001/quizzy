@@ -1,5 +1,5 @@
 {
-  "name": "@quizzy/common",
+  "name": "@quizzy/base",
   "version": "1.0.0",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -24,22 +24,22 @@
   "devDependencies": {
     "@types/random-js": "^2.0.0",
     "@types/tiny-segmenter": "^0.2.0",
-    "typescript": "^5.7.2"
+    "typescript": "^5.8.2"
   },
   "dependencies": {
-    "@quizzy/common": "^1.0.0",
+    "@quizzy/base": "file:",
     "base64-js": "^1.5.1",
     "franc": "^6.2.0",
-    "i18next": "^24.2.1",
-    "i18next-browser-languagedetector": "^8.0.2",
-    "idb": "^8.0.1",
+    "i18next": "^24.2.2",
+    "i18next-browser-languagedetector": "^8.0.4",
+    "idb": "^8.0.2",
     "jieba-wasm": "^2.2.0",
     "quick-lru": "^7.0.0",
     "random-js": "^2.1.0",
-    "react-i18next": "^15.4.0",
+    "react-i18next": "^15.4.1",
     "stopwords-ja": "^0.2.0",
     "tiny-segmenter": "^0.2.0",
-    "trie-search": "^2.1.0",
-    "uuid": "^11.0.4"
+    "trie-search": "^2.2.0",
+    "uuid": "^11.1.0"
   }
 }

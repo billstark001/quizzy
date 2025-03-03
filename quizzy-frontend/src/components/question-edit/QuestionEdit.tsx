@@ -1,4 +1,4 @@
-import { Question } from "@quizzy/common/types";
+import { Question } from "@quizzy/base/types";
 import { useDisclosureWithData } from "@/utils/disclosure";
 import {
   Box, Button, HStack,
@@ -11,7 +11,7 @@ import { useEditorContext } from "@/utils/react-patch";
 import TagSelectModal, { TagSelectState } from "../TagSelectModal";
 import { MdAdd } from "react-icons/md";
 import { ChoiceQuestionOptionsEdit } from "./ChoiceQuestionOptionsEdit";
-import { normalizeOptionOrBlankArray } from "@quizzy/common/db/question-id";
+import { normalizeOptionOrBlankArray } from "@quizzy/base/db/question-id";
 import { BlankQuestionBlanksEdit } from "./BlankQuestionBlankEdit";
 import EditForm, { EditFormItem } from "../common/EditForm";
 import TagList, { TagButton } from "../common/TagList";

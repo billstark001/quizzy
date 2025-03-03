@@ -2,7 +2,7 @@ import { useCallbackRef } from "@chakra-ui/react";
 import { createContext, HTMLAttributes, KeyboardEvent, RefObject, useCallback, useContext, useEffect, useRef, useState } from "react";
 import { debounce, DebounceProps, DebounceReturn } from "./debounce";
 import QuickLRU from "quick-lru";
-import { parseObjectPath } from "@quizzy/common/utils";
+import { parseObjectPath } from "@quizzy/base/utils";
 
 export type UsePatchProps<T, P = Partial<T>> = {
   value: T;

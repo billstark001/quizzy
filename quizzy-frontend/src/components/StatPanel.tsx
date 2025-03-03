@@ -1,4 +1,4 @@
-import { StatBase, StatUnit, toPercentage } from "@quizzy/common/types"
+import { StatBase, StatUnit, toPercentage } from "@quizzy/base/types"
 import { HStack, StackProps, VStack } from "@chakra-ui/react";
 import { RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, Legend } from 'recharts';
 

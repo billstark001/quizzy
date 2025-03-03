@@ -1,7 +1,7 @@
 import React, { isValidElement, ReactNode, RefObject, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AlertDialog, AlertDialogBody, AlertDialogCloseButton, AlertDialogContent, AlertDialogFooter, AlertDialogHeader, AlertDialogOverlay, AlertDialogProps, Button, ButtonProps, HStack, useCallbackRef } from "@chakra-ui/react";
 import { useTranslation } from "react-i18next";
-import { uuidV4B64 } from "@quizzy/common/utils";
+import { uuidV4B64 } from "@quizzy/base/utils";
 import { promiseWithResolvers } from "./func";
 
 type _O<T> = Readonly<T | [T, ReactNode] | [T, ReactNode, ButtonProps]>;

@@ -1,8 +1,8 @@
-import { defaultQuizPaper, QuizPaper } from "@quizzy/common/types";
+import { defaultQuizPaper, QuizPaper } from "@quizzy/base/types";
 import { withHandler } from "@/components/handler";
 import { uploadFile } from "@/utils/html";
 import { useAsyncEffect } from "@/utils/react-async";
-import { uuidV4B64 } from "@quizzy/common/utils";
+import { uuidV4B64 } from "@quizzy/base/utils";
 import { atom, useAtom } from "jotai";
 import { useNavigate } from "react-router-dom";
 import { Quizzy } from ".";

@@ -1,5 +1,5 @@
 import { PaperCard } from "@/components/PaperCard";
-import { TagListResult } from "@quizzy/common/types";
+import { TagListResult } from "@quizzy/base/types";
 import { useSelection } from "@/utils/react";
 import { useAsyncMemo } from "@/utils/react-async";
 import { Quizzy } from "@/data";

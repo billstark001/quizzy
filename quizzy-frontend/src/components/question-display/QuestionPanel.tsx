@@ -1,4 +1,4 @@
-import { Question } from "@quizzy/common/types";
+import { Question } from "@quizzy/base/types";
 
 import { BlankQuestionPanelProps, TextQuestionPanelProps, BlankQuestionPanel } from "./BlankQuestionPanel";
 import ChoiceQuestionPanel, { ChoiceQuestionPanelProps } from "./ChoiceQuestionPanel";

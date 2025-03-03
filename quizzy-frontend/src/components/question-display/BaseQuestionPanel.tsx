@@ -1,4 +1,4 @@
-import { BaseQuestion, BookmarkType } from "@quizzy/common/types";
+import { BaseQuestion, BookmarkType } from "@quizzy/base/types";
 import {
   Box,
   HStack,

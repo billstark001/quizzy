@@ -1,5 +1,5 @@
 import Pagination from "@/components/Pagination";
-import { Answers, BlankAnswers, ChoiceAnswers, ChoiceQuestion, Question, TextAnswers } from "@quizzy/common/types";
+import { Answers, BlankAnswers, ChoiceAnswers, ChoiceQuestion, Question, TextAnswers } from "@quizzy/base/types";
 import { formatMilliseconds } from "@/utils/time";
 import { QuestionSelectionModal } from "@/components/QuestionSelectionModal";
 import { RxDragHandleDots2 } from "react-icons/rx";

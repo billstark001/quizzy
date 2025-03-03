@@ -1,6 +1,6 @@
-import { getOptionOrBlankId } from "@quizzy/common/db/question-id";
-import { blankPattern, BlankQuestion, TextQuestion } from "@quizzy/common/types";
-import { ID } from "@quizzy/common/types";
+import { getOptionOrBlankId } from "@quizzy/base/db/question-id";
+import { blankPattern, BlankQuestion, TextQuestion } from "@quizzy/base/types";
+import { ID } from "@quizzy/base/types";
 import {
   Box,
   Code,

@@ -11,7 +11,7 @@ import { IoSearch } from "react-icons/io5";
 import { ChangeEvent, KeyboardEvent, useCallback, useEffect, useRef, useState } from "react";
 import { debounce, DebounceReturn } from "@/utils/debounce";
 import { useAsyncMemo } from "@/utils/react-async";
-import { DatabaseIndexed, SearchResult } from "@quizzy/common/types";
+import { DatabaseIndexed, SearchResult } from "@quizzy/base/types";
 
 interface SearchBoxProps<T extends DatabaseIndexed> {
   onFreezeResult?: (result: SearchResult<T> | undefined) => void;
