@@ -6,6 +6,7 @@ import { useRef, useState } from "react";
 
 import { useTranslation } from "react-i18next";
 import i18n, { getSystemLanguage } from "@/data/lang-entry";
+import useTags from "@/data/tags";
 
 const _u = {
   async: true,
@@ -73,6 +74,13 @@ export const SettingsPage = () => {
 
   const langSelectRef = useRef<HTMLSelectElement>(null);
 
+  const tags = useTags();
+
+  const recordAllRecordableTags = withHandler(
+    tags.recordAllRecordableTags,
+    { cache: true }
+  );
+
   return <VStack alignItems='stretch' width='100%'>
     <Wrap>
 
@@ -97,6 +105,9 @@ export const SettingsPage = () => {
       </Button>
       <Button onClick={normalizeQuestions}>
         {t('page.settings.btn.normalizeQuestions')}
+      </Button>
+      <Button onClick={recordAllRecordableTags}>
+        {t('page.settings.btn.recordAllRecordableTags')}
       </Button>
     </Wrap>
     <Separator />

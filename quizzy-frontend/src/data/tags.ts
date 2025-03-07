@@ -1,7 +1,8 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Quizzy, QuizzyRaw } from ".";
 import { Tag, TempTagListResult } from "@quizzy/base/types";
 import { useCallback } from "react";
+import { useCallbackRef } from "@chakra-ui/react";
 
 
 const defaultTempTagListResult = (): TempTagListResult => ({
@@ -120,29 +121,27 @@ export const useTags = () => {
   }, [tagList, tempTagList]);
 
 
-  const mRecordAllRecordableTags = useMutation({
-    mutationFn: async () => {
+  const recordAllRecordableTags = useCallbackRef(async () => {
+    try {
       const d = findBadTags();
       for (const tag of d.tagsCanBuildRecord) {
-        QuizzyRaw.getTag(tag);
+        await QuizzyRaw.getTag(tag);
       }
       for (const tag of d.categoriesCanBuildRecord) {
-        QuizzyRaw.getTag(tag);
+        await QuizzyRaw.getTag(tag);
       }
-    },
-    onSuccess: () => c.invalidateQueries({ queryKey: ['tag-list'] }),
-    onError: (e) => {
-      c.invalidateQueries({ queryKey: ['tag-list'] });
+    } catch (e) {
       console.error(e);
-    },
+    } finally {
+      c.invalidateQueries({ queryKey: ['tag-list'] });
+    }
   });
-
 
   return {
     tagList,
     tempTagList,
     findBadTags,
-    recordAllRecordableTags: mRecordAllRecordableTags.mutate,
+    recordAllRecordableTags,
   }
 };
 
