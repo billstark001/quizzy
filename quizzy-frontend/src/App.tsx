@@ -37,7 +37,7 @@ const EditPage = () => {
 };
 
 const EditSelectPage = () => {
-  return <Tabs.Root variant="enclosed">
+  return <Tabs.Root variant="enclosed" defaultValue='paper'>
     <Tabs.List>
       <Tabs.Trigger value="paper">paper</Tabs.Trigger>
       <Tabs.Trigger value="question">question</Tabs.Trigger>

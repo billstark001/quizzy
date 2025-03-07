@@ -57,7 +57,10 @@ export const StartQuizPage = () => {
   // global
   const startRandomDisabled = !selectionByTab[tabIndex]?.isAnySelected;
 
-  const tabs = <Tabs.Root variant='enclosed' onValueChange={(e) => onTabIndexChange(Number(e.value))}>
+  const tabs = <Tabs.Root variant='enclosed' 
+    defaultValue='0'
+    onValueChange={(e) => onTabIndexChange(Number(e.value))}
+  >
     <Tabs.List>
       <Tabs.Trigger value="0">{t('dialog.startQuiz.tab.paper')}</Tabs.Trigger>
       <Tabs.Trigger value="1">{t('dialog.startQuiz.tab.tag')}</Tabs.Trigger>
