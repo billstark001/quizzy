@@ -92,7 +92,7 @@ export const toWrapped = (
   controller: QuizzyController, 
   withHandler: typeof withHandlerRaw,
 ) => {
-  const commonOptions: WithHandlerOptions<any> = Object.freeze({
+  const commonOptions: WithHandlerOptions<any, any> = Object.freeze({
     async: true,
     cache: false,
     notifySuccess: undefined,
