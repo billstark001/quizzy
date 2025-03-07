@@ -1,12 +1,17 @@
-import { defineConfig } from 'vite';
+import { defineConfig, loadEnv } from 'vite';
 import { resolve } from 'path';
 import react from '@vitejs/plugin-react-swc';
 import tsconfigPaths from 'vite-tsconfig-paths';
-import dts from 'vite-plugin-dts';
 import wasm from "vite-plugin-wasm";
+
+const mode = process.env.NODE_ENV;
+if (mode) {
+  process.env = {...process.env, ...loadEnv(mode, process.cwd())};
+}
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  base: process.env.VITE_BASE_PATH || '/',
   plugins: [
     react(),
     // dts({ include: ['lib'] }),
@@ -14,7 +19,7 @@ export default defineConfig({
     tsconfigPaths(),
   ],
   optimizeDeps: {
-    exclude: ['jieba-wasm'], // 替换为实际使用的 wasm 库名
+    exclude: ['jieba-wasm'],
   },
   build: {
     target: 'esnext',
