@@ -38,13 +38,13 @@ const ResumeButton = withSheetRow<QuizRecord, _K>((props) => {
         id: item.id,
       });
       navigate('/quiz?' + params.toString());
-    }} colorScheme='purple'>
+    }} colorPalette='purple'>
       {t('common.btn.continue')}
     </Button>
     <Button onClick={async () => {
       await Quizzy.deleteQuizRecord(item.id);
       await refresh();
-    }} colorScheme='red'>
+    }} colorPalette='red'>
       {t('common.btn.delete')}
     </Button>
   </HStack>

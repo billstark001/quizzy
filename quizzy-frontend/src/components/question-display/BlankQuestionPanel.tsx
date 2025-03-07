@@ -5,8 +5,8 @@ import {
   Box,
   Code,
   Input,
-  HTMLChakraProps,
-  Text
+  Text,
+  StackProps
 } from "@chakra-ui/react";
 import { createContext, createElement, Fragment, PropsWithChildren, ReactNode, useCallback, useContext, useMemo } from "react";
 
@@ -35,7 +35,9 @@ const BlankInput = (props: {
   const invalid = !valid(blankKey);
   return <Box as='span' display='inline-table'>
     <Input p={1} borderColor='gray.300' display='table-cell'
-      placeholder={invalid ? '<INVALID BLANK>' : blankKey} isInvalid={invalid} isDisabled={invalid}
+      placeholder={invalid ? '<INVALID BLANK>' : blankKey} 
+      // isInvalid={invalid} 
+      disabled={invalid}
       value={get(blankKey)} size='sm' borderRadius='lg' fontSize='md'
       onChange={(e) => set(blankKey, e.target.value)}
     />
@@ -104,7 +106,7 @@ export type BlankQuestionPanelProps = {
   question: BlankQuestion;
   set?(id: ID, set: string): void;
   get?(id: ID): string;
-} & QuestionPanelState & HTMLChakraProps<'div'>;
+} & QuestionPanelState & StackProps;
 
 export const BlankQuestionPanel = (props: BlankQuestionPanelProps) => {
   const {
@@ -152,5 +154,5 @@ export type TextQuestionPanelProps = {
   question: TextQuestion;
   set?(set: string): void;
   get?(): string;
-} & QuestionPanelState & HTMLChakraProps<'div'>;
+} & QuestionPanelState & StackProps;
 

@@ -3,7 +3,7 @@ import { useDisclosure } from '@chakra-ui/react';
 import { createContext, SetStateAction, useCallback, useState } from "react";
 
 type _D = {
-  isOpen: boolean;
+  open: boolean;
   onOpen: () => void;
   onClose: () => void;
   onToggle: () => void;
@@ -53,7 +53,7 @@ export const LayoutContext = createContext<LayoutContextScheme>({
   setImmersive: () => void 0,
   toggleImmersive: () => void 0,
   sidebarDisclosure: {
-    isOpen: false,
+    open: false,
     onOpen: () => void 0,
     onClose: () => void 0,
     onToggle: () => void 0,

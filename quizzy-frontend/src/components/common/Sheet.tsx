@@ -2,14 +2,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { getTagStyle } from '@/utils/react';
 import { useScreenSize } from '@/utils/responsive';
-import { Box, DividerProps, HTMLChakraProps, Table, TableBodyProps, TableHeadProps, TableProps, TableRowProps, Tbody, Td, Th, Thead, Tr, VStack } from '@chakra-ui/react';
+import { Box, HTMLChakraProps, StackProps, Table, VStack } from '@chakra-ui/react';
 import { ReactNode, PropsWithChildren, ReactElement, createContext, useContext, ComponentType } from 'react';
 
 /**
  * Props for a table row that includes the item data and index.
  * @template T The type of the item data.
  */
-export type TableRowWithItemProps<T> = TableRowProps & {
+export type TableRowWithItemProps<T> = React.HTMLAttributes<HTMLTableRowElement> & {
   item: T;
   index: number;
 }
@@ -33,14 +33,22 @@ export type SheetProps<T> = PropsWithChildren<{
   rowStyle?: _StyleRenderer<T, ReactElement<HTMLChakraProps<'tr'>>>,
   /** Style for header cells. */
   cellStyleHeader?: ReactElement<HTMLChakraProps<'th'>>,
-  /** Style for the header row. */
+  /** Style for header row. */
   rowStyleHeader?: ReactElement<HTMLChakraProps<'tr'>>,
 
-  theadWrapper?: ComponentType<TableHeadProps>,
-  tbodyWrapper?: ComponentType<TableBodyProps>,
+  theadWrapper?: ComponentType<any>,
+  tbodyWrapper?: ComponentType<any>,
   trWrapper?: ComponentType<TableRowWithItemProps<T>>,
-  mobileWrapper?: ComponentType<DividerProps>,
-}> & TableProps;
+  mobileWrapper?: ComponentType<StackProps>,
+  
+  /** Table props */
+  size?: 'sm' | 'md' | 'lg';
+  variant?: 'line' | 'outline';
+  striped?: boolean;
+  showColumnBorder?: boolean;
+  interactive?: boolean;
+  stickyHeader?: boolean;
+}>;
 
 /**
  * Props for the Column component.
@@ -135,11 +143,10 @@ export const Column = <T extends object = Record<string, any>, K extends keyof T
   const [index, item] = useContext(SheetRowContext) as _I<T>;
   const { header, field, mainField, render, children } = props;
 
-  
   if (stage === 'head') {
-    return <Th {...style ?? {}}>
+    return <Table.ColumnHeader {...style ?? {}}>
       {header ?? <Box>{field as string}</Box>}
-    </Th>;
+    </Table.ColumnHeader>;
   }
 
   // else it is rendering body
@@ -169,7 +176,7 @@ export const Column = <T extends object = Record<string, any>, K extends keyof T
     </Box>;
   }
 
-  return <Td {...style ?? {}}>{fieldDisplay}{children}</Td>;
+  return <Table.Cell {...style ?? {}}>{fieldDisplay}{children}</Table.Cell>;
 };
 
 const DefaultMobileWrapper: SheetProps<any>['mobileWrapper'] = (props) => {
@@ -205,16 +212,21 @@ export const Sheet = <T extends object = Record<string, any>>(
     tbodyWrapper,
     trWrapper,
     mobileWrapper,
-    ...tableProps
+    size,
+    variant,
+    striped,
+    showColumnBorder,
+    interactive,
+    stickyHeader,
   } = props;
 
   if (!data || data.length === 0) {
     return <div>{noData ?? 'NO DATA'}</div>;
   }
 
-  const TheadWrapper = theadWrapper ?? Thead;
-  const TbodyWrapper = tbodyWrapper ?? Tbody;
-  const TrWrapper = trWrapper ?? Tr;
+  const TheadWrapper = theadWrapper ?? Table.Header;
+  const TbodyWrapper = tbodyWrapper ?? Table.Body;
+  const TrWrapper = trWrapper ?? Table.Row;
   const MobileWrapper = mobileWrapper ?? DefaultMobileWrapper;
 
   const isMobile = useScreenSize() === 'mobile';
@@ -222,13 +234,13 @@ export const Sheet = <T extends object = Record<string, any>>(
   const bodyRowRenderer = (item: T, index: number) => {
     const rowStyle = getTagStyle(typeof rowStyleProvider === 'function'
       ? rowStyleProvider(item, index)
-      : rowStyleProvider, true, Tr);
+      : rowStyleProvider, true, Table.Row);
 
     const cellStyle = getTagStyle(typeof cellStyleProvider === 'function'
       ? cellStyleProvider(item, index)
-      : cellStyleProvider, true, Td);
+      : cellStyleProvider, true, Table.Cell);
 
-    const W = isMobile ? MobileWrapper : TrWrapper;
+    const W = isMobile ? (MobileWrapper as any) : TrWrapper;
 
     return (
       <SheetRowContext.Provider value={[index, item]} key={index}>
@@ -260,18 +272,25 @@ export const Sheet = <T extends object = Record<string, any>>(
   }
 
   const thead = (
-    <Tr {...getTagStyle(rowStyleHeader, true, Tr)}>
-      <RenderStageContext.Provider value={{ stage: 'head', style: getTagStyle(cellStyleHeader, true, Th) }}>
+    <Table.Row {...getTagStyle(rowStyleHeader, true, Table.Row)}>
+      <RenderStageContext.Provider value={{ stage: 'head', style: getTagStyle(cellStyleHeader, true, Table.ColumnHeader) }}>
         {children}
       </RenderStageContext.Provider>
-    </Tr>
+    </Table.Row>
   );
 
   return (
-    <Table {...tableProps}>
+    <Table.Root 
+      size={size}
+      variant={variant}
+      striped={striped}
+      showColumnBorder={showColumnBorder}
+      interactive={interactive}
+      stickyHeader={stickyHeader}
+    >
       <TheadWrapper>{thead}</TheadWrapper>
       <TbodyWrapper>{tbody}</TbodyWrapper>
-    </Table>
+    </Table.Root>
   );
 };
 

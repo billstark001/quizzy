@@ -4,15 +4,15 @@ import {
   Button,
   HStack,
   IconButton,
-  HTMLChakraProps,
-  NumberInput,
-  NumberInputField,
+  NumberInputRoot,
+  StackProps,
 } from "@chakra-ui/react";
 import { 
   AiFillStepBackward, AiFillStepForward, AiOutlineCheck,  
   AiFillCaretLeft, AiFillCaretRight } from "react-icons/ai";
+import { NumberInputField } from "./ui/number-input";
 
-export type PaginationProps = HTMLChakraProps<'div'> & {
+export type PaginationProps = StackProps & {
   currentPage: number;
   totalPages: number;
   nearPages?: number;
@@ -56,7 +56,7 @@ export const Pagination: React.FC<PaginationProps> = (props) => {
   const _btn = (i: number, selected: boolean, key?: number | string) => <Button
     key={key ?? i}
     onClick={() => handlePageChange(i)}
-    colorScheme={selected ? "purple" : "gray"}
+    colorPalette={selected ? "purple" : "gray"}
   >
     {i}
   </Button>
@@ -93,51 +93,50 @@ export const Pagination: React.FC<PaginationProps> = (props) => {
   };
 
   return (
-    <HStack spacing={2} justifyContent='center' {...divProps}>
+    <HStack gap={2} justifyContent='center' {...divProps}>
       <IconButton
         aria-label="first"
-        icon={<AiFillStepBackward />}
+        children={<AiFillStepBackward />}
         onClick={() => handlePageChange(1)} 
-        isDisabled={currentPageRaw <= 1}
+        disabled={currentPageRaw <= 1}
       />
       <IconButton
         aria-label="prev"
-        icon={<AiFillCaretLeft />}
+        children={<AiFillCaretLeft />}
         onClick={() => handlePageChange(currentPage - 1)}
-        isDisabled={currentPageRaw <= 1}
+        disabled={currentPageRaw <= 1}
       />
       {renderPageNumbers()}
       <IconButton
         aria-label="next"
-        icon={<AiFillCaretRight />}
+        children={<AiFillCaretRight />}
         onClick={() => handlePageChange(currentPage + 1)}
-        isDisabled={currentPageRaw >= totalPages}
+        disabled={currentPageRaw >= totalPages}
       />
       <IconButton
         aria-label="last"
-        icon={<AiFillStepForward />}
+        children={<AiFillStepForward />}
         onClick={() => handlePageChange(totalPages)}
-        isDisabled={currentPageRaw >= totalPages}
+        disabled={currentPageRaw >= totalPages}
       />
       <Box>
-        <NumberInput
+        <NumberInputRoot
           minW={16}
           maxW={64}
-          defaultValue={currentPage}
           min={1}
           max={totalPages}
           value={gotoPage}
-          onChange={(valueString) => setGotoPage(valueString)}
+          onValueChange={(e) => setGotoPage(e.value)}
         >
           <NumberInputField
             border='1px solid'
             borderColor='gray.400'
             borderRadius={6} />
-        </NumberInput>
+        </NumberInputRoot>
       </Box>
       <IconButton
         aria-label="goto"
-        icon={<AiOutlineCheck />}
+        children={<AiOutlineCheck />}
         onClick={() => {
           const p = Number(gotoPage);
           if (!Number.isNaN(p)) {

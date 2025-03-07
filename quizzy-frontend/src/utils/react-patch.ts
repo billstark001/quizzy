@@ -82,7 +82,7 @@ export const usePatch = <T extends object, P = Partial<T>, Tag = HTMLDivElement>
     }
 
     const newValue = applyPatch(value, patch as any);
-    setValue?.(newValue);
+    setValue?.(newValue!);
 
     if (shouldReplace?.(value, patch, lastPatchRef.current)) {
       // merge to last step
@@ -90,12 +90,12 @@ export const usePatch = <T extends object, P = Partial<T>, Tag = HTMLDivElement>
       lastItem.patch = lastItem.patch
         ? mergePatch(lastItem.patch, patch as any)
         : patch;
-      lastItem.state = newValue;
+      lastItem.state = newValue!;
       lastPatchRef.current = lastItem.patch as any;
     } else {
       // new record
       history.push({
-        state: newValue,
+        state: newValue!,
         patch,
       });
       lastPatchRef.current = patch;

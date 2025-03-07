@@ -1,109 +1,94 @@
-import { UseToastOptions } from "@chakra-ui/react";
 import { DependencyList, ReactNode, useCallback } from "react";
-import { isAsync } from "./func";
 
-type N = ReactNode | UseToastOptions | null | undefined;
+// type NotificationPayload = ReactNode | null | undefined;
+export type NonCallable = {} & Record<PropertyKey, never>
+  | null | undefined | ReactNode
+  | string | number | bigint | boolean | Symbol;
 
-type _RET<P extends Array<any>, R, RD = undefined> = (
-  R extends Promise<infer RR>
-  ? (...args: P) => Promise<RR | RD>
-  : (...args: P) => R | RD
-);
+type AsyncFunctionReturnType<ParamTypes extends Array<any>, ResultType, DefaultResultType = undefined> =
+  (...args: ParamTypes) => Promise<ResultType | DefaultResultType>;
 
 export type WithHandlerOptions<
-  R,
-  RD = undefined,
-  E = any,
+  NotificationPayload,
+  ResultType,
+  DefaultResultType = undefined,
+  ErrorType = any,
 > = {
+  /**
+   * @deprecated
+   */
   async?: boolean;
   cache?: boolean;
   deps?: DependencyList;
-  def?: RD;
+  def?: DefaultResultType;
   setLoading?: (isLoading: boolean) => void;
-  notify?: (payload: N, isSuccess: boolean) => void;
-  notifySuccess?: N | ((result: R extends Promise<infer RR> ? RR : R) => N);
-  notifyError?: N | ((error: E) => N);
-  finallySection?: () => R extends Promise<any> ? Promise<void> : void;
+  notify?: (payload: NotificationPayload, isSuccess: boolean) => void;
+  notifySuccess?: NotificationPayload | ((result: ResultType) => NotificationPayload);
+  notifyError?: NotificationPayload | ((error: ErrorType) => NotificationPayload);
+  finallySection?: () => Promise<void>;
 };
 
 export function withHandlerRaw<
-  T extends (...args: any) => any,
-  P extends Parameters<T> = Parameters<T>,
-  R extends ReturnType<T> = ReturnType<T>,
-  RD = undefined,
-  E = any,
+  FunctionType extends (...args: any) => any,
+  NotificationPayload extends NonCallable = NonCallable,
+  ParamTypes extends Parameters<FunctionType> = Parameters<FunctionType>,
+  ResultType = Awaited<ReturnType<FunctionType>>,
+  DefaultResultType = undefined,
+  ErrorType = any,
 >(
-  f: T,
-  options?: WithHandlerOptions<R, RD, E>,
-): _RET<P, R, RD> {
+  fn: FunctionType,
+  options?: WithHandlerOptions<NotificationPayload, ResultType, DefaultResultType, ErrorType>,
+): AsyncFunctionReturnType<ParamTypes, ResultType, DefaultResultType> {
 
   const {
-    async, 
     cache,
     deps,
     def,
     setLoading,
     notify,
-    notifySuccess, 
+    notifySuccess,
     notifyError,
     finallySection,
   } = options ?? {};
 
-  const isFunctionAsync = (async ?? isAsync(f)) as R extends Promise<any> ? true : false;
-  const needsNotify1 = !!notify && !!notifySuccess;
-  const needsNotify2 = !!notify && !!notifyError;
-  const returnFunction = (isFunctionAsync
-    ? async (...args: P) => {
-      setLoading?.(true);
-      try {
-        const ret = await f(...args);
-        needsNotify1 && notify(typeof notifySuccess === 'function'
-          ? notifySuccess(ret)
+  const hasSuccessNotification = !!notify && !!notifySuccess;
+  const hasErrorNotification = !!notify && !!notifyError;
+
+  const wrappedAsyncFunction = async (...args: ParamTypes) => {
+    setLoading?.(true);
+    try {
+      const result = await Promise.resolve(fn(...args));
+      if (hasSuccessNotification) {
+        notify(typeof notifySuccess === 'function'
+          ? notifySuccess(result as ResultType)
           : notifySuccess, true);
-        return ret;
-      } catch (e) {
-        needsNotify2 && notify(typeof notifyError === 'function'
-          ? notifyError(e as E)
-          : notifyError, false);
-        return def;
-      } finally {
-        await finallySection?.();
-        setLoading?.(false);
       }
+      return result as ResultType;
+    } catch (error) {
+      if (hasErrorNotification) {
+        notify(typeof notifyError === 'function'
+          ? notifyError(error as ErrorType)
+          : notifyError, false);
+      }
+      return def as DefaultResultType;
+    } finally {
+      await finallySection?.();
+      setLoading?.(false);
     }
-    : (...args: P) => {
-      setLoading?.(true);
-      try {
-        const ret = f(...args);
-        needsNotify1 && notify(typeof notifySuccess === 'function'
-          ? notifySuccess(ret)
-          : notifySuccess, true);
-        return ret;
-      } catch (e) {
-        needsNotify2 && notify(typeof notifyError === 'function'
-          ? notifyError(e as E)
-          : notifyError, false);
-        return def;
-      } finally {
-        finallySection?.();
-        setLoading?.(false);
-      }
-    }) as _RET<P, R, RD>;
+  };
 
   if (cache) {
     return useCallback(
-      returnFunction,
+      wrappedAsyncFunction,
       [
-        f,
-        async, setLoading, 
-        notify, notifySuccess, notifyError, 
+        fn,
+        setLoading,
+        notify, notifySuccess, notifyError,
         finallySection,
-        ...deps ?? [],
+        ...(deps ?? []),
       ]
     );
   }
 
-  return returnFunction;
+  return wrappedAsyncFunction;
 };
-
-

@@ -8,20 +8,20 @@ import {
   Code,
   HStack,
   VStack,
-  useColorMode,
-  HTMLChakraProps
+  StackProps
 } from "@chakra-ui/react";
 
 import { QuestionPanelState, BaseQuestionPanel } from "./BaseQuestionPanel";
 import Markdown from "@/markdown/markdown-renderer";
 import { Components } from "react-markdown";
+import { useColorMode } from "../ui/color-mode";
 
 
 export type ChoiceQuestionPanelProps = {
   question: ChoiceQuestion;
   set?(id: ID, set: boolean, multiple: boolean): void;
   get?(id: ID): boolean;
-} & QuestionPanelState & HTMLChakraProps<'div'>;
+} & QuestionPanelState & StackProps;
 
 const getOptionColor = (selected: boolean, correct?: boolean | null | undefined, isDark?: boolean): [string, string, string, string] => {
   const isSelect = correct == null;

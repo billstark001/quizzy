@@ -1,6 +1,7 @@
+import { useColorMode } from "@/components/ui/color-mode";
 import useTags from "@/data/tags";
 import { useSelection } from "@/utils/react";
-import { Box, Button, useColorMode, Wrap } from "@chakra-ui/react";
+import { Box, Button, Wrap } from "@chakra-ui/react";
 import { Tag as TagType } from "@quizzy/base/types";
 import { useTranslation } from "react-i18next";
 

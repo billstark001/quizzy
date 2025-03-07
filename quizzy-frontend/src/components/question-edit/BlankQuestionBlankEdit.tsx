@@ -84,12 +84,17 @@ const BlankEdit = (props: BlankEditProps) => {
             onChange={(e) => onChange?.(index, { key: e.target.value })}
           />
           <Box whiteSpace='nowrap'>{t('panel.blankEdit.answerIsRegExp')}</Box>
-          <Switch
-            isChecked={blank ? !!blank.answerIsRegExp : undefined}
-            onChange={(e) =>
-              onChange?.(index, { answerIsRegExp: !!e.target.checked })
+          <Switch.Root
+            checked={blank ? !!blank.answerIsRegExp : undefined}
+            onCheckedChange={(e) => 
+              onChange?.(index, { answerIsRegExp: !!e.checked })
             }
-          />
+          >
+            <Switch.HiddenInput />
+            <Switch.Control>
+              <Switch.Thumb />
+            </Switch.Control>
+          </Switch.Root>
           <Box whiteSpace='nowrap'>{t('panel.blankEdit.answerFlag')}</Box>
           <Input
             value={blank?.answerFlag}

@@ -1,53 +1,69 @@
 import {
-  AlertDialog, AlertDialogBody,
-  AlertDialogContent, AlertDialogFooter,
-  AlertDialogHeader, AlertDialogOverlay,
-  Button, useToast,
-  UseToastOptions,
+  Button,
   Box,
   Center,
   Spinner,
-  ChakraProvider,
-  AlertDialogCloseButton,
-  Fade,
-  ToastId,
+  DialogCloseTrigger,
+  DialogContent,
+  DialogHeader,
+  DialogBody,
+  createToaster,
+  CreateToasterReturn,
 } from "@chakra-ui/react";
 import { useDisclosureWithData, UseDisclosureWithDataProps } from "./disclosure";
 import { isValidElement, ReactNode, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { WithHandlerOptions, withHandlerRaw } from "./react-msg";
+import { NonCallable, WithHandlerOptions, withHandlerRaw } from "./react-msg";
 import ReactDOM from "react-dom/client";
 import AsyncDialog, { DialogOpener } from "./react-dialog";
+import { DialogFooter, DialogRoot } from "@/components/ui/dialog";
+import { Provider } from "@/components/ui/provider";
+import { Toaster } from "@/components/ui/toaster";
+import { getDialogController } from "./chakra";
+
+export type UseToastOptions = Parameters<CreateToasterReturn['create']>[0];
 
 const LoadingScreen = ({ isLoading }: { isLoading?: boolean }) => {
-  return <Fade
-    in={!!isLoading}
-    unmountOnExit
-    transition={{
-      enter: { duration: 0.5 },
-      exit: { duration: 0.01 }
+
+
+  if (!isLoading) {
+    return;
+  }
+
+  return <Box
+    data-state={isLoading ? 'open' : 'closed'}
+    _open={{
+      animationName: "fade-in",
+      animationDuration: "500ms",
+    }}
+    _closed={{
+      animationName: "fade-out, scale-out",
+      animationDuration: "500ms",
     }}
   >
     <Box
-      position="fixed"
+      position="absolute"
       top="0"
       left="0"
       right="0"
       bottom="0"
-      bg="rgba(0, 0, 0, 0.7)"
-      zIndex="9999"
+      height='100vh'
+      width='100vw'
+      bg="rgba(124, 124, 124, 0.5)"
+      backdropBlur='10px'
+      zIndex={10000}
     >
       <Center h="100vh">
         <Spinner
-          thickness="4px"
-          speed="0.65s"
-          emptyColor="gray.200"
+          borderWidth="4px"
+          animationDuration="0.65s"
+          // emptyColor="gray.200"
           color="purple.500"
           size="xl"
         />
       </Center>
     </Box>
-  </Fade>;
+  </Box>;
 };
 
 type _M = {
@@ -56,15 +72,18 @@ type _M = {
 };
 
 type _H = typeof withHandlerRaw;
-type _T = (options?: UseToastOptions) => ToastId;
 
 export type WrappedHandlerRootProps = {
   async?: boolean;
   cache?: boolean;
+  /**
+   * @deprecated
+   */
   useToastOptions?: UseToastOptions,
-  withHandlerOptions?: WithHandlerOptions<any>,
+  withHandlerOptions?: WithHandlerOptions<NonCallable | UseToastOptions, any>,
   useDisclosureWithDataProps?: UseDisclosureWithDataProps<_M>,
-  onHandlerUpdated: (handler: _H, toast: _T, dialog: DialogOpener) => void,
+  toaster: CreateToasterReturn,
+  onHandlerUpdated: (handler: _H, dialog: DialogOpener) => void,
 };
 
 export const WrappedHandlerRoot = (props: WrappedHandlerRootProps) => {
@@ -72,7 +91,7 @@ export const WrappedHandlerRoot = (props: WrappedHandlerRootProps) => {
   const {
     async,
     cache,
-    useToastOptions,
+    toaster,
     withHandlerOptions,
     useDisclosureWithDataProps,
     onHandlerUpdated,
@@ -83,11 +102,6 @@ export const WrappedHandlerRoot = (props: WrappedHandlerRootProps) => {
     ? t('common.notify.success.header')
     : t('common.notify.error.header');
 
-  const toast = useToast({
-    isClosable: true,
-    position: 'top',
-    ...useToastOptions,
-  });
 
   const { data, ...disclosure } = useDisclosureWithData<_M>({}, useDisclosureWithDataProps);
 
@@ -100,7 +114,7 @@ export const WrappedHandlerRoot = (props: WrappedHandlerRootProps) => {
   const [openDialog, setOpenDialog] = useState({ f: (() => void 0) as unknown as DialogOpener });
 
   useEffect(() => {
-    const options: WithHandlerOptions<any> = Object.freeze({
+    const options: WithHandlerOptions<NonCallable | UseToastOptions, any> = Object.freeze({
       async: async,
       cache: cache ?? true,
       def: undefined,
@@ -115,10 +129,10 @@ export const WrappedHandlerRoot = (props: WrappedHandlerRootProps) => {
         if (shouldShowDialog) {
           disclosure.onOpen({ message: payload, success });
         } else {
-          toast(typeof payload === 'string' ? {
+          toaster.create(typeof payload === 'string' ? {
             title: _h(success),
             description: payload,
-            status: success ? 'success' : 'error',
+            type: success ? 'success' : 'error',
           } as UseToastOptions : payload as UseToastOptions);
         }
       },
@@ -126,7 +140,7 @@ export const WrappedHandlerRoot = (props: WrappedHandlerRootProps) => {
         return {
           title: _h(true),
           description: t('common.notify.success.desc'),
-          status: 'success',
+          type: 'success',
         } as UseToastOptions;
       },
       notifyError(error) {
@@ -136,65 +150,71 @@ export const WrappedHandlerRoot = (props: WrappedHandlerRootProps) => {
       ...withHandlerOptions,
     });
 
-    const handler: _H = (f, o) => withHandlerRaw(f, o == null ? options : Object.assign({}, options, o)) as any;
+    const handler: _H = (f, o) => withHandlerRaw<typeof f, any>(f, o == null ? options : Object.assign({}, options, o)) as any;
 
-    onHandlerUpdated(handler, toast, openDialog.f);
+    onHandlerUpdated(handler, openDialog.f);
 
   }, [
     async, cache, openDialog.f,
-    t, toast, disclosure.onOpen, setIsLoading, withHandlerOptions,
+    t, toaster, disclosure.onOpen, setIsLoading, withHandlerOptions,
     onHandlerUpdated,
   ]);
 
 
 
-  return <ChakraProvider>
+  return <Provider>
+    <Toaster toaster={toaster} />
     <LoadingScreen isLoading={isLoading} />
-    <AsyncDialog onOpenDialogChanged={(f) => setOpenDialog({ f })}/>
-    <AlertDialog
-      leastDestructiveRef={cancelRef as any}
-      closeOnOverlayClick={false}
-      {...disclosure}
+    <AsyncDialog onOpenDialogChanged={(f) => setOpenDialog({ f })} />
+    <DialogRoot
+      initialFocusEl={cancelRef as any}
+      closeOnInteractOutside={false}
+      {...getDialogController(disclosure)}
     >
-      <AlertDialogOverlay />
-      <AlertDialogContent>
-        <AlertDialogCloseButton />
-        <AlertDialogHeader fontSize='lg' fontWeight='bold'>
+      <DialogContent>
+        <DialogCloseTrigger />
+        <DialogHeader fontSize='lg' fontWeight='bold'>
           {_h(!!success)}
-        </AlertDialogHeader>
+        </DialogHeader>
 
-        <AlertDialogBody>
+        <DialogBody>
           {message}
-        </AlertDialogBody>
+        </DialogBody>
 
-        <AlertDialogFooter>
-          <Button colorScheme='red' onClick={disclosure.onClose} ml={3}>
+        <DialogFooter>
+          <Button colorPalette='red' onClick={disclosure.onClose} ml={3}>
             {t('common.btn.dismiss')}
           </Button>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
-  </ChakraProvider>;
+        </DialogFooter>
+      </DialogContent>
+    </DialogRoot>
+  </Provider>;
 
 };
 
 export const createStandaloneHandler = (props?: Omit<WrappedHandlerRootProps, 'onHandlerUpdated'>) => {
 
   let _h: _H | undefined = undefined;
-  let _t: _T | undefined = undefined;
   let _d: DialogOpener | undefined = undefined;
   const wrappedHandler: _H = (f, o) => _h!(f, o);
-  const wrappedToast: _T = (t) => _t!(t);
-  const wrappedDialog: DialogOpener = ((a, b) => _d!(a, b)) as DialogOpener; 
-  const onHandlerUpdated = (handler: _H, toast: _T, dialog: DialogOpener) => {
+  const wrappedDialog: DialogOpener = ((a, b) => _d!(a, b)) as DialogOpener;
+  const onHandlerUpdated = (handler: _H, dialog: DialogOpener) => {
     _h = handler;
-    _t = toast;
     _d = dialog;
   }
 
-  const root = <WrappedHandlerRoot {...props} onHandlerUpdated={onHandlerUpdated} />;
+  const toaster = createToaster({
+    placement: 'top',
+    pauseOnPageIdle: true,
+  });
+
+  const root = <
+    WrappedHandlerRoot {...props}
+    toaster={toaster}
+    onHandlerUpdated={onHandlerUpdated}
+  />;
   const rootNode = ReactDOM.createRoot(document.getElementById('toast')!);
   rootNode.render(root);
 
-  return [wrappedHandler, wrappedToast, wrappedDialog] as [_H, _T, DialogOpener];
+  return [wrappedHandler, toaster, wrappedDialog] as [_H, CreateToasterReturn, DialogOpener];
 }

@@ -1,22 +1,23 @@
 import { PaperEdit } from "@/components/PaperEdit";
 import { QuestionEdit } from "@/components/question-edit/QuestionEdit";
 import { BaseQuestionPanel } from "@/components/question-display/BaseQuestionPanel";
-import { QuestionSelectionModal } from "@/components/QuestionSelectionModal";
+import { QuestionSelectionDialog } from "@/components/QuestionSelectionDialog";
 import { defaultQuestion, defaultQuizPaper, Question, QuizPaper } from "@quizzy/base/types";
 import { ID } from "@quizzy/base/types";
-import { openDialog, standaloneToast, withHandler } from "@/components/handler";
+import { openDialog, withHandler } from "@/components/handler";
 import { useDisclosureWithData } from "@/utils/disclosure";
 import { applyPatch, Patch } from "@quizzy/base/utils";
 import { EditorContextProvider, useEditor, usePatch } from "@/utils/react-patch";
 import { uuidV4B64 } from "@quizzy/base/utils";
 import { Quizzy, QuizzyCache, QuizzyCacheRaw, QuizzyRaw } from "@/data";
-import QuestionPreviewModal from "@/modals/QuestionPreviewModal";
+import QuestionPreviewDialog from "@/dialogs/QuestionPreviewDialog";
 import { RxDragHandleDots2 } from "react-icons/rx";
-import { Box, Button, Divider, HStack, IconButton, useCallbackRef, useDisclosure, VStack } from "@chakra-ui/react";
+import { Box, Button, Separator, HStack, IconButton, useCallbackRef, useDisclosure, VStack } from "@chakra-ui/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
+import { defaultToaster } from "@/components/ui/toaster";
 
 
 type EditState = Readonly<{
@@ -148,8 +149,8 @@ export const PaperEditPage = (props: { paper?: string }) => {
       questions: { ...cachedState?.questions }
     }
     if (cachedState?.question || cachedState?.paper) {
-      standaloneToast({
-        status: 'info',
+      defaultToaster.create({
+        type: 'info',
         title: t('page.edit.toast.dataLoaded.title'),
         description: t('page.edit.toast.dataLoaded.desc'),
       });
@@ -303,7 +304,7 @@ export const PaperEditPage = (props: { paper?: string }) => {
         }}>preview</Button>
       </HStack>
 
-      <Divider />
+      <Separator />
 
       {/* paper edit */}
       <EditorContextProvider value={editorPaper}>
@@ -311,7 +312,7 @@ export const PaperEditPage = (props: { paper?: string }) => {
       </EditorContextProvider>
       <HStack justifyContent='space-between'>
         <Box>{t('page.edit.nowEditing', { questionIndex })}</Box>
-        <IconButton colorScheme='purple' aria-label={t('page.edit.selectQuestions')} icon={<RxDragHandleDots2 />}
+        <IconButton colorPalette='purple' aria-label={t('page.edit.selectQuestions')} children={<RxDragHandleDots2 />}
           onClick={() => {
             selectQuestionPreview(1);
             questionMap.current = {};
@@ -319,7 +320,7 @@ export const PaperEditPage = (props: { paper?: string }) => {
           }} />
       </HStack>
 
-      <Divider />
+      <Separator />
 
       {editingState.question != undefined ? <EditorContextProvider value={editorQuestion}>
         <QuestionEdit />
@@ -327,7 +328,7 @@ export const PaperEditPage = (props: { paper?: string }) => {
 
     </VStack>
 
-    <QuestionSelectionModal
+    <QuestionSelectionDialog
       selected={questionIndex} total={editingState.paper.questions?.length || 0}
       preview={questionPreviewIndex}
       onSelectPreview={selectQuestionPreview}
@@ -338,9 +339,9 @@ export const PaperEditPage = (props: { paper?: string }) => {
       {...dQuestionSelect}
     >
       {questionPreview && <BaseQuestionPanel w='100%' question={questionPreview} />}
-    </QuestionSelectionModal>
+    </QuestionSelectionDialog>
     
-    <QuestionPreviewModal {...dPreview} question={dPreviewQuestion} />
+    <QuestionPreviewDialog {...dPreview} question={dPreviewQuestion} />
 
   </>;
 };

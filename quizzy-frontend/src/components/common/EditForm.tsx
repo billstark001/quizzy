@@ -31,7 +31,7 @@ export const EditForm = (props: BoxProps) => {
 
   const ref = useRef<HTMLDivElement>(null);
 
-  const { children, sx, ...rest } = props;
+  const { children, css, ...rest } = props;
 
   return <Box 
     ref={ref}
@@ -41,7 +41,7 @@ export const EditForm = (props: BoxProps) => {
     gap={2}
     flexDirection='column'
     alignItems='stretch'
-    sx={{
+    css={{
       '& > .ef-label': {
 
       },
@@ -51,7 +51,7 @@ export const EditForm = (props: BoxProps) => {
       '&.mobile > .ef-box': {
         mb: '16px',
       },
-      ...sx,
+      ...css,
     }}
     {...rest}
   >

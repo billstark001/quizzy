@@ -1,10 +1,7 @@
 import {
   Box,
   Input,
-  InputGroup,
-  InputLeftElement,
   List,
-  ListItem,
   useCallbackRef
 } from "@chakra-ui/react";
 import { IoSearch } from "react-icons/io5";
@@ -12,6 +9,8 @@ import { ChangeEvent, KeyboardEvent, useCallback, useEffect, useRef, useState } 
 import { debounce, DebounceReturn } from "@/utils/debounce";
 import { DatabaseIndexed, SearchResult } from "@quizzy/base/types";
 import { useQuery } from "@tanstack/react-query";
+import { useColorMode } from "./ui/color-mode";
+import { InputGroup } from "./ui/input-group";
 
 interface SearchBoxProps<T extends DatabaseIndexed> {
   onFreezeResult?: (result: SearchResult<T> | undefined) => void;
@@ -29,7 +28,7 @@ export const SearchBox = <T extends DatabaseIndexed>(props: SearchBoxProps<T>) =
 
   const [searchTerm, setSearchTerm] = useState("");
   const debouncedSetSearchTerm = useRef<DebounceReturn<typeof setSearchTerm>>(undefined);
-  const [isOpen, setIsOpen] = useState(false);
+  const [open, setOpen] = useState(false);
   const [disableBlur, setDisableBlur] = useState(false);
 
   useEffect(() => {
@@ -47,13 +46,13 @@ export const SearchBox = <T extends DatabaseIndexed>(props: SearchBoxProps<T>) =
   const filteredItems = searchResult?.result ?? [];
 
   const freezeSearchResult = useCallback(() => {
-    setIsOpen(false);
+    setOpen(false);
     onFreezeResult?.(searchResult ?? undefined);
   }, [searchResult, onFreezeResult]);
 
   const handleSearch = useCallback((e: ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
-    setIsOpen(true);
+    setOpen(true);
   }, [setSearchTerm]);
 
   const handleSelect = useCallback((item: T) => {
@@ -68,32 +67,33 @@ export const SearchBox = <T extends DatabaseIndexed>(props: SearchBoxProps<T>) =
     }
   }, [freezeSearchResult]);
 
+  const isDark = useColorMode().colorMode === 'dark';
+
   return (
     <Box position="relative" minWidth="300px" onBlur={() => {
-      !disableBlur && setIsOpen(false);
+      !disableBlur && setOpen(false);
     }}>
-      <InputGroup>
-        <InputLeftElement>
-          <IoSearch color="lightgray" />
-        </InputLeftElement>
+      <InputGroup
+        startElement={<IoSearch color="lightgray" />}
+      >
         <Input
           value={searchTerm}
           onChange={handleSearch}
           onKeyDown={handleKeyPress}
           onBlur={disableBlur ? undefined : freezeSearchResult}
           placeholder="Search..."
-          onFocus={() => setIsOpen(true)}
+          onFocus={() => setOpen(true)}
         />
       </InputGroup>
 
-      {isOpen && searchTerm && (
-        <List
+      {open && searchTerm && (
+        <List.Root
           position="absolute"
           top="100%"
           left="0"
           right="0"
           mt="2"
-          bg="white"
+          backgroundColor={isDark ? 'gray.800' : 'white'}
           boxShadow="md"
           borderRadius="md"
           minH='100px'
@@ -105,7 +105,7 @@ export const SearchBox = <T extends DatabaseIndexed>(props: SearchBoxProps<T>) =
         >
           {filteredItems.length > 0 ? (
             filteredItems.map((item, index) => (
-              <ListItem
+              <List.Item
                 key={index}
                 px="4"
                 py="2"
@@ -114,14 +114,14 @@ export const SearchBox = <T extends DatabaseIndexed>(props: SearchBoxProps<T>) =
                 onClick={() => handleSelect(item)}
               >
                 {props.renderItem(item)}
-              </ListItem>
+              </List.Item>
             ))
           ) : (
-            <ListItem px="4" py="2">
+            <List.Item px="4" py="2">
               No match
-            </ListItem>
+            </List.Item>
           )}
-        </List>
+        </List.Root>
       )}
     </Box>
   );

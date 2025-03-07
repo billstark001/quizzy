@@ -4,9 +4,14 @@ import { FiMinus } from "react-icons/fi";
 import { MdAdd } from "react-icons/md";
 import { AiOutlineQuestionCircle } from "react-icons/ai";
 import {
-  Box, Button, HStack, IconButton, IconButtonProps, Modal, ModalBody, ModalCloseButton, ModalContent,
-  ModalFooter, ModalHeader, ModalOverlay, ModalProps, Switch, useCallbackRef, Wrap
+  Box, Button, DialogRootProps, HStack, IconButton, IconButtonProps,
+  Switch, useCallbackRef, UseDisclosureReturn, Wrap
 } from "@chakra-ui/react";
+import {
+  DialogActionTrigger, DialogBody, DialogCloseTrigger,
+  DialogContent, DialogFooter, DialogHeader, DialogRoot,
+  DialogTitle
+} from './ui/dialog';
 import { ReactNode, useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -24,9 +29,10 @@ import {
   useSortable,
 } from '@dnd-kit/sortable';
 import { CSS as CssDnD } from '@dnd-kit/utilities';
+import { getDialogController } from "@/utils/chakra";
 
 
-export type QuestionSelectionModalProps = Omit<ModalProps, "children"> & {
+export type QuestionSelectionDialogProps = Omit<DialogRootProps, "children"> & {
   children?: ReactNode;
   header?: ReactNode;
 
@@ -39,7 +45,7 @@ export type QuestionSelectionModalProps = Omit<ModalProps, "children"> & {
   allowEdit?: boolean;
   onAdd?: (index: number) => boolean | Promise<boolean>;
   onEdit?: (indices: readonly number[]) => void;
-};
+} & UseDisclosureReturn;
 
 const smallIcon = <IconButton
   display='none' className='h'
@@ -48,7 +54,7 @@ const smallIcon = <IconButton
   position='absolute' top={0} left={0}
   transformOrigin='0 0' transform='translate(-50%, -50%)'
   aria-label=""
-  sx={{
+  css={{
     '& > *': {
       transform: 'translateY(-1px)'
     }
@@ -66,7 +72,7 @@ const smallIconRightProps: Readonly<IconButtonProps> = {
   transform: 'translate(50%, -50%)',
 };
 
-type ModalEditState = Readonly<{
+type DialogEditState = Readonly<{
   isEditing: boolean;
   totalAtStart: number;
   nextIndex: number;
@@ -101,7 +107,7 @@ const RenderButton = (props: RenderButtonProps) => {
 
   let indexButton = <Button
     w={12}
-    colorScheme={preview === indexOfPaper ? 'purple' : undefined}
+    colorPalette={preview === indexOfPaper ? 'purple' : undefined}
     onClick={() => onSelectPreview?.(indexOfPaper)}
     border={selected === indexOfPaper ? '1px solid' : 'none'}
     borderColor='gray.500'
@@ -121,7 +127,7 @@ const RenderButton = (props: RenderButtonProps) => {
 
   return <Box
     position='relative'
-    sx={{
+    css={{
       '&:hover .h': { display: 'block' },
     }}
   >
@@ -129,7 +135,7 @@ const RenderButton = (props: RenderButtonProps) => {
     {isEditing && <>
       <IconButton
         {...smallIconProps}
-        icon={<FiMinus />} aria-label="remove" colorScheme="red"
+        children={<FiMinus />} aria-label="remove" colorPalette="red"
         onClick={(e) => {
           e.stopPropagation();
           e.preventDefault();
@@ -138,7 +144,7 @@ const RenderButton = (props: RenderButtonProps) => {
       />
       <IconButton
         {...smallIconCenterProps}
-        icon={<AiOutlineQuestionCircle />} aria-label="view" colorScheme="purple"
+        children={<AiOutlineQuestionCircle />} aria-label="view" colorPalette="purple"
         onClick={(e) => {
           e.stopPropagation();
           e.preventDefault();
@@ -147,7 +153,7 @@ const RenderButton = (props: RenderButtonProps) => {
       />
       <IconButton
         {...smallIconRightProps}
-        icon={<MdAdd />} aria-label="add" colorScheme="green"
+        children={<MdAdd />} aria-label="add" colorPalette="green"
         onClick={(e) => {
           e.stopPropagation();
           e.preventDefault();
@@ -159,22 +165,23 @@ const RenderButton = (props: RenderButtonProps) => {
 
 };
 
-export const QuestionSelectionModal = (props: QuestionSelectionModalProps) => {
+export const QuestionSelectionDialog = (props: QuestionSelectionDialogProps) => {
   const {
     preview, selected, total, children, header,
     onSelectPreview: onSelectPreviewProp, onSelect,
     allowEdit, onAdd, onEdit,
-    ...modalProps
+    ...dialogProps
   } = props;
 
   const onSelectPreview = useCallbackRef(onSelectPreviewProp);
 
   const { t } = useTranslation();
 
+
   // select
   const onSelectClick = () => {
     onSelect?.(preview);
-    modalProps.onClose();
+    dialogProps.onClose();
   }
 
 
@@ -183,7 +190,7 @@ export const QuestionSelectionModal = (props: QuestionSelectionModalProps) => {
     () => Array(total).fill(0).map((_, i) => i + 1) as readonly number[],
     [total]
   );
-  const [editState, setEditState] = useState<ModalEditState>({
+  const [editState, setEditState] = useState<DialogEditState>({
     isEditing: false,
     totalAtStart: 0,
     nextIndex: 0,
@@ -197,7 +204,7 @@ export const QuestionSelectionModal = (props: QuestionSelectionModalProps) => {
   });
 
   const startEdit = useCallback(() => {
-    const _s: ModalEditState = {
+    const _s: DialogEditState = {
       isEditing: true,
       totalAtStart: total | 0,
       nextIndex: (total | 0) + 1,
@@ -254,61 +261,91 @@ export const QuestionSelectionModal = (props: QuestionSelectionModalProps) => {
   // render
 
   const { isEditing } = editState;
-
-  return <Modal
-    closeOnOverlayClick={false}
-    size='4xl'
-    {...modalProps}
+  
+  return <DialogRoot
+    closeOnInteractOutside={false}
+    size="xl"
+    {...dialogProps}
+    {...getDialogController(dialogProps)}
   >
-    <ModalOverlay />
-    <ModalContent onKeyDown={isEditing ? editPatch.onKeyInput : undefined}>
-      <ModalHeader>
-        {header ?? t('modal.questionSelect.header')}
-      </ModalHeader>
-      <ModalCloseButton />
-      <ModalBody>
-        <HStack alignItems='flex-start' maxH='75vh'>
-          <Wrap flex={2.4} overflowY='scroll' maxH='75vh' p={1} overflow='visible'>
-            {isEditing ? <><DndContext
-              sensors={sensors}
-              collisionDetection={closestCenter}
-              onDragEnd={({ active, over }) => insert(Number(active.id), Number(over?.id))}
-            >
-              <SortableContext
-                items={editOrder.map((_, i) => i)}
+    <DialogContent onKeyDown={isEditing ? editPatch.onKeyInput : undefined}>
+      <DialogHeader>
+        <DialogTitle>{header ?? t('dialog.questionSelect.header')}</DialogTitle>
+        <DialogCloseTrigger />
+      </DialogHeader>
+      <DialogBody>
+        <HStack alignItems="flex-start" maxH="75vh">
+          <Wrap flex={2.4} overflowY="auto" maxH="75vh" p={1} overflow="visible">
+            {isEditing ? (
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={({ active, over }) => insert(Number(active.id), Number(over?.id))}
               >
-                {editOrder.map((ip, ia) => <RenderButton
-                  key={ip} indexOfPaper={ip} indexOfArray={ia}
-                  preview={preview} selected={selected} isEditing={isEditing}
-                  add={add} remove={remove} onSelectPreview={onSelectPreview}
-                />)}
-              </SortableContext>
-              {!editOrder.length && <Button onClick={() => add(0)}>
-                {t('modal.questionSelect.btn.addFirst')}
-              </Button>}
-            </DndContext>
-            </> : <>
-              {totalArray.map((ip, ia) => <RenderButton
-                key={ip} indexOfPaper={ip} indexOfArray={ia}
-                preview={preview} selected={selected} isEditing={isEditing}
-                add={add} remove={remove} onSelectPreview={onSelectPreview}
-              />)}
-              {!totalArray.length && <Box>No question</Box>}
-            </>}
+                <SortableContext items={editOrder.map((_, i) => i)}>
+                  {editOrder.map((ip, ia) => (
+                    <RenderButton
+                      key={ip}
+                      indexOfPaper={ip}
+                      indexOfArray={ia}
+                      preview={preview}
+                      selected={selected}
+                      isEditing={isEditing}
+                      add={add}
+                      remove={remove}
+                      onSelectPreview={onSelectPreview}
+                    />
+                  ))}
+                </SortableContext>
+                {!editOrder.length && (
+                  <Button onClick={() => add(0)}>
+                    {t('dialog.questionSelect.btn.addFirst')}
+                  </Button>
+                )}
+              </DndContext>
+            ) : (
+              <>
+                {totalArray.map((ip, ia) => (
+                  <RenderButton
+                    key={ip}
+                    indexOfPaper={ip}
+                    indexOfArray={ia}
+                    preview={preview}
+                    selected={selected}
+                    isEditing={isEditing}
+                    add={add}
+                    remove={remove}
+                    onSelectPreview={onSelectPreview}
+                  />
+                ))}
+                {!totalArray.length && <Box>No question</Box>}
+              </>
+            )}
           </Wrap>
-          <Box flex={1} overflowY='scroll' maxH='65vh'>
+          <Box flex={1} overflowY="auto" maxH="65vh">
             {children}
           </Box>
         </HStack>
-      </ModalBody>
-      <ModalFooter as={HStack} justifyContent='space-between'>
-        <Button onClick={modalProps.onClose}>{t('common.btn.close')}</Button>
-        <HStack>
-          {allowEdit && <Switch isChecked={isEditing} onChange={isEditing ? endEdit : startEdit} />}
-          <Button onClick={onSelectClick}>{t('common.btn.select')}</Button>
+      </DialogBody>
+      <DialogFooter>
+        <HStack width="100%" justifyContent="space-between">
+          <DialogActionTrigger asChild>
+            <Button onClick={dialogProps.onClose}>{t('common.btn.close')}</Button>
+          </DialogActionTrigger>
+          <HStack>
+            {allowEdit && (
+              <Switch.Root checked={isEditing} onCheckedChange={e => e.checked ? startEdit() : endEdit()}>
+                <Switch.HiddenInput />
+                <Switch.Control>
+                  <Switch.Thumb />
+                </Switch.Control>
+                <Switch.Label />
+              </Switch.Root>
+            )}
+            <Button onClick={onSelectClick}>{t('common.btn.select')}</Button>
+          </HStack>
         </HStack>
-      </ModalFooter>
-    </ModalContent>
-
-  </Modal>
+      </DialogFooter>
+    </DialogContent>
+  </DialogRoot>
 };

@@ -1,16 +1,16 @@
 import Pagination from "@/components/Pagination";
 import { Answers, BlankAnswers, ChoiceAnswers, ChoiceQuestion, Question, TextAnswers } from "@quizzy/base/types";
 import { formatMilliseconds } from "@/utils/time";
-import { QuestionSelectionModal } from "@/components/QuestionSelectionModal";
 import { RxDragHandleDots2 } from "react-icons/rx";
 import { Box, Button, HStack, IconButton, Progress, StackProps, useDisclosure, VStack } from "@chakra-ui/react";
 import { Dispatch, ElementType, ReactNode, SetStateAction, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { getTagStyle } from "@/utils/react";
-import BaseQuestionPanel from "./BaseQuestionPanel";
 import { BlankQuestionPanelProps, TextQuestionPanelProps } from "./BlankQuestionPanel";
 import { ChoiceQuestionPanelProps } from "./ChoiceQuestionPanel";
 import { QuestionPanelProps, QuestionPanel } from "./QuestionPanel";
+import { QuestionSelectionDialog } from "../QuestionSelectionDialog";
+import BaseQuestionPanel from "./BaseQuestionPanel";
 
 
 export type QuestionDisplayProps = {
@@ -126,15 +126,27 @@ export const QuestionDisplay = (props: QuestionDisplayProps) => {
       <Box>{t('panel.question.count', { current: currentQuestion, total: totalQuestions })}</Box>
       <Box flex={1} />
       <HStack>
-        {hasBoth && <Progress hasStripe maxW='200px' minW='100px' value={timeRatio * 100} />}
-        {(!hasBoth && hasEither) && <Progress maxW='200px' minW='100px' isIndeterminate />}
+        {hasBoth && (
+          <Progress.Root maxW='200px' minW='100px' value={timeRatio * 100} striped>
+            <Progress.Track>
+              <Progress.Range />
+            </Progress.Track>
+          </Progress.Root>
+        )}
+        {(!hasBoth && hasEither) && (
+          <Progress.Root maxW='200px' minW='100px' value={null}>
+            <Progress.Track>
+              <Progress.Range />
+            </Progress.Track>
+          </Progress.Root>
+        )}
         {hasCurrentTime && <Box>{formatMilliseconds(currentTime)}</Box>}
         {hasBoth && <Box>{' / '}</Box>}
         {hasTotalTime && <Box>{formatMilliseconds(totalTime)}</Box>}
       </HStack>
     </HStack>
     {question && <QuestionPanel
-      overflowY='scroll'
+      overflowY='auto'
       flex={1}
       {...getTagStyle(panelStyle, true, VStack) as {}}
       displaySolution={!!isResult}
@@ -146,28 +158,28 @@ export const QuestionDisplay = (props: QuestionDisplayProps) => {
       nearPages={3}
       currentPage={currentQuestion} totalPages={totalQuestions} setPage={onQuestionChanged} />
     <HStack justifyContent='space-between' width='100%'>
-      <Button colorScheme='red' onClick={onExit}>{t('panel.question.btn.exit')}</Button>
-      <Button colorScheme='purple' 
+      <Button colorPalette='red' onClick={onExit}>{t('panel.question.btn.exit')}</Button>
+      <Button colorPalette='purple' 
         onClick={
           onPrev ? () => onPrev(currentQuestion) :
           () => currentQuestion > 1 && onQuestionChanged?.(currentQuestion - 1)
         }
       >{t('panel.question.btn.prev')}</Button>
       <Box flex={1} minWidth={0}></Box>
-      <IconButton colorScheme='purple' aria-label={t('panel.question.btn.questions')} icon={<RxDragHandleDots2 />} 
+      <IconButton colorPalette='purple' aria-label={t('panel.question.btn.questions')}  
         onClick={() => {
           setQuestionSelect(currentQuestion);
           q.onOpen();
-        }} />
-      <Button colorScheme='purple'
+        }}><RxDragHandleDots2 /></IconButton>
+      <Button colorPalette='purple'
         onClick={
           onNext ? () => onNext(currentQuestion) :
           () => currentQuestion < totalQuestions && onQuestionChanged?.(currentQuestion + 1)
         }
       >{t('panel.question.btn.next')}</Button>
-      <Button colorScheme='teal' onClick={onSubmit}>{t('panel.question.btn.submit')}</Button>
+      <Button colorPalette='teal' onClick={onSubmit}>{t('panel.question.btn.submit')}</Button>
     </HStack>
-    <QuestionSelectionModal 
+    <QuestionSelectionDialog 
       preview={questionSelect} total={totalQuestions} 
       selected={currentQuestion}
       onSelectPreview={(i) => {
@@ -177,6 +189,6 @@ export const QuestionDisplay = (props: QuestionDisplayProps) => {
       {...q}
     >
       {question ? <BaseQuestionPanel w='100%' question={previewQuestion ?? question} /> : <></>}
-    </QuestionSelectionModal>
+    </QuestionSelectionDialog>
   </VStack>;
 };

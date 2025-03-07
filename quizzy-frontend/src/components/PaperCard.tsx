@@ -1,15 +1,14 @@
 import { QuizPaper } from "@quizzy/base/types";
 import { AiOutlineCheck } from "react-icons/ai";
 import {
-  Card, Heading, CardBody, Stack, Text, Image,
-  Button, ButtonGroup, CardFooter, Divider, useColorMode,
-  CardProps, Wrap,
-  Tag,
-  IconButton,
+  Card, Heading, Text, Image,
+  Button, Wrap,
+  Tag, IconButton,
 } from "@chakra-ui/react";
 import { useTranslation } from "react-i18next";
+import { useColorMode } from "./ui/color-mode";
 
-export type PaperCardProps = Omit<CardProps, 'children' | 'onSelect'> & {
+export type PaperCardProps = Omit<Card.RootProps, 'children' | 'onSelect'> & {
   paper: QuizPaper,
   selected?: boolean,
   onSelect?: (selected: boolean) => void,
@@ -36,48 +35,59 @@ export const PaperCard = (props: PaperCardProps) => {
 
   const useSelect = selected != null || onSelect != null;
 
-
-  return <Card w='sm' {...cardProps}>
-    <CardBody>
-      <Image
-        src={paper.img ?? DEFAULT_IMG}
-        alt={paper.name}
-        aspectRatio={16 / 9}
-        backgroundColor={colorMode === "dark" ? "gray.600" : 'gray.200'}
-        borderRadius='lg'
-      />
-      <Stack mt='6' spacing='3'>
-        <Heading size='md'>
+  return (
+    <Card.Root w='sm' {...cardProps}>
+      <Card.Body>
+        <Image
+          src={paper.img ?? DEFAULT_IMG}
+          alt={paper.name}
+          aspectRatio={16 / 9}
+          backgroundColor={colorMode === "dark" ? "gray.600" : 'gray.200'}
+          borderRadius='lg'
+        />
+        <Heading size='md' mt='6'>
           {paper.name}
         </Heading>
-        <Text>
+        <Text mt='2'>
           {paper.desc}
         </Text>
-        <Wrap>
-          {paper.categories?.map((t, i) => <Tag key={i} border='1px solid gray'>{t}</Tag>)}
-          {paper.tags?.map((t, i) => <Tag key={i}>{t}</Tag>)}
+        <Wrap mt='3'>
+          {paper.categories?.map((category, i) => (
+            <Tag.Root key={`category-${i}`} variant="outline">
+              <Tag.Label>{category}</Tag.Label>
+            </Tag.Root>
+          ))}
+          {paper.tags?.map((tag, i) => (
+            <Tag.Root key={`tag-${i}`}>
+              <Tag.Label>{tag}</Tag.Label>
+            </Tag.Root>
+          ))}
         </Wrap>
-      </Stack>
-    </CardBody>
-    <Divider />
-    <CardFooter>
-      <ButtonGroup as={Wrap} spacing='2' justifyContent='flex-end'>
-        {useSelect && <IconButton 
-          icon={<AiOutlineCheck />} aria-label="check"
-          colorScheme={selected ? 'purple' : undefined}
-          onClick={() => onSelect?.(!selected)}
-        />}
-        <Button variant='solid' colorScheme='purple' onClick={onStart}>
+      </Card.Body>
+      <Card.Footer justifyContent="flex-end">
+        {useSelect && (
+          <IconButton 
+            children={<AiOutlineCheck />} 
+            aria-label="check"
+            colorPalette={selected ? 'purple' : undefined}
+            onClick={() => onSelect?.(!selected)}
+            mr="2"
+          />
+        )}
+        <Button variant='solid' colorPalette='purple' onClick={onStart}>
           {t('common.btn.start')}
         </Button>
-        {onRevise && <Button variant='ghost' colorScheme='purple' onClick={onRevise}>
-          {t('common.btn.revise')}
-        </Button>}
-        {onEdit && <Button variant='ghost' colorScheme='purple' onClick={onEdit}>
-          {t('common.btn.edit')}
-        </Button>}
-      </ButtonGroup>
-    </CardFooter>
-  </Card>
-
+        {onRevise && (
+          <Button variant='ghost' colorPalette='purple' onClick={onRevise} ml="2">
+            {t('common.btn.revise')}
+          </Button>
+        )}
+        {onEdit && (
+          <Button variant='ghost' colorPalette='purple' onClick={onEdit} ml="2">
+            {t('common.btn.edit')}
+          </Button>
+        )}
+      </Card.Footer>
+    </Card.Root>
+  );
 };

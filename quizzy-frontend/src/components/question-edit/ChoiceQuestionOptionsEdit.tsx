@@ -94,12 +94,17 @@ const OptionEdit = (props: OptionEditProps) => {
         value={option?.content}
         onChange={(e) => onChange?.(index, { content: e.target.value })}
       />
-      <Switch
-        isChecked={option ? !!option.shouldChoose : undefined}
-        onChange={(e) =>
-          onChange?.(index, { shouldChoose: !!e.target.checked })
+      <Switch.Root
+        checked={option ? !!option.shouldChoose : undefined}
+        onCheckedChange={(e) =>
+          onChange?.(index, { shouldChoose: !!e.checked })
         }
-      />
+      >
+        <Switch.HiddenInput />
+        <Switch.Control>
+          <Switch.Thumb />
+        </Switch.Control>
+      </Switch.Root>
       <IconButton
         aria-label={t("common.btn.edit")}
         {...attributes}

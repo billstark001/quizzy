@@ -1,7 +1,7 @@
 import { withHandler } from "@/components/handler";
 import { downloadFile, uploadFile } from "@/utils/html";
 import { QuizzyRaw } from "@/data";
-import { Box, Button, Divider, HStack, Select, Switch, VStack, Wrap } from "@chakra-ui/react";
+import { Box, Button, Separator, HStack, Switch, VStack, Wrap, NativeSelect } from "@chakra-ui/react";
 import { useRef, useState } from "react";
 
 import { useTranslation } from "react-i18next";
@@ -29,7 +29,7 @@ const refreshIndices = withHandler(
 );
 
 const deleteUnlinked = withHandler(
-  QuizzyRaw.deleteUnlinked.bind(QuizzyRaw), 
+  QuizzyRaw.deleteUnlinked.bind(QuizzyRaw),
   _d,
 );
 
@@ -75,12 +75,20 @@ export const SettingsPage = () => {
 
   return <VStack alignItems='stretch' width='100%'>
     <Wrap>
+
       <HStack>
         <Button onClick={() => refreshIndices(force, true)}>{t('page.settings.btn.refreshIndices')}</Button>
-        <Switch isChecked={force} onChange={(e) => setForce(e.target.checked)}>
-          {t('page.settings.switch.forceRefresh')}
-        </Switch>
+        <Switch.Root checked={force} onCheckedChange={(e) => setForce(e.checked)}>
+          <Switch.HiddenInput />
+          <Switch.Control>
+            <Switch.Thumb />
+          </Switch.Control>
+          <Switch.Label>
+            {t('page.settings.switch.forceRefresh')}
+          </Switch.Label>
+        </Switch.Root>
       </HStack>
+
       <Button onClick={() => deleteUnlinked(true)}>
         {t('page.settings.btn.deleteUnlinked')}
       </Button>
@@ -91,23 +99,30 @@ export const SettingsPage = () => {
         {t('page.settings.btn.normalizeQuestions')}
       </Button>
     </Wrap>
-    <Divider />
+    <Separator />
     <Wrap>
       <Button onClick={importData}>{t('page.settings.btn.importData')}</Button>
       <Button onClick={exportData}>{t('page.settings.btn.exportData')}</Button>
     </Wrap>
-    <Divider />
+    <Separator />
     <HStack>
       <Box>{t('page.settings.selectLanguage')}</Box>
-      <Select
-        ref={langSelectRef}
-        maxW='50%'
-        onChange={(e) => i18n.changeLanguage(e.target.value || undefined)}>
-        <option value=''>{t('common.select.default')}</option>
-        {['en', 'ja', 'zh'].map(l => <option key={l} value={l}>
-          {t('meta.lang.' + l)}
-        </option>)}
-      </Select>
+
+      <NativeSelect.Root maxW='50%'>
+        <NativeSelect.Field
+          ref={langSelectRef}
+          onChange={(e) => i18n.changeLanguage(e.target.value || undefined)}
+          placeholder={t('common.select.default')}
+        >
+          {['en', 'ja', 'zh'].map(l => (
+            <option key={l} value={l}>
+              {t('meta.lang.' + l)}
+            </option>
+          ))}
+        </NativeSelect.Field>
+        <NativeSelect.Indicator />
+      </NativeSelect.Root>
+
       <Button onClick={() => {
         const l = getSystemLanguage();
         i18n.changeLanguage(l);

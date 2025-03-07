@@ -3,7 +3,7 @@ import Sheet, { withSheetRow, Column } from "@/components/common/Sheet";
 import { QuizResult, Stat } from "@quizzy/base/types";
 import { dispDuration } from "@/utils/time";
 import { Quizzy } from "@/data";
-import { Button, Checkbox, CheckboxProps, Divider, HStack, VStack } from "@chakra-ui/react";
+import { Button, Separator, HStack, VStack, Checkbox } from "@chakra-ui/react";
 import { DateTime } from "luxon";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
@@ -27,31 +27,39 @@ const GotoButton = withSheetRow<QuizResult, _K>((props) => {
   return <HStack>
     <Button onClick={() => {
       navigate('/result/' + item.id);
-    }} colorScheme="purple">
+    }} colorPalette="purple">
       {t('common.btn.view')}
     </Button>
     <Button onClick={async () => {
       await Quizzy.deleteQuizResult(item.id);
       await refresh();
-    }} colorScheme='red'>
+    }} colorPalette='red'>
       {t('common.btn.delete')}
     </Button>
   </HStack>;
 });
 
-const Selector = withSheetRow<QuizResult, CheckboxProps & {
+const Selector = withSheetRow<QuizResult, Omit<Checkbox.RootProps, 'checked' | 'onCheckedChange'> & {
   setSelected: (id: string, selected?: boolean) => void;
   isSelected: (id: string) => boolean;
 }>((props) => {
   const { item, isSelected, setSelected, index: _, isHeader: __, ...other } = props;
   const selected = item ? isSelected(item.id) : false;
-  return <Checkbox
-    isChecked={selected}
-    onChange={item ? (e) => setSelected(item.id, e.target.checked) : undefined}
-    isDisabled={!item}
-    {...other} />;
+  
+  return (
+    <Checkbox.Root 
+      checked={selected}
+      onCheckedChange={(e) => item && setSelected(item.id, !!e.checked)}
+      disabled={!item}
+      {...other}
+    >
+      <Checkbox.HiddenInput />
+      <Checkbox.Control>
+        <Checkbox.Indicator />
+      </Checkbox.Control>
+    </Checkbox.Root>
+  );
 });
-
 
 export const ResultsPage = () => {
 
@@ -94,10 +102,10 @@ export const ResultsPage = () => {
 
   return <VStack alignItems='stretch'>
     <HStack>
-      <Button isDisabled={!s.isAnySelected} onClick={() => refreshStats(s.getAllSelected())}>refresh stat</Button>
-      <Button isDisabled={!s.isAnySelected} onClick={() => generateStats(s.getAllSelected())}>create stat</Button>
+      <Button disabled={!s.isAnySelected} onClick={() => refreshStats(s.getAllSelected())}>refresh stat</Button>
+      <Button disabled={!s.isAnySelected} onClick={() => generateStats(s.getAllSelected())}>create stat</Button>
     </HStack>
-    <Divider />
+    <Separator />
     <Sheet data={results}>
       <Column>
         <Selector setSelected={s.setSelected} isSelected={s.isSelected} />

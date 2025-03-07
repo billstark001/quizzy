@@ -29,18 +29,13 @@ import deepmerge from 'deepmerge';
 import { Components } from 'react-markdown';
 import {
   Code,
-  Divider,
+  Separator,
   Heading,
   Link,
-  ListItem,
-  OrderedList,
-  Text,
-  UnorderedList,
+  Text, Image, Table,
+  chakra
 } from '@chakra-ui/react';
-import { Image } from '@chakra-ui/react';
-import { Checkbox } from '@chakra-ui/react';
-import { Table, Tbody, Td, Th, Thead, Tr } from '@chakra-ui/react';
-import { chakra } from '@chakra-ui/react';
+import { ClassAttributes, HTMLAttributes } from 'react';
 
 type GetCoreProps = {
   children?: React.ReactNode;
@@ -103,7 +98,7 @@ export const defaults: Defaults = {
     return <Text as="del">{children}</Text>;
   },
   hr: _ => {
-    return <Divider />;
+    return <Separator />;
   },
   a: Link,
   img: Image,
@@ -111,71 +106,94 @@ export const defaults: Defaults = {
     const { children } = props;
     return <Text as="span">{children}</Text>;
   },
-  ul: props => {
-    const { ordered, children, depth } = props;
-    const attrs = getCoreProps(props);
-    let Element = UnorderedList;
-    let styleType = 'disc';
-    if (ordered) {
-      Element = OrderedList;
-      styleType = 'decimal';
-    }
-    if (depth === 1) styleType = 'circle';
-    return (
-      <Element
-        spacing={2}
-        as={ordered ? 'ol' : 'ul'}
-        styleType={styleType}
-        pl={4}
-        {...attrs}
-      >
+  // ul: props => {
+  //   const { ordered, children, depth } = props;
+  //   const attrs = getCoreProps(props);
+  //   let Element = UnorderedList;
+  //   let styleType = 'disc';
+  //   if (ordered) {
+  //     Element = OrderedList;
+  //     styleType = 'decimal';
+  //   }
+  //   if (depth === 1) styleType = 'circle';
+  //   return (
+  //     <Element
+  //       spacing={2}
+  //       as={ordered ? 'ol' : 'ul'}
+  //       styleType={styleType}
+  //       pl={4}
+  //       {...attrs}
+  //     >
+  //       {children}
+  //     </Element>
+  //   );
+  // },
+  // ol: props => {
+  //   const { ordered, children, depth } = props;
+  //   const attrs = getCoreProps(props);
+  //   let Element = UnorderedList;
+  //   let styleType = 'disc';
+  //   if (ordered) {
+  //     Element = OrderedList;
+  //     styleType = 'decimal';
+  //   }
+  //   if (depth === 1) styleType = 'circle';
+  //   return (
+  //     <Element
+  //       spacing={2}
+  //       as={ordered ? 'ol' : 'ul'}
+  //       styleType={styleType}
+  //       pl={4}
+  //       {...attrs}
+  //     >
+  //       {children}
+  //     </Element>
+  //   );
+  // },
+  // li: props => {
+  //   const { children, checked } = props;
+  //   let checkbox = null;
+  //   if (checked !== null && checked !== undefined) {
+  //     checkbox = (
+  //       <Checkbox isChecked={checked} isReadOnly>
+  //         {children}
+  //       </Checkbox>
+  //     );
+  //   }
+  //   return (
+  //     <ListItem
+  //       {...getCoreProps(props)}
+  //       listStyleType={checked !== null ? 'none' : 'inherit'}
+  //     >
+  //       {checkbox || children}
+  //     </ListItem>
+  //   );
+  // },
+  h1: createHeadingRenderer(1),
+  h2: createHeadingRenderer(2),
+  h3: createHeadingRenderer(3),
+  h4: createHeadingRenderer(4),
+  h5: createHeadingRenderer(5),
+  h6: createHeadingRenderer(6),
+  pre: props => {
+    const { children } = props;
+    return <chakra.pre {...getCoreProps(props)}>
+      <PreContext.Provider value={true}>
         {children}
-      </Element>
-    );
+      </PreContext.Provider>
+    </chakra.pre>;
   },
-  ol: props => {
-    const { ordered, children, depth } = props;
-    const attrs = getCoreProps(props);
-    let Element = UnorderedList;
-    let styleType = 'disc';
-    if (ordered) {
-      Element = OrderedList;
-      styleType = 'decimal';
-    }
-    if (depth === 1) styleType = 'circle';
-    return (
-      <Element
-        spacing={2}
-        as={ordered ? 'ol' : 'ul'}
-        styleType={styleType}
-        pl={4}
-        {...attrs}
-      >
-        {children}
-      </Element>
-    );
-  },
-  li: props => {
-    const { children, checked } = props;
-    let checkbox = null;
-    if (checked !== null && checked !== undefined) {
-      checkbox = (
-        <Checkbox isChecked={checked} isReadOnly>
-          {children}
-        </Checkbox>
-      );
-    }
-    return (
-      <ListItem
-        {...getCoreProps(props)}
-        listStyleType={checked !== null ? 'none' : 'inherit'}
-      >
-        {checkbox || children}
-      </ListItem>
-    );
-  },
-  heading: props => {
-    const { level, children } = props;
+  table: Table.Root,
+  thead: Table.Header,
+  tbody: Table.Body,
+  tr: props => <Table.Row>{props.children}</Table.Row>,
+  td: props => <Table.Cell>{props.children}</Table.Cell>,
+  th: props => <Table.ColumnHeader>{props.children}</Table.ColumnHeader>,
+};
+
+function createHeadingRenderer (level: number)  {
+  return (props: ClassAttributes<HTMLHeadingElement> & HTMLAttributes<HTMLHeadingElement>) => {
+    const { children } = props;
     const sizes = ['2xl', 'xl', 'lg', 'md', 'sm', 'xs'];
     return (
       <Heading
@@ -186,23 +204,9 @@ export const defaults: Defaults = {
       >
         {children}
       </Heading>
-    );
-  },
-  pre: props => {
-    const { children } = props;
-    return <chakra.pre {...getCoreProps(props)}>
-      <PreContext.Provider value={true}>
-        {children}
-      </PreContext.Provider>
-    </chakra.pre>;
-  },
-  table: Table,
-  thead: Thead,
-  tbody: Tbody,
-  tr: props => <Tr>{props.children}</Tr>,
-  td: props => <Td>{props.children}</Td>,
-  th: props => <Th>{props.children}</Th>,
-};
+    );  
+  }
+}
 
 function ChakraUIRenderer(theme?: Defaults, merge = true): Components {
   const elements = {

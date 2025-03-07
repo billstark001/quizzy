@@ -1,8 +1,6 @@
 import { KeywordIndexed, TagSearchResult } from "@quizzy/base/types";
 import {
-  Button, Input, Modal, ModalBody,
-  ModalCloseButton, ModalContent, ModalFooter,
-  ModalHeader, ModalOverlay, ModalProps, useCallbackRef, VStack,
+  Button, DialogRootProps, Input, useCallbackRef, UseDisclosureReturn, VStack,
   Wrap
 } from "@chakra-ui/react";
 import { useState, useCallback, useEffect, useRef } from "react";
@@ -11,6 +9,11 @@ import { Quizzy } from "@/data";
 import { debounce, DebounceReturn } from "@/utils/debounce";
 import { getChangedArray } from "@/utils/array";
 import TagList from "./common/TagList";
+import { 
+  DialogRoot, DialogBody, DialogCloseTrigger, 
+  DialogContent, DialogFooter, DialogHeader 
+} from "./ui/dialog";
+import { getDialogController } from "@/utils/chakra";
 
 export type TagSelectState = {
   tagIndex?: number,
@@ -21,20 +24,20 @@ const _d = (): TagSearchResult => ({
   question: [], questionTags: [], paper: [], paperTags: [],
 });
 
-export const TagSelectModal = (props: Omit<ModalProps, 'children' | 'onSelect'> & {
+export const TagSelectDialog = (props: Omit<DialogRootProps, 'children' | 'onSelect'> & {
   object: Readonly<KeywordIndexed>,
   onChange?: (patch: Partial<KeywordIndexed>) => void | Promise<void>,
   onSelect?: (tag: string) => void,
   dbIndex?: string,
-} & TagSelectState) => {
+} & TagSelectState & UseDisclosureReturn) => {
 
   const {
     isCategory, tagIndex,
     object, onChange, onSelect,
-    ...modalProps
+    ...dialogProps
   } = props;
 
-  const { isOpen, onClose } = modalProps;
+  const { open, onClose } = dialogProps;
 
   const { t } = useTranslation();
 
@@ -42,14 +45,14 @@ export const TagSelectModal = (props: Omit<ModalProps, 'children' | 'onSelect'> 
   const [origArr, setOrigArr] = useState<readonly string[]>([]);
 
   useEffect(() => {
-    if (!isOpen) {
+    if (!open) {
       return;
     }
     const origArr = (isCategory ? object.categories : object.tags) ?? [];
     setOrigArr(origArr ?? []);
     const orig = (tagIndex == null ? undefined : origArr?.[tagIndex]) ?? '';
     setCurrentTag(orig);
-  }, [isOpen]);
+  }, [open]);
 
   const submitTag = useCallback(async () => {
     await onChange?.({
@@ -94,12 +97,12 @@ export const TagSelectModal = (props: Omit<ModalProps, 'children' | 'onSelect'> 
       }}
     />;
 
-  return <Modal closeOnOverlayClick={false} {...modalProps}>
-    <ModalOverlay />
-    <ModalContent>
-      <ModalCloseButton />
-      <ModalHeader>{t('modal.tagSelect.header')}</ModalHeader>
-      <ModalBody as={VStack} alignItems='stretch'>
+  return <DialogRoot closeOnInteractOutside={false} 
+    {...dialogProps} {...getDialogController(dialogProps)}>
+    <DialogContent>
+      <DialogCloseTrigger />
+      <DialogHeader>{t('dialog.tagSelect.header')}</DialogHeader>
+      <DialogBody as={VStack} alignItems='stretch'>
         <Input value={currentTag} onChange={(e) => {
           setCurrentTag(e.target.value);
           debouncedSearch.current?.(e.target.value);
@@ -110,13 +113,13 @@ export const TagSelectModal = (props: Omit<ModalProps, 'children' | 'onSelect'> 
           {getRenderedTags(tagSearch.paperTags, true, true)}
           {getRenderedTags(tagSearch.paper, false, true)}
         </Wrap>}
-      </ModalBody>
-      <ModalFooter justifyContent='space-between'>
-        <Button colorScheme='red' onClick={onClose}>{t('common.btn.cancel')}</Button>
-        <Button colorScheme='purple' onClick={submitTag}>{t('common.btn.save')}</Button>
-      </ModalFooter>
-    </ModalContent>
-  </Modal>;
+      </DialogBody>
+      <DialogFooter justifyContent='space-between'>
+        <Button colorPalette='red' onClick={onClose}>{t('common.btn.cancel')}</Button>
+        <Button colorPalette='purple' onClick={submitTag}>{t('common.btn.save')}</Button>
+      </DialogFooter>
+    </DialogContent>
+  </DialogRoot>;
 };
 
-export default TagSelectModal;
+export default TagSelectDialog;

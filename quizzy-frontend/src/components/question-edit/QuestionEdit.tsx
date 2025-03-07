@@ -2,13 +2,12 @@ import { Question } from "@quizzy/base/types";
 import { useDisclosureWithData } from "@/utils/disclosure";
 import {
   Box, Button, HStack,
-  Input, Select, Switch,
-  SwitchProps, Textarea, TextareaProps, VStack
+  Input, NativeSelect, Switch,
+  Textarea, TextareaProps, VStack
 } from "@chakra-ui/react";
 import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useEditorContext } from "@/utils/react-patch";
-import TagSelectModal, { TagSelectState } from "../TagSelectModal";
 import { MdAdd } from "react-icons/md";
 import { ChoiceQuestionOptionsEdit } from "./ChoiceQuestionOptionsEdit";
 import { normalizeOptionOrBlankArray } from "@quizzy/base/db/question-id";
@@ -16,6 +15,7 @@ import { BlankQuestionBlanksEdit } from "./BlankQuestionBlankEdit";
 import EditForm, { EditFormItem } from "../common/EditForm";
 import TagList, { TagButton } from "../common/TagList";
 import { IoAddOutline } from "react-icons/io5";
+import TagSelectDialog, { TagSelectState } from "../TagSelectDialog";
 
 
 const _adjustHeight = (t: HTMLTextAreaElement) => {
@@ -57,18 +57,22 @@ export const QuestionEdit = () => {
     </EditFormItem>
 
     <EditFormItem label={t('page.edit.type')}>
-      <Select {...edit('type')}>
-        <option value=''>{t('common.select.default')}</option>
-        {['choice', 'blank', 'text'].map(x => <option key={x}
-          value={x}>{t('meta.question.type.' + x)}</option>)}
-      </Select>
+      <NativeSelect.Root {...edit('type')}>
+        <NativeSelect.Field>
+          <option value=''>{t('common.select.default')}</option>
+          {['choice', 'blank', 'text'].map(x => (
+            <option key={x} value={x}>{t('meta.question.type.' + x)}</option>
+          ))}
+        </NativeSelect.Field>
+        <NativeSelect.Indicator />
+      </NativeSelect.Root>
     </EditFormItem>
 
     <EditFormItem label={t('page.edit.tags')}>
       <TagList tags={question.tags}
         onDoubleClick={(_, __, i) => dTag.onOpen({ tagIndex: i })}
       >
-        <TagButton onClick={() => dTag.onOpen()} icon={<IoAddOutline />} />
+        <TagButton onClick={() => dTag.onOpen()}><IoAddOutline /></TagButton>
       </TagList>
     </EditFormItem>
 
@@ -78,7 +82,7 @@ export const QuestionEdit = () => {
           dTag.onOpen({ tagIndex: i, isCategory: true })}
       >
         <TagButton onClick={() =>
-          dTag.onOpen({ isCategory: true })} icon={<IoAddOutline />} />
+          dTag.onOpen({ isCategory: true })}><IoAddOutline /></TagButton>
       </TagList>
     </EditFormItem>
 
@@ -89,16 +93,21 @@ export const QuestionEdit = () => {
     {question.type === 'choice' && <EditFormItem label={
       <VStack alignItems='flex-start'>
         <Box>{t('page.edit.choice._')}</Box>
-        <Button leftIcon={<MdAdd />} onClick={() => {
+        <Button onClick={() => {
           onChangeImmediate({
             options: normalizeOptionOrBlankArray(
               [{ content: '' }, ...(question.options ?? [])]
             )
           })
-        }}>{t('page.edit.choice.addTop')}</Button>
+        }}><MdAdd /> {t('page.edit.choice.addTop')}</Button>
         <HStack>
           <Box>{t('page.edit.choice.multiple')}</Box>
-          <Switch {...edit<SwitchProps>('multiple', { debounce: true, key: 'isChecked' })} />
+          <Switch.Root {...edit('multiple', { debounce: true, key: 'isChecked' })}>
+            <Switch.HiddenInput />
+            <Switch.Control>
+              <Switch.Thumb />
+            </Switch.Control>
+          </Switch.Root>
         </HStack>
       </VStack>
     }>
@@ -108,13 +117,13 @@ export const QuestionEdit = () => {
     {question.type === 'blank' && <EditFormItem label={
       <VStack alignItems='flex-start'>
         <Box>{t('page.edit.blank._')}</Box>
-        <Button leftIcon={<MdAdd />} onClick={() => {
+        <Button onClick={() => {
           onChangeImmediate({
             blanks: normalizeOptionOrBlankArray(
               [{ key: 'key-0' }, ...(question.blanks ?? [])]
             )
           })
-        }}>{t('page.edit.choice.addTop')}</Button>
+        }}><MdAdd /> {t('page.edit.choice.addTop')}</Button>
       </VStack>
     }>
       <BlankQuestionBlanksEdit question={question} />
@@ -124,7 +133,7 @@ export const QuestionEdit = () => {
       <Textarea2 {...edit('solution', { debounce: true })} />
     </EditFormItem>
 
-    <TagSelectModal
+    <TagSelectDialog
       {...dTag} {...editTag}
       object={question} onChange={onChangeImmediate}
     />

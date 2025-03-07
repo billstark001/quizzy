@@ -5,8 +5,8 @@ import { useDisclosureWithData } from "@/utils/disclosure";
 import { applyPatch, Patch } from "@quizzy/base/utils";
 import { EditorContextProvider, useEditor, usePatch } from "@/utils/react-patch";
 import { Quizzy, QuizzyCache, QuizzyCacheRaw, QuizzyRaw } from "@/data";
-import QuestionPreviewModal from "@/modals/QuestionPreviewModal";
-import { Button, Divider, HStack, useCallbackRef, VStack } from "@chakra-ui/react";
+import QuestionPreviewDialog from "@/dialogs/QuestionPreviewDialog";
+import { Button, Separator, HStack, useCallbackRef, VStack } from "@chakra-ui/react";
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -142,14 +142,14 @@ export const QuestionEditPage = (props: { question?: string }) => {
         }}>preview</Button>
       </HStack>
 
-      <Divider />
+      <Separator />
       <EditorContextProvider value={editorQuestion}>
         <QuestionEdit />
       </EditorContextProvider>
 
     </VStack>
 
-    <QuestionPreviewModal {...dPreview} question={dPreviewQuestion} />
+    <QuestionPreviewDialog {...dPreview} question={dPreviewQuestion} />
 
   </>;
 };

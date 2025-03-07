@@ -7,9 +7,9 @@ import {
 import { useTranslation } from "react-i18next";
 import { useEditorContext } from "@/utils/react-patch";
 import { Textarea2 } from "./question-edit/QuestionEdit";
-import TagSelectModal, { TagSelectState } from "./TagSelectModal";
 import EditForm, { EditFormItem } from "./common/EditForm";
 import TagList, { TagButton } from "./common/TagList";
+import TagSelectDialog, { TagSelectState } from "./TagSelectDialog";
 
 
 export const PaperEdit = () => {
@@ -32,7 +32,7 @@ export const PaperEdit = () => {
       <TagList tags={paper.tags} 
         onDoubleClick={(_, __, i) => dTag.onOpen({ tagIndex: i })}
       >
-        <TagButton onClick={() => dTag.onOpen()} icon={<IoAddOutline />} />
+        <TagButton onClick={() => dTag.onOpen()} children={<IoAddOutline />} />
       </TagList>
     </EditFormItem>
 
@@ -42,7 +42,7 @@ export const PaperEdit = () => {
           dTag.onOpen({ tagIndex: i, isCategory: true  })}
       >
         <TagButton onClick={() => 
-          dTag.onOpen({ isCategory: true })} icon={<IoAddOutline />} />
+          dTag.onOpen({ isCategory: true })} children={<IoAddOutline />} />
       </TagList>
     </EditFormItem>
 
@@ -67,7 +67,7 @@ export const PaperEdit = () => {
     </EditFormItem>
 
 
-    <TagSelectModal
+    <TagSelectDialog
       {...dTag} {...editTag}
       object={paper} onChange={onChangeImmediate}
     />

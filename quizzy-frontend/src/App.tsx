@@ -16,7 +16,7 @@ import StatPage from './pages/StatPage';
 import AppLayout from './layout/AppLayout';
 import StartQuizPage from './pages/StartQuizPage';
 
-import { Tab, TabList, TabPanel, TabPanels, Tabs } from '@chakra-ui/react';
+import { Tabs } from '@chakra-ui/react';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from './data/query';
 import TagsPage from './pages/TagsPage';
@@ -37,18 +37,16 @@ const EditPage = () => {
 };
 
 const EditSelectPage = () => {
-  return <Tabs variant='enclosed'>
-    <TabList>
-      <Tab>paper</Tab>
-      <Tab>question</Tab>
-      <Tab>tag</Tab>
-    </TabList>
-    <TabPanels>
-      <TabPanel><PaperSelectionPage /></TabPanel>
-      <TabPanel><QuestionPage /></TabPanel>
-      <TabPanel><TagsPage /></TabPanel>
-    </TabPanels>
-  </Tabs>
+  return <Tabs.Root variant="enclosed">
+    <Tabs.List>
+      <Tabs.Trigger value="paper">paper</Tabs.Trigger>
+      <Tabs.Trigger value="question">question</Tabs.Trigger>
+      <Tabs.Trigger value="tag">tag</Tabs.Trigger>
+    </Tabs.List>
+    <Tabs.Content value="paper"><PaperSelectionPage /></Tabs.Content>
+    <Tabs.Content value="question"><QuestionPage /></Tabs.Content>
+    <Tabs.Content value="tag"><TagsPage /></Tabs.Content>
+  </Tabs.Root>;
 };
 
 export const App = () => {

@@ -5,49 +5,14 @@ import { usePapers } from "@/data/papers";
 import {
   Button,
   HStack,
-  Tab,
-  TabList,
-  TabPanel,
-  TabPanels,
   Tabs,
-  Tag,
   useCallbackRef,
   VStack,
   Wrap,
 } from "@chakra-ui/react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import useTags from "@/data/tags";
 
-type _S = {
-  sTagsIsSelected: (id: string) => boolean;
-  sTagsToggleSelected: (id: string) => void;
-  sCategoriesIsSelected: (id: string) => boolean;
-  sCategoriesToggleSelected: (id: string) => void;
-};
-
-const RenderedTags = (props: {
-  t?: string[],
-  isTag?: boolean,
-  isPaper?: boolean,
-} & _S) => {
-  const { 
-    t, isTag = true, isPaper = false,
-    sTagsIsSelected, sTagsToggleSelected,
-    sCategoriesIsSelected, sCategoriesToggleSelected,
-  } = props;
-  // TODO this is too slow
-  return <>
-    {t?.map(x => <Tag
-      key={x} cursor='pointer' 
-      onClick={() => (isTag ? sTagsToggleSelected : sCategoriesToggleSelected)(x)}
-      colorScheme={(isTag ? sTagsIsSelected : sCategoriesIsSelected)(x) ? 'purple' : undefined}
-      border={isPaper ? '1px solid gray' : undefined}
-      transition='all 0.3s ease'
-      userSelect='none'
-    >{x}</Tag>)}
-  </>;
-};
 
 export const StartQuizPage = () => {
 
@@ -89,31 +54,18 @@ export const StartQuizPage = () => {
     return await startRandom2(ids, tabIndex === 1);
   };
 
-  // tab 0
-
-  // tab 1 & 2
-  const tags = useTags();
-
-  const _s = {
-    sTagsIsSelected: sTags.isSelected,
-    sTagsToggleSelected: sTags.toggleSelected,
-    sCategoriesIsSelected: sCategories.isSelected,
-    sCategoriesToggleSelected: sCategories.toggleSelected,
-  };
-
-
   // global
   const startRandomDisabled = !selectionByTab[tabIndex]?.isAnySelected;
 
-  const tabs = <Tabs variant='enclosed' onChange={onTabIndexChange}>
-    <TabList>
-      <Tab>{t('modal.startQuiz.tab.paper')}</Tab>
-      <Tab>{t('modal.startQuiz.tab.tag')}</Tab>
-      <Tab>{t('modal.startQuiz.tab.category')}</Tab>
-    </TabList>
+  const tabs = <Tabs.Root variant='enclosed' onValueChange={(e) => onTabIndexChange(Number(e.value))}>
+    <Tabs.List>
+      <Tabs.Trigger value="0">{t('dialog.startQuiz.tab.paper')}</Tabs.Trigger>
+      <Tabs.Trigger value="1">{t('dialog.startQuiz.tab.tag')}</Tabs.Trigger>
+      <Tabs.Trigger value="2">{t('dialog.startQuiz.tab.category')}</Tabs.Trigger>
+    </Tabs.List>
 
-    <TabPanels>
-      <TabPanel as={VStack} alignItems='stretch'>
+    <Tabs.Content value="0">
+      <VStack alignItems='stretch'>
         <Wrap>
           {papers.map(p => <PaperCard
             key={p.id}
@@ -123,30 +75,26 @@ export const StartQuizPage = () => {
             onStart={() => start(p.id)}
           />)}
         </Wrap>
-      </TabPanel>
-      <TabPanel>
-        <Wrap>
-          <RenderedTags t={tags.tempTagList.paperTags} isPaper={true} {..._s} />
-          <RenderedTags t={tags.tempTagList.questionTags} {..._s} />
-        </Wrap>
-      </TabPanel>
-      <TabPanel>
-        <Wrap>
-          <RenderedTags t={tags.tempTagList.paperCategories} isPaper={true} isTag={false} {..._s} />
-          <RenderedTags t={tags.tempTagList.questionCategories} isTag={false} {..._s} />
-        </Wrap>
-      </TabPanel>
-    </TabPanels>
-  </Tabs>;
+      </VStack>
+    </Tabs.Content>
+
+    <Tabs.Content value="1">
+      TODO
+    </Tabs.Content>
+
+    <Tabs.Content value="2">
+      TODO
+    </Tabs.Content>
+  </Tabs.Root>;
 
   return <VStack alignItems='stretch'>
     {tabs}
     <HStack>
       <Button
-        colorScheme="purple" isDisabled={startRandomDisabled}
+        colorPalette="purple" disabled={startRandomDisabled}
         onClick={() => startRandomWithTab(selectionByTab[tabIndex].getAllSelected())}
       >
-        {t('modal.startQuiz.btn.startRandom')}
+        {t('dialog.startQuiz.btn.startRandom')}
       </Button>
     </HStack>
   </VStack>;

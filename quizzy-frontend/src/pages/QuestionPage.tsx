@@ -11,7 +11,7 @@ import Sheet, { Column, withSheetRow } from "@/components/common/Sheet";
 import Pagination from "@/components/Pagination";
 import { DateTime } from "luxon";
 import { useTranslation } from "react-i18next";
-import QuestionPreviewModal from "@/modals/QuestionPreviewModal";
+import QuestionPreviewDialog from "@/dialogs/QuestionPreviewDialog";
 import { useDisclosureWithData } from "@/utils/disclosure";
 import { SearchBox } from "@/components/SearchBox";
 
@@ -88,7 +88,7 @@ export const QuestionPage = () => {
       /> : undefined}
     </VStack>
 
-    <QuestionPreviewModal {...dPreview} question={dPreviewQuestion} />
+    <QuestionPreviewDialog {...dPreview} question={dPreviewQuestion} />
   </>;
 };
 export default QuestionPage;

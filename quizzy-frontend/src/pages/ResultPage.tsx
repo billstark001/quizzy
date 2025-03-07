@@ -4,12 +4,14 @@ import { QuizResultRecordRow } from "@quizzy/base/types";
 import { ID } from "@quizzy/base/types";
 import { useDisclosureWithData } from "@/utils/disclosure";
 import { Quizzy } from "@/data";
-import { Box, Button, Divider, Modal, ModalBody, ModalCloseButton, ModalContent, ModalHeader, ModalOverlay, VStack } from "@chakra-ui/react";
+import { Box, Button, Separator, VStack } from "@chakra-ui/react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useParams } from "react-router-dom";
 import { StatPanel } from "@/components/StatPanel";
 import { useQuery } from "@tanstack/react-query";
+import { DialogRoot, DialogBody, DialogCloseTrigger, DialogContent, DialogHeader } from "@/components/ui/dialog";
+import { getDialogController } from "@/utils/chakra";
 
 export type ResultPageParams = {
   rid: ID;
@@ -92,7 +94,7 @@ export const ResultPage = () => {
       <Box>{t('page.result.times', { startTime, timeUsed })}</Box>
       <Box>{t('page.result.score', { score, total, percentage: (score ?? 0) / (total ?? 1) })}</Box>
 
-      <Divider />
+      <Separator />
 
       <Sheet data={result.records}>
         <Column field='name' />
@@ -105,18 +107,17 @@ export const ResultPage = () => {
         </Column>
       </Sheet>
 
-      <Divider />
+      <Separator />
       {stat ? <StatPanel stat={stat} /> : <>NO STAT</>}
 
     </VStack>
 
-    <Modal {...d} size='6xl' closeOnOverlayClick={false}>
+    <DialogRoot {...getDialogController(d)} size='xl' closeOnInteractOutside={false}>
 
-      <ModalOverlay />
-      <ModalContent my={5}>
-        <ModalHeader>{t('page.result.modal.question.header')}</ModalHeader>
-        <ModalCloseButton />
-        <ModalBody pb={5}>
+      <DialogContent my={5}>
+        <DialogHeader>{t('page.result.dialog.question.header')}</DialogHeader>
+        <DialogCloseTrigger />
+        <DialogBody pb={5}>
           <QuestionDisplay isResult
             question={question}
             answers={result.answers[qid ?? '']}
@@ -128,9 +129,9 @@ export const ResultPage = () => {
             onExit={onClose}
             panelStyle={<VStack maxH='70vh' />}
           />
-        </ModalBody>
-      </ModalContent>
-    </Modal>
+        </DialogBody>
+      </DialogContent>
+    </DialogRoot>
 
   </>;
 

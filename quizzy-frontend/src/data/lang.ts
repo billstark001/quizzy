@@ -62,7 +62,7 @@ export const langRes: LanguageResource = {
     }
   },
 
-  modal: {
+  dialog: {
     startQuiz: {
       header: ['Starting New Quiz', '新規クイズを開始', '开始新测验'],
       btn: {
@@ -183,7 +183,7 @@ export const langRes: LanguageResource = {
       autoDetect: ['Auto Detect', '自動検出', '自动检测']
     },
     result: {
-      modal: {
+      dialog: {
         question: {
           header: ['Question Detail', '問題詳細', '问题详情']
         }

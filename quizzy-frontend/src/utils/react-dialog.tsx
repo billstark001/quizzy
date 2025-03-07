@@ -1,8 +1,11 @@
 import React, { isValidElement, ReactNode, RefObject, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { AlertDialog, AlertDialogBody, AlertDialogCloseButton, AlertDialogContent, AlertDialogFooter, AlertDialogHeader, AlertDialogOverlay, AlertDialogProps, Button, ButtonProps, HStack, useCallbackRef } from "@chakra-ui/react";
+import {
+  Button, ButtonProps, DialogRootProps, HStack, useCallbackRef
+} from "@chakra-ui/react";
 import { useTranslation } from "react-i18next";
 import { uuidV4B64 } from "@quizzy/base/utils";
 import { promiseWithResolvers } from "./func";
+import { DialogBody, DialogCloseTrigger, DialogContent, DialogFooter, DialogHeader, DialogRoot } from "@/components/ui/dialog";
 
 type _O<T> = Readonly<T | [T, ReactNode] | [T, ReactNode, ButtonProps]>;
 export type DialogDefinition<T = boolean> = {
@@ -15,8 +18,8 @@ export type DialogDefinition<T = boolean> = {
 };
 
 
-export type DialogType = 'normal' | 'alert' | 
-'alert-confirm' | 'ok-cancel' | 'load-discard' | 'save-discard';
+export type DialogType = 'normal' | 'alert' |
+  'alert-confirm' | 'ok-cancel' | 'load-discard' | 'save-discard';
 export type DialogOpener = {
   (desc: ReactNode, type?: DialogType, id?: string): Promise<boolean>;
   <T = boolean>(option: Readonly<DialogDefinition<T>>): Promise<T>;
@@ -24,7 +27,7 @@ export type DialogOpener = {
 
 type DialogState = {
   id: string;
-  isOpen: boolean;
+  open: boolean;
   definition: Readonly<DialogDefinition>;
 };
 
@@ -34,19 +37,19 @@ const getOptionsDefinition = (
   t: ReturnType<typeof useTranslation>['t'], type: DialogType
 ): _O<boolean>[] =>
   type === 'load-discard' ? [
-    [false, t('common.btn.discard'), { colorScheme: 'red' }],
-    [true, t('common.btn.load'), { colorScheme: 'green' }]
+    [false, t('common.btn.discard'), { colorPalette: 'red' }],
+    [true, t('common.btn.load'), { colorPalette: 'green' }]
   ] : type === 'save-discard' ? [
-    [false, t('common.btn.discard'), { colorScheme: 'red' }],
-    [true, t('common.btn.save'), { colorScheme: 'green' }]
+    [false, t('common.btn.discard'), { colorPalette: 'red' }],
+    [true, t('common.btn.save'), { colorPalette: 'green' }]
   ] : type === 'alert-confirm' ? [
     [false, t('common.btn.cancel')],
-    [true, t('common.btn.confirm'), { colorScheme: 'red' }]
+    [true, t('common.btn.confirm'), { colorPalette: 'red' }]
   ] : type === 'ok-cancel' ? [
-    [false, t('common.btn.cancel', { colorScheme: 'red' })],
-    [true, t('common.btn.ok'), { colorScheme: 'purple' }]
+    [false, t('common.btn.cancel', { colorPalette: 'red' })],
+    [true, t('common.btn.ok'), { colorPalette: 'purple' }]
   ] : type === 'alert' ? [
-    [true, t('common.btn.dismiss'), { colorScheme: 'red' }]
+    [true, t('common.btn.dismiss'), { colorPalette: 'red' }]
   ] : [
     [true, t('common.btn.dismiss')],
   ];
@@ -61,7 +64,7 @@ function getOptionDefinition<T = boolean>(o: _O<T>): {
     : { key: o as T, desc: String(o) };
 }
 
-export const AsyncDialog = (props: Partial<AlertDialogProps> & {
+export const AsyncDialog = (props: Partial<DialogRootProps> & {
   onOpenDialogChanged: (func: DialogOpener) => void;
 }) => {
 
@@ -87,7 +90,7 @@ export const AsyncDialog = (props: Partial<AlertDialogProps> & {
       throw new Error('ID Conflict: ' + id);
     }
     const state: DialogState = {
-      id, isOpen: true, definition: def,
+      id, open: true, definition: def,
     };
     setDialogRecord(d => ({ ...d, [id]: state }));
     return id;
@@ -107,7 +110,7 @@ export const AsyncDialog = (props: Partial<AlertDialogProps> & {
       return;
     }
     const state = dialogRecord[id];
-    setDialogRecord(d => ({ ...d, [id]: { ...state, isOpen: false } }));
+    setDialogRecord(d => ({ ...d, [id]: { ...state, open: false } }));
   }, [dialogRecord, setDialogRecord]);
   const closeRef = useCallbackRef(close);
 
@@ -129,7 +132,7 @@ export const AsyncDialog = (props: Partial<AlertDialogProps> & {
           options: getOptionsDefinition(t, type || 'normal'),
           closeOption: false,
         };
-      const id = openRef(def);
+      const id = openRef(def) ?? '';
       if (promiseMap[id]) {
         return promiseMap[id].promise;
       }
@@ -149,10 +152,10 @@ export const AsyncDialog = (props: Partial<AlertDialogProps> & {
     }
   }, [openRef, closeRef]);
 
-  useEffect(() => onOpenDialogChanged(openDialog), [openDialog, onOpenDialogChanged]);
+  useEffect(() => void onOpenDialogChanged(openDialog), [openDialog, onOpenDialogChanged]);
 
   const renderSingleDialog = (state: Readonly<DialogState>) => {
-    const { id, isOpen, definition: data } = state;
+    const { id, open, definition: data } = state;
     const { title, desc, type } = data;
     const options = data.options?.length
       ? data.options
@@ -161,38 +164,42 @@ export const AsyncDialog = (props: Partial<AlertDialogProps> & {
     const closeOption = data.closeOption
       ?? getOptionDefinition(options[0]).key;
 
-    return <AlertDialog
-      isOpen={isOpen} key={id}
-      onCloseComplete={() => closeRef(id, true)}
-      leastDestructiveRef={((r: any) => cancelRefs.current![id] = r) as any}
-      onClose={() => closeDialog(id, closeOption)}
+    return <DialogRoot
+      role="alertdialog"
+      key={id}
+      onExitComplete={() => closeRef(id, true)}
+      initialFocusEl={((r: any) => cancelRefs.current![id] = r) as any}
+      open={open} 
+      onOpenChange={({ open }) => {
+        if (!open) {
+          closeDialog(id, closeOption);
+        }
+      }}
       {...dialogProps}
     >
-      <AlertDialogOverlay>
-        <AlertDialogContent>
-          <AlertDialogCloseButton onClick={() => closeDialog(id, closeOption)} />
-          <AlertDialogHeader fontSize='lg' fontWeight='bold'>
-            {title ?? t(`common.dialog.title.${type || 'normal'}`)}
-          </AlertDialogHeader>
+      <DialogContent>
+        <DialogCloseTrigger onClick={() => closeDialog(id, closeOption)} />
+        <DialogHeader fontSize='lg' fontWeight='bold'>
+          {title ?? t(`common.dialog.title.${type || 'normal'}`)}
+        </DialogHeader>
 
-          <AlertDialogBody>
-            {desc}
-          </AlertDialogBody>
+        <DialogBody>
+          {desc}
+        </DialogBody>
 
-          <AlertDialogFooter
-            as={options.length > 1 ? HStack : undefined}
-            justifyContent={options.length > 1 ? 'space-between' : undefined}
-          >
-            {options.map((option, index) => {
-              const { key, desc, props } = getOptionDefinition(option);
-              return <Button key={index} onClick={() => closeDialog(id, key)} {...props}>
-                {desc}
-              </Button>;
-            })}
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialogOverlay>
-    </AlertDialog>;
+        <DialogFooter
+          as={options.length > 1 ? HStack : undefined}
+          justifyContent={options.length > 1 ? 'space-between' : undefined}
+        >
+          {options.map((option, index) => {
+            const { key, desc, props } = getOptionDefinition(option);
+            return <Button key={index} onClick={() => closeDialog(id, key)} {...props}>
+              {desc}
+            </Button>;
+          })}
+        </DialogFooter>
+      </DialogContent>
+    </DialogRoot>;
   };
 
   return <>

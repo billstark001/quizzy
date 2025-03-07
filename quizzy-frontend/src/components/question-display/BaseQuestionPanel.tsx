@@ -3,9 +3,8 @@ import {
   Box,
   HStack,
   VStack,
-  useColorMode,
-  HTMLChakraProps,
-  IconButton
+  IconButton,
+  StackProps
 } from "@chakra-ui/react";
 import { Dispatch, SetStateAction, useState } from "react";
 import Markdown from '@/markdown/markdown-renderer';
@@ -15,6 +14,7 @@ import { MdAdd } from "react-icons/md";
 import { Components } from "react-markdown";
 
 import { IoBookmark, IoBookmarkOutline } from "react-icons/io5";
+import { useColorMode } from "../ui/color-mode";
 
 
 export type QuestionPanelState = {
@@ -29,7 +29,7 @@ export type QuestionPanelState = {
 export type BaseQuestionPanelProps = {
   components?: Components;
   question: BaseQuestion;
-} & QuestionPanelState & HTMLChakraProps<'div'>;
+} & QuestionPanelState & StackProps;
 
 export const BaseQuestionPanel = (props: BaseQuestionPanelProps) => {
   const { components, question, children,
@@ -65,10 +65,11 @@ export const BaseQuestionPanel = (props: BaseQuestionPanelProps) => {
       top='8px'
       right='8px'
       borderTopRightRadius='1.2em'
-      colorScheme={hasBookmark ? 'purple' : undefined}
+      colorPalette={hasBookmark ? 'purple' : undefined}
       aria-label='bookmark'
-      icon={hasBookmark ? <IoBookmark /> : <IoBookmarkOutline />}
-    />
+    >
+      {hasBookmark ? <IoBookmark /> : <IoBookmarkOutline />}
+    </IconButton>
 
     {title && <Markdown children={title} />}
     <Box w='100%' flex={1}>
