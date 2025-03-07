@@ -9,6 +9,7 @@
   -moz-osx-font-smoothing: grayscale;
 }
 #toast {
+  z-index: 9900;
   position: fixed;
   top: 0;
   left: 0;

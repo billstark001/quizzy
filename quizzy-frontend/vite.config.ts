@@ -23,6 +23,7 @@ export default defineConfig({
   },
   build: {
     target: 'esnext',
+    // minify: false,
     rollupOptions: {
       output: {
         // Provide global variables to use in the UMD build
