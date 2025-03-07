@@ -1,5 +1,5 @@
-import { useQuery } from "@tanstack/react-query";
-import { Quizzy } from ".";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Quizzy, QuizzyRaw } from ".";
 import { Tag, TempTagListResult } from "@quizzy/base/types";
 import { useCallback } from "react";
 
@@ -37,11 +37,9 @@ const _tt = (
 };
 
 type _T = {
-  tagsCanReplaceToId: {
-      [k: string]: string;
-  };
+  tagsWithNoReference: string[];
   tagsRecordedInAlternative: {
-      [k: string]: string;
+      [k: string]: [string, string];
   };
   tagsCanBuildRecord: string[];
   categoriesCanBuildRecord: string[];
@@ -57,11 +55,11 @@ const _t = (
     alternativeSet,
   } = t;
 
-  const tagsCanReplaceToId = new Map<string, string>();
-  const tagsRecordedInAlternative = new Map<string, string>();
+  const tagsWithNoReference = new Set<string>(tagMap.keys());
+  const tagsRecordedInAlternative = new Map<string, [string, string]>();
   const tagsCanBuildRecord = new Set<string>();
   const categoriesCanBuildRecord = new Set<string>();
-  
+
   for (const [key, arr] of Object.entries(tempTagList)) {
     const isCategory = key.endsWith('Categories');
     for (const tag of arr) {
@@ -70,9 +68,10 @@ const _t = (
       }
       let t1: string | undefined;
       if ((t1 = mainNameSet.get(tag))) {
-        tagsCanReplaceToId.set(tag, t1);
+        tagsWithNoReference.delete(t1);
       } else if ((t1 = alternativeSet.get(tag))) {
-        tagsRecordedInAlternative.set(tag, t1);
+        tagsRecordedInAlternative.set(tag, [t1, tagMap.get(t1)!.mainName]);
+        tagsWithNoReference.delete(t1);
       } else {
         if (isCategory) {
           categoriesCanBuildRecord.add(tag);
@@ -84,7 +83,7 @@ const _t = (
   }
 
   return {
-    tagsCanReplaceToId: Object.fromEntries(tagsCanReplaceToId),
+    tagsWithNoReference: Array.from(tagsWithNoReference),
     tagsRecordedInAlternative: Object.fromEntries(tagsRecordedInAlternative),
     tagsCanBuildRecord: Array.from(tagsCanBuildRecord),
     categoriesCanBuildRecord: Array.from(categoriesCanBuildRecord),
@@ -94,9 +93,14 @@ const _t = (
 
 export const useTags = () => {
 
+  const c = useQueryClient();
+
   const qTagList = useQuery({
     queryKey: ['tag-list'],
-    queryFn: () => Quizzy.listTags(),
+    queryFn: () => Quizzy.listTags().then(x => {
+      x.sort((a, b) => a.mainName.localeCompare(b.mainName));
+      return x;
+    }),
     initialData: [],
   });
 
@@ -116,10 +120,29 @@ export const useTags = () => {
   }, [tagList, tempTagList]);
 
 
+  const mRecordAllRecordableTags = useMutation({
+    mutationFn: async () => {
+      const d = findBadTags();
+      for (const tag of d.tagsCanBuildRecord) {
+        QuizzyRaw.getTag(tag);
+      }
+      for (const tag of d.categoriesCanBuildRecord) {
+        QuizzyRaw.getTag(tag);
+      }
+    },
+    onSuccess: () => c.invalidateQueries({ queryKey: ['tag-list'] }),
+    onError: (e) => {
+      c.invalidateQueries({ queryKey: ['tag-list'] });
+      console.error(e);
+    },
+  });
+
+
   return {
     tagList,
     tempTagList,
     findBadTags,
+    recordAllRecordableTags: mRecordAllRecordableTags.mutate,
   }
 };
 

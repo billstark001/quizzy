@@ -15,7 +15,7 @@ const Logo = () => {
   const logoEnv = useContext(LogoEnvironmentContext);
   const { collapsed } = useContext(LayoutContext);
   return <Flex 
-    fontSize="2xl" fontFamily="monospace" fontWeight="bold"
+    fontSize="2xl" fontFamily="menlo, consolas, monospace" fontWeight="bold"
     alignItems='center'
   >
     <Box fontSize='2em' color='inherit'>
