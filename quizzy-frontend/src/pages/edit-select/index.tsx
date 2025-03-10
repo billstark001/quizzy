@@ -1,0 +1,35 @@
+import PaperSelectionPage from './PaperSelectionPage';
+import QuestionPage from './QuestionPage';
+
+import { Tabs } from '@chakra-ui/react';
+import TagsPage from './TagsPage';
+import { useTranslation } from 'react-i18next';
+import BookmarksPage from './BookmarksPage';
+
+
+export const EditSelectPage = () => {
+  const { t } = useTranslation();
+
+  return <Tabs.Root variant="enclosed" defaultValue='paper'>
+    <Tabs.List>
+      <Tabs.Trigger value="paper">
+        {t('page.edit.tab.paper')}
+      </Tabs.Trigger>
+      <Tabs.Trigger value="question">
+        {t('page.edit.tab.question')}
+      </Tabs.Trigger>
+      <Tabs.Trigger value="tag">
+        {t('page.edit.tab.tag')}
+      </Tabs.Trigger>
+      <Tabs.Trigger value="bookmark">
+        {t('page.edit.tab.bookmark')}
+      </Tabs.Trigger>
+    </Tabs.List>
+    <Tabs.Content value="paper"><PaperSelectionPage /></Tabs.Content>
+    <Tabs.Content value="question"><QuestionPage /></Tabs.Content>
+    <Tabs.Content value="tag"><TagsPage /></Tabs.Content>
+    <Tabs.Content value="bookmark"><BookmarksPage /></Tabs.Content>
+  </Tabs.Root>;
+};
+
+export default EditSelectPage;

@@ -69,7 +69,7 @@ export const langRes: LanguageResource = {
         startRandom: ['Start a random quiz', 'ランダムクイズを開始', '开始随机测验'],
       },
       tab: {
-        paper: ['Papers', '試験用紙', '试卷'],
+        paper: ['Papers', '問題冊子', '试卷'],
         tag: ['Tags', 'タグ', '标签'],
         category: ['Categories', 'カテゴリー', '分类'],
       }
@@ -94,7 +94,7 @@ export const langRes: LanguageResource = {
     continueQuiz: ['Continue', '継続クイズ', '继续测验'],
     results: ['Results', '結果', '结果'],
     stats: ['Stats', '統計データ', '统计数据'],
-    edit: ['Edit Quizzes', 'クイズ編集', '编辑试卷与试题'],
+    edit: ['Explore', 'クイズ一覧', '浏览试卷与试题'],
     settings: ['Settings', '設定', '设置'],
   },
 
@@ -143,6 +143,14 @@ export const langRes: LanguageResource = {
   page: {
 
     edit: {
+      
+      tab: {
+        paper: ['Papers', '問題冊子', '试卷'],
+        question: ['Questions', '問題', '试题'],
+        tag: ['Tags', 'タグ', '标签'],
+        bookmark: ['Bookmarks', 'ブックマーク', '书签'],
+      },
+
       toast: {
         dataLoaded: {
           title: ['Loaded', '読み込み完了', '已加载'],
@@ -209,7 +217,7 @@ export const langRes: LanguageResource = {
           header: ['Question Detail', '問題詳細', '问题详情']
         }
       },
-      paperName: ['Quiz Paper: {{paperName}}', 'テスト：{{paperName}}', '测验卷：{{paperName}}'],
+      paperName: ['Quiz Paper: {{paperName}}', 'テスト：{{paperName}}', '试卷：{{paperName}}'],
       times: [
         'Started at {{startTime}}; Total time: {{timeUsed}}',
         '開始時刻：{{startTime}}、所要時間：{{timeUsed}}',
