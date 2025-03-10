@@ -1,29 +1,29 @@
-import { BaseQuestion, BookmarkType } from "@quizzy/base/types";
+import { BaseQuestion } from "@quizzy/base/types";
 import {
   Box,
   HStack,
   VStack,
-  IconButton,
-  StackProps
+  StackProps,
 } from "@chakra-ui/react";
-import { Dispatch, SetStateAction, useState } from "react";
+import { Dispatch, ReactNode, SetStateAction, useState } from "react";
 import Markdown from '@/markdown/markdown-renderer';
 
 import { FiMinus } from "react-icons/fi";
 import { MdAdd } from "react-icons/md";
 import { Components } from "react-markdown";
 
-import { IoBookmark, IoBookmarkOutline } from "react-icons/io5";
 import { useColorMode } from "../ui/color-mode";
 
 
 export type QuestionPanelState = {
   state?: 'select' | 'display';
+
   displaySolution?: boolean;
   expandSolution?: boolean;
-  bookmark?: BookmarkType;
   setExpandSolution?: Dispatch<SetStateAction<boolean>>;
   solutionTitle?: React.ReactNode;
+
+  bookmark?: ReactNode;
 };
 
 export type BaseQuestionPanelProps = {
@@ -48,9 +48,6 @@ export const BaseQuestionPanel = (props: BaseQuestionPanelProps) => {
   const { title, content } = question;
   const { colorMode } = useColorMode();
 
-  const hasBookmark = !!bookmark;
-  // TODO add full bookmark support
-
   return <VStack
     alignItems='flex-start'
     padding='1.5em'
@@ -60,17 +57,7 @@ export const BaseQuestionPanel = (props: BaseQuestionPanelProps) => {
     position='relative'
     {...divProps}
   >
-    <IconButton
-      position='absolute'
-      top='8px'
-      right='8px'
-      borderTopRightRadius='1.2em'
-      colorPalette={hasBookmark ? 'purple' : undefined}
-      aria-label='bookmark'
-    >
-      {hasBookmark ? <IoBookmark /> : <IoBookmarkOutline />}
-    </IconButton>
-
+    {bookmark}
     {title && <Markdown children={title} />}
     <Box w='100%' flex={1}>
       <Markdown components={components} children={content} />

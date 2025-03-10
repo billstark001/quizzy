@@ -1,6 +1,5 @@
 import { PaperEdit } from "@/components/PaperEdit";
 import { QuestionEdit } from "@/components/question-edit/QuestionEdit";
-import { BaseQuestionPanel } from "@/components/question-display/BaseQuestionPanel";
 import { QuestionSelectionDialog } from "@/components/QuestionSelectionDialog";
 import { defaultQuestion, defaultQuizPaper, Question, QuizPaper } from "@quizzy/base/types";
 import { ID } from "@quizzy/base/types";
@@ -18,6 +17,7 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { defaultToaster } from "@/components/ui/toaster";
+import BaseQuestionPanelWithBookmark from "@/components/question-display/BaseQuestionPanelWithBookmark";
 
 
 type EditState = Readonly<{
@@ -338,7 +338,7 @@ export const PaperEditPage = (props: { paper?: string }) => {
       onEdit={onQuestionSort}
       {...dQuestionSelect}
     >
-      {questionPreview && <BaseQuestionPanel w='100%' question={questionPreview} />}
+      {questionPreview && <BaseQuestionPanelWithBookmark w='100%' question={questionPreview} />}
     </QuestionSelectionDialog>
     
     <QuestionPreviewDialog {...dPreview} question={dPreviewQuestion} />

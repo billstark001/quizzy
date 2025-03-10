@@ -20,6 +20,21 @@ export const defaultBookmarkType = (t?: Partial<BookmarkType>): BookmarkType => 
 
 export type BookmarkCategory = 'paper' | 'question';
 
+export const BookmarkReservedWords = Object.freeze([
+  'default', 'reported'
+] as const);
+
+export const BOOKMARK_DEFAULT_CSS_COLOR = 'gray.solid';
+
+export const BookmarkReservedColors = Object.freeze({
+  'default': 'gray.solid',
+  'reported': 'orange.solid',
+} satisfies Record<BookmarkReservedWord, string>);
+
+export type BookmarkReservedWord = (typeof BookmarkReservedWords)[
+  number
+] & string;
+
 export type BookmarkBase = {
   typeId: ID; // empty -> default type
   itemId: ID;

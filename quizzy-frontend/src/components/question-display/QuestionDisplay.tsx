@@ -8,9 +8,10 @@ import { useTranslation } from "react-i18next";
 import { getTagStyle } from "@/utils/react";
 import { BlankQuestionPanelProps, TextQuestionPanelProps } from "./BlankQuestionPanel";
 import { ChoiceQuestionPanelProps } from "./ChoiceQuestionPanel";
-import { QuestionPanelProps, QuestionPanel } from "./QuestionPanel";
+import { QuestionPanelProps } from "./QuestionPanel";
 import { QuestionSelectionDialog } from "../QuestionSelectionDialog";
-import BaseQuestionPanel from "./BaseQuestionPanel";
+import BaseQuestionPanelWithBookmark from "./BaseQuestionPanelWithBookmark";
+import QuestionPanelWithBookmark from "./QuestionPanelWithBookmark";
 
 
 export type QuestionDisplayProps = {
@@ -145,7 +146,7 @@ export const QuestionDisplay = (props: QuestionDisplayProps) => {
         {hasTotalTime && <Box>{formatMilliseconds(totalTime)}</Box>}
       </HStack>
     </HStack>
-    {question && <QuestionPanel
+    {question && <QuestionPanelWithBookmark
       overflowY='auto'
       flex={1}
       {...getTagStyle(panelStyle, true, VStack) as {}}
@@ -188,7 +189,7 @@ export const QuestionDisplay = (props: QuestionDisplayProps) => {
       }} onSelect={onQuestionChanged}
       {...q}
     >
-      {question ? <BaseQuestionPanel w='100%' question={previewQuestion ?? question} /> : <></>}
+      {question ? <BaseQuestionPanelWithBookmark w='100%' question={previewQuestion ?? question} /> : <></>}
     </QuestionSelectionDialog>
   </VStack>;
 };

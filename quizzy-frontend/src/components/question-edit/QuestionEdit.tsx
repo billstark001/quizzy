@@ -108,7 +108,7 @@ export const QuestionEdit = () => {
         }}><MdAdd /> {t('page.edit.choice.addTop')}</Button>
         <HStack>
           <Box>{t('page.edit.choice.multiple')}</Box>
-          <Switch.Root {...edit('multiple', { debounce: true, key: 'isChecked' })}>
+          <Switch.Root {...edit('multiple', { debounce: true, key: 'checked' })}>
             <Switch.HiddenInput />
             <Switch.Control>
               <Switch.Thumb />

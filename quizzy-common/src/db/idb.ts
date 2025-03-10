@@ -24,8 +24,8 @@ import { startQuiz, updateQuiz } from "./quiz";
 import { initWeightedState } from "../utils/random-seq";
 import { createStatFromQuizResults } from "./stats";
 import { normalizeQuestion } from "./question-id";
-import IDBCore, { Bm25Cache, BuildBm25CacheOptions, trieSearchByQuery } from "./idb-core";
-import { Bookmark, BookmarkBase, BookmarkType, defaultBookmark, defaultBookmarkType } from "../types/bookmark";
+import IDBCore, { BuildBm25CacheOptions, trieSearchByQuery } from "./idb-core";
+import { Bookmark, BookmarkBase, BookmarkReservedColors, BookmarkReservedWords, BookmarkType, defaultBookmark, defaultBookmarkType } from "../types/bookmark";
 import { createMergableTagsFinder, diffTags, mergeTags } from "./tag";
 
 
@@ -45,6 +45,7 @@ const STORE_KEY_GENERAL = 'general';
 
 
 const ticIndices: readonly ((keyof BookmarkBase) & TICIndex)[] = ['typeId', 'itemId', 'category'];
+const icIndices: readonly ((keyof BookmarkBase) & TICIndex)[] = ['itemId', 'category'];
 
 
 const updaters: Record<number, DatabaseUpdateDefinition> = {
@@ -100,19 +101,30 @@ const updaters: Record<number, DatabaseUpdateDefinition> = {
       store.createIndex('deleted', 'deleted');
       store.createIndex('lastUpdate', 'lastUpdate');
     }
+
     // tag
     tagStore.createIndex('mainName', 'mainName', { unique: true });
-    // tagStore.createIndex('type', 'type');
     tagStore.createIndex('alternatives', 'alternatives', { multiEntry: true });
+
     // bookmark
-    bookmarkTypeStore.createIndex('name', 'name', { unique: true });
     // 'typeId' | 'itemId' | 'category';
     for (const i of ticIndices) {
       bookmarkStore.createIndex(i, i);
     }
     bookmarkStore.createIndex('TIC', ticIndices as any, { unique: true });
+    bookmarkStore.createIndex('IC', icIndices as any);
     bookmarkStore.createIndex('createTime', 'createTime');
-  }
+
+    // bookmark type
+    bookmarkTypeStore.createIndex('name', 'name', { unique: true });
+    for (const w of BookmarkReservedWords) {
+      bookmarkTypeStore.put(defaultBookmarkType({
+        dispCssColor: BookmarkReservedColors[w],
+        name: w,
+        id: w,
+      }));
+    }
+  },
 } as const;
 
 export class IDBController extends IDBCore implements QuizzyController {
@@ -206,7 +218,12 @@ export class IDBController extends IDBCore implements QuizzyController {
   async putBookmarkTIC(payload: BookmarkBase): Promise<ID> {
     // first check if exists, and return the existent one
     const [tx, existentBookmark] = await this._tic(payload);
-    if (existentBookmark && existentBookmark.note !== payload.note) {
+
+    // exists && needs update
+    if (existentBookmark && (
+      existentBookmark.note !== payload.note 
+      || existentBookmark.deleted
+    )) {
       const lastUpdate = Date.now();
       const id = await tx.store.put({ 
         ...existentBookmark, 
@@ -216,6 +233,10 @@ export class IDBController extends IDBCore implements QuizzyController {
       });
       await tx.done;
       return id as ID;
+    } else if (existentBookmark) {
+      // exists
+      await tx.done;
+      return existentBookmark.id;
     }
     // else, create a new one
     const id = await uuidV4B64WithRetry(
@@ -248,8 +269,33 @@ export class IDBController extends IDBCore implements QuizzyController {
     return existentBookmark;
   }
 
-  listBookmarks(index?: TICIndex, value?: string) {
-    return this._list<Bookmark>(STORE_KEY_BOOKMARKS, index, value);
+  listBookmarks(itemId: string, isQuestion: boolean) {
+    return this._list<Bookmark>(STORE_KEY_BOOKMARKS, 'IC', [
+      itemId, 
+      isQuestion ? 'question' : 'paper'
+    ] as any);
+  }
+
+  async clearAllBookmarks(itemId: string, isQuestion: boolean) {
+    const tx = this.db.transaction(STORE_KEY_BOOKMARKS, 'readwrite');
+    const i = tx.store.index('IC');
+    const bookmarks = await i.getAll([
+      itemId,
+      isQuestion ? 'question' : 'paper'
+    ]);
+    const now = Date.now();
+    const promises: Promise<any>[] = [];
+    for (const b of bookmarks) {
+      if (b.deleted) {
+        continue;
+      }
+      b.deleted = true;
+      b.lastUpdate = now;
+      promises.push(tx.store.put(b));
+    }
+    await Promise.all(promises);
+    await tx.done;
+    return promises.length;
   }
 
   // tags

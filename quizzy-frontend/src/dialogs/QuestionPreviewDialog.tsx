@@ -1,4 +1,3 @@
-import { QuestionPanel } from "@/components/question-display/QuestionPanel";
 import { Question } from "@quizzy/base/types";
 import { Button, DialogRootProps, UseDisclosureReturn } from "@chakra-ui/react";
 import { useTranslation } from "react-i18next";
@@ -7,6 +6,7 @@ import {
   DialogContent, DialogFooter, DialogHeader, 
 } from "@/components/ui/dialog";
 import { getDialogController } from "@/utils/chakra";
+import QuestionPanelWithBookmark from "@/components/question-display/QuestionPanelWithBookmark";
 
 export const QuestionPreviewDialog = (props: Omit<DialogRootProps, 'children'> & {
   question?: Question;
@@ -21,7 +21,7 @@ export const QuestionPreviewDialog = (props: Omit<DialogRootProps, 'children'> &
         {t('dialog.questionPreview.header')}
       </DialogHeader>
       <DialogBody>
-        <QuestionPanel
+        <QuestionPanelWithBookmark
           height='68vh'
           overflowY='au to'
           question={question as any}

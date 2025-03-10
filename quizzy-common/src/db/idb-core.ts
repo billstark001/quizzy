@@ -179,7 +179,7 @@ export class IDBCore {
     if (index) {
       ret = await this.db.getAllFromIndex(storeId, index, id || undefined);
     } else {
-      ret = await this.db.getAll(storeId, index);
+      ret = await this.db.getAll(storeId);
     }
     return ret.filter(x => x && !x.deleted);
   }

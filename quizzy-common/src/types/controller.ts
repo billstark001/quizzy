@@ -74,13 +74,8 @@ export interface QuizzyController {
   deleteBookmarkTIC(payload: BookmarkBase): Promise<boolean>;
   getBookmarkTIC(payload: BookmarkBase): Promise<Bookmark | undefined>;
 
-  /**
-   * 
-   * @param index 
-   * @param value the key of given index. `undefined` -> all from 1 index
-   * @returns 
-   */
-  listBookmarks(index?: TICIndex, value?: string): Promise<Bookmark[]>;
+  listBookmarks(itemId: string, isQuestion: boolean): Promise<Bookmark[]>;
+  clearAllBookmarks(itemId: string, isQuestion: boolean): Promise<number>;
 
   // papers & questions
 

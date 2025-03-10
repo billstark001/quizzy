@@ -204,7 +204,7 @@ export type EditProps<T = string> = ({
   get?: (raw: T) => string;
   set?: (raw: string) => T;
 } | {
-  key: 'checked' | 'isChecked',
+  key: 'checked',
   get?: undefined,
   set?: undefined,
 }) & {
@@ -314,7 +314,7 @@ export const useEditor = <T extends object>(props: EditorProps<T>) => {
   const edit = useCallback(<P = HTMLAttributes<HTMLElement>, V = string>(path: string, props?: EditProps<V>) => {
     const { key, debounce, get, set } = props ?? {};
     const getKey = key || 'value';
-    const setKey = (key === 'isChecked' ? 'checked' : key) || 'value';
+    const setKey = key || 'value';
     const current = getFromValue(path, debounce);
     return {
       [getKey as any]: (get ? get(current) : current) ?? '',

@@ -197,7 +197,9 @@ export const createStandaloneHandler = (props?: Omit<WrappedHandlerRootProps, 'o
   let _h: _H | undefined = undefined;
   let _d: DialogOpener | undefined = undefined;
   const wrappedHandler: _H = (f, o) => _h!(f, o);
-  const wrappedDialog: DialogOpener = ((a, b) => _d!(a, b)) as DialogOpener;
+  const wrappedDialog: DialogOpener = ((...args: any[]) => {
+    return (_d as any)!(...args);
+  }) as DialogOpener;
   const onHandlerUpdated = (handler: _H, dialog: DialogOpener) => {
     _h = handler;
     _d = dialog;

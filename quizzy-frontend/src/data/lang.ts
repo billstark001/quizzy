@@ -119,6 +119,27 @@ export const langRes: LanguageResource = {
     }
   },
 
+  btn: {
+    bookmark: {
+      btn: {
+        add: ['Add Bookmark', 'ブックマーク追加', '添加书签'],
+        remove: ['Remove Bookmark', 'ブックマーク削除', '删除书签'],
+        report: ['Report', '問題報告', '报告问题'],
+        removeReport: ['Remove Report', '問題報告を解除', '撤回问题报告'],
+        
+        clearAll: ['Clear All Bookmarks', '全てのブックマークを削除', '删除所有书签'],
+        addTo: ['Add to...', '特定のブックマーク……', '添加到……'],
+      },
+      dialog: {
+        clearAll: [
+          'Do you want to clear all added bookmarks? This cannot be undone.',
+          '追加したブックマークをすべて消去しますか？元に戻すことはできません。',
+          '要清除所有已添加的书签吗？无法取消。'
+        ]
+      }
+    }
+  },
+
   page: {
 
     edit: {

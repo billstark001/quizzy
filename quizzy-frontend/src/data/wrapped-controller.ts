@@ -25,6 +25,7 @@ const keys: Readonly<{[key in keyof QuizzyController]: undefined}> = Object.free
   'deleteBookmarkTIC': undefined,
   'getBookmarkTIC': undefined,
   'listBookmarks': undefined,
+  'clearAllBookmarks': undefined,
 
   // papers & questions
 
