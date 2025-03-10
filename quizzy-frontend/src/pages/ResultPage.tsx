@@ -2,7 +2,6 @@ import { QuestionDisplay } from "@/components/question-display/QuestionDisplay";
 import Sheet, { Column, withSheetRow } from "@/components/common/Sheet";
 import { QuizResultRecordRow } from "@quizzy/base/types";
 import { ID } from "@quizzy/base/types";
-import { useDisclosureWithData } from "@/utils/disclosure";
 import { Quizzy } from "@/data";
 import { Box, Button, Separator, VStack } from "@chakra-ui/react";
 import { useState } from "react";
@@ -10,8 +9,8 @@ import { useTranslation } from "react-i18next";
 import { useParams } from "react-router-dom";
 import { StatPanel } from "@/components/StatPanel";
 import { useQuery } from "@tanstack/react-query";
-import { DialogRoot, DialogBody, DialogCloseTrigger, DialogContent, DialogHeader } from "@/components/ui/dialog";
-import { getDialogController } from "@/utils/chakra";
+import { DialogBody, DialogCloseTrigger, DialogContent, DialogHeader } from "@/components/ui/dialog";
+import { useDialog } from "@/utils/chakra";
 
 export type ResultPageParams = {
   rid: ID;
@@ -53,12 +52,12 @@ export const ResultPage = () => {
 
   // question view
 
-  const d = useDisclosureWithData<{ qid: string, qIndex: number }>({
+  const d = useDialog();
+  const [dState, setDState] = useState<{ qid: string, qIndex: number }>({
     qid: '',
     qIndex: 0,
   });
-  const { data, onOpen, onClose } = d;
-  const { qid, qIndex } = data;
+  const { qid, qIndex } = dState;
 
   const { data: question } = useQuery({
     queryKey: ['question', qid ?? ''],
@@ -77,7 +76,8 @@ export const ResultPage = () => {
   const totalQuestions = result?.records.length ?? 0;
 
   const setQIndex = (qIndex: number) => {
-    return onOpen({ qid: result?.records?.[qIndex - 1]?.id ?? '', qIndex });
+    setDState({ qid: result?.records?.[qIndex - 1]?.id ?? '', qIndex });
+    d.open();
   };
 
 
@@ -103,7 +103,10 @@ export const ResultPage = () => {
         <Column field='status' />
         <Column field='score' />
         <Column>
-          <ResultDisplayButton onClick={onOpen} />
+          <ResultDisplayButton onClick={(x) => {
+            setDState(x);
+            d.open();
+          }} />
         </Column>
       </Sheet>
 
@@ -112,7 +115,7 @@ export const ResultPage = () => {
 
     </VStack>
 
-    <DialogRoot {...getDialogController(d)} size='xl' closeOnInteractOutside={false}>
+    <d.Root size='xl' closeOnInteractOutside={false}>
 
       <DialogContent my={5}>
         <DialogHeader>{t('page.result.dialog.question.header')}</DialogHeader>
@@ -126,12 +129,12 @@ export const ResultPage = () => {
             previewQuestion={preview}
             onPreviewQuestionChanged={setPIndex}
             onQuestionChanged={setQIndex}
-            onExit={onClose}
+            onExit={() => d.submit(undefined)}
             panelStyle={<VStack maxH='70vh' />}
           />
         </DialogBody>
       </DialogContent>
-    </DialogRoot>
+    </d.Root>
 
   </>;
 

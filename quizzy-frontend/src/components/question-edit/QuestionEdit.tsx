@@ -1,11 +1,10 @@
 import { Question } from "@quizzy/base/types";
-import { useDisclosureWithData } from "@/utils/disclosure";
 import {
   Box, Button, HStack,
   Input, NativeSelect, Switch,
   Textarea, TextareaProps, VStack
 } from "@chakra-ui/react";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useEditorContext } from "@/utils/react-patch";
 import { MdAdd } from "react-icons/md";
@@ -16,6 +15,7 @@ import EditForm, { EditFormItem } from "../common/EditForm";
 import TagList, { TagButton } from "../common/TagList";
 import { IoAddOutline } from "react-icons/io5";
 import TagSelectDialog, { TagSelectState } from "../TagSelectDialog";
+import { useDialog } from "@/utils/chakra";
 
 
 const _adjustHeight = (t: HTMLTextAreaElement) => {
@@ -48,9 +48,15 @@ export const QuestionEdit = () => {
   const { t } = useTranslation();
 
   // tags
+  const dTag = useDialog(TagSelectDialog);
+  const [dTagState, setDTagState] = useState<TagSelectState>({});
 
-  const { data: editTag, ...dTag } = useDisclosureWithData<TagSelectState>({});
-
+  const open = async (s: TagSelectState) => {
+    setDTagState(s);
+    const result = await dTag.open<Partial<Question>>();
+    onChangeImmediate(result);
+  }
+  
   return <EditForm>
     <EditFormItem label={t('page.edit.title')}>
       <Input {...edit('title', { debounce: true })} />
@@ -70,19 +76,19 @@ export const QuestionEdit = () => {
 
     <EditFormItem label={t('page.edit.tags')}>
       <TagList tags={question.tags}
-        onDoubleClick={(_, __, i) => dTag.onOpen({ tagIndex: i })}
+        onDoubleClick={(_, __, i) => open({ tagIndex: i })}
       >
-        <TagButton onClick={() => dTag.onOpen()}><IoAddOutline /></TagButton>
+        <TagButton onClick={() => open({})}><IoAddOutline /></TagButton>
       </TagList>
     </EditFormItem>
 
     <EditFormItem label={t('page.edit.categories')}>
       <TagList tags={question.categories}
         onDoubleClick={(_, __, i) =>
-          dTag.onOpen({ tagIndex: i, isCategory: true })}
+          open({ tagIndex: i, isCategory: true })}
       >
         <TagButton onClick={() =>
-          dTag.onOpen({ isCategory: true })}><IoAddOutline /></TagButton>
+          open({ isCategory: true })}><IoAddOutline /></TagButton>
       </TagList>
     </EditFormItem>
 
@@ -133,10 +139,7 @@ export const QuestionEdit = () => {
       <Textarea2 {...edit('solution', { debounce: true })} />
     </EditFormItem>
 
-    <TagSelectDialog
-      {...dTag} {...editTag}
-      object={question} onChange={onChangeImmediate}
-    />
+    <dTag.Root object={question} {...dTagState} />
 
   </EditForm>;
 

@@ -1,6 +1,6 @@
-import { KeywordIndexed, TagSearchResult } from "@quizzy/base/types";
+import { KeywordIndexed, Question, TagSearchResult } from "@quizzy/base/types";
 import {
-  Button, DialogRootProps, Input, useCallbackRef, UseDisclosureReturn, VStack,
+  Button, Input, useCallbackRef, VStack,
   Wrap
 } from "@chakra-ui/react";
 import { useState, useCallback, useEffect, useRef } from "react";
@@ -9,11 +9,12 @@ import { Quizzy } from "@/data";
 import { debounce, DebounceReturn } from "@/utils/debounce";
 import { getChangedArray } from "@/utils/array";
 import TagList from "./common/TagList";
-import { 
-  DialogRoot, DialogBody, DialogCloseTrigger, 
-  DialogContent, DialogFooter, DialogHeader 
+import {
+  DialogRoot, DialogBody, DialogCloseTrigger,
+  DialogContent, DialogFooter, DialogHeader
 } from "./ui/dialog";
-import { getDialogController } from "@/utils/chakra";
+import { DialogRootNoChildrenProps, UseDialogYieldedRootProps } from "@/utils/chakra";
+import useTags from "@/data/tags";
 
 export type TagSelectState = {
   tagIndex?: number,
@@ -24,22 +25,22 @@ const _d = (): TagSearchResult => ({
   question: [], questionTags: [], paper: [], paperTags: [],
 });
 
-export const TagSelectDialog = (props: Omit<DialogRootProps, 'children' | 'onSelect'> & {
-  object: Readonly<KeywordIndexed>,
-  onChange?: (patch: Partial<KeywordIndexed>) => void | Promise<void>,
-  onSelect?: (tag: string) => void,
-  dbIndex?: string,
-} & TagSelectState & UseDisclosureReturn) => {
+export const TagSelectDialog = (
+  props: {
+    object: Readonly<KeywordIndexed>,
+  } & TagSelectState
+    & DialogRootNoChildrenProps
+    & UseDialogYieldedRootProps<Partial<Question>>
+) => {
 
   const {
     isCategory, tagIndex,
-    object, onChange, onSelect,
+    object, submit,
     ...dialogProps
   } = props;
 
-  const { open, onClose } = dialogProps;
-
   const { t } = useTranslation();
+  const tags = useTags();
 
   const [currentTag, setCurrentTag] = useState('');
   const [origArr, setOrigArr] = useState<readonly string[]>([]);
@@ -52,17 +53,17 @@ export const TagSelectDialog = (props: Omit<DialogRootProps, 'children' | 'onSel
     setOrigArr(origArr ?? []);
     const orig = (tagIndex == null ? undefined : origArr?.[tagIndex]) ?? '';
     setCurrentTag(orig);
+    setListExpanded(false);
   }, [open]);
 
   const submitTag = useCallback(async () => {
-    await onChange?.({
+    const resultObject = {
       [isCategory ? 'categories' : 'tags']: tagIndex == null
         ? [...origArr, currentTag]
         : getChangedArray(origArr, tagIndex, currentTag)
-    });
-    onSelect?.(currentTag);
-    onClose();
-  }, [onChange, onSelect, onClose, currentTag, isCategory, tagIndex, origArr]);
+    };
+    submit(resultObject);
+  }, [submit, currentTag, isCategory, tagIndex, origArr]);
 
   // display list
   const [listExpanded, setListExpanded] = useState(false);
@@ -97,8 +98,8 @@ export const TagSelectDialog = (props: Omit<DialogRootProps, 'children' | 'onSel
       }}
     />;
 
-  return <DialogRoot closeOnInteractOutside={false} 
-    {...dialogProps} {...getDialogController(dialogProps)}>
+  return <DialogRoot closeOnInteractOutside={false}
+    {...dialogProps}>
     <DialogContent>
       <DialogCloseTrigger />
       <DialogHeader>{t('dialog.tagSelect.header')}</DialogHeader>
@@ -115,7 +116,7 @@ export const TagSelectDialog = (props: Omit<DialogRootProps, 'children' | 'onSel
         </Wrap>}
       </DialogBody>
       <DialogFooter justifyContent='space-between'>
-        <Button colorPalette='red' onClick={onClose}>{t('common.btn.cancel')}</Button>
+        <Button colorPalette='red' onClick={() => submit({})}>{t('common.btn.cancel')}</Button>
         <Button colorPalette='purple' onClick={submitTag}>{t('common.btn.save')}</Button>
       </DialogFooter>
     </DialogContent>

@@ -1,7 +1,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Quizzy, QuizzyRaw } from ".";
 import { Tag, TempTagListResult } from "@quizzy/base/types";
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 import { useCallbackRef } from "@chakra-ui/react";
 
 
@@ -114,11 +114,31 @@ export const useTags = () => {
   const tagList = qTagList.data;
   const tempTagList = qTempTagList.data;
 
+  const parsedTagList = useMemo(() => _tt(tagList), [tagList]);
+
   const findBadTags = useCallback(() => {
-    const t = _tt(tagList);
-    const r = _t(tempTagList, t);
+    const r = _t(tempTagList, _tt(tagList));
     return r;
   }, [tagList, tempTagList]);
+
+  const getTag = (name: string) => {
+    name ??= '';
+    const t = parsedTagList.mainNameSet.get(name);
+    const isAlternative = t == null;
+    const t2 = isAlternative
+      ? parsedTagList.alternativeSet.get(name)
+      : undefined;
+    const tagObject = parsedTagList.tagMap.get(t || t2 || '');
+    if (tagObject == null) {
+      return {
+        isAlternative: false,
+      };
+    }
+    return {
+      tag: tagObject as Readonly<Tag>,
+      isAlternative,
+    }
+  }
 
 
   const recordAllRecordableTags = useCallbackRef(async () => {
@@ -138,6 +158,7 @@ export const useTags = () => {
   });
 
   return {
+    getTag,
     tagList,
     tempTagList,
     findBadTags,

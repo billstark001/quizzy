@@ -1,5 +1,4 @@
 import { QuizPaper } from "@quizzy/base/types";
-import { useDisclosureWithData } from "@/utils/disclosure";
 import { IoAddOutline } from "react-icons/io5";
 import {
   Input, InputProps
@@ -10,6 +9,8 @@ import { Textarea2 } from "./question-edit/QuestionEdit";
 import EditForm, { EditFormItem } from "./common/EditForm";
 import TagList, { TagButton } from "./common/TagList";
 import TagSelectDialog, { TagSelectState } from "./TagSelectDialog";
+import { useState } from "react";
+import { useDialog } from "@/utils/chakra";
 
 
 export const PaperEdit = () => {
@@ -19,9 +20,14 @@ export const PaperEdit = () => {
   const { t } = useTranslation();
 
   // tags
+  const dTag = useDialog(TagSelectDialog);
+  const [dTagState, setDTagState] = useState<TagSelectState>({});
 
-  const { data: editTag, ...dTag } = useDisclosureWithData<TagSelectState>({});
-
+  const open = async (s: TagSelectState) => {
+    setDTagState(s);
+    const result = await dTag.open<Partial<QuizPaper>>();
+    onChangeImmediate(result);
+  }
   return <EditForm>
     
     <EditFormItem label={t('page.edit.title')}>
@@ -30,19 +36,19 @@ export const PaperEdit = () => {
 
     <EditFormItem label={t('page.edit.tags')}>
       <TagList tags={paper.tags} 
-        onDoubleClick={(_, __, i) => dTag.onOpen({ tagIndex: i })}
+        onDoubleClick={(_, __, i) => open({ tagIndex: i })}
       >
-        <TagButton onClick={() => dTag.onOpen()} children={<IoAddOutline />} />
+        <TagButton onClick={() => open({})} children={<IoAddOutline />} />
       </TagList>
     </EditFormItem>
 
     <EditFormItem label={t('page.edit.categories')}>
       <TagList tags={paper.categories} 
         onDoubleClick={(_, __, i) => 
-          dTag.onOpen({ tagIndex: i, isCategory: true  })}
+          open({ tagIndex: i, isCategory: true  })}
       >
         <TagButton onClick={() => 
-          dTag.onOpen({ isCategory: true })} children={<IoAddOutline />} />
+          open({ isCategory: true })} children={<IoAddOutline />} />
       </TagList>
     </EditFormItem>
 
@@ -67,10 +73,7 @@ export const PaperEdit = () => {
     </EditFormItem>
 
 
-    <TagSelectDialog
-      {...dTag} {...editTag}
-      object={paper} onChange={onChangeImmediate}
-    />
+    <dTag.Root object={paper} {...dTagState} />
   </EditForm>;
 
 };
