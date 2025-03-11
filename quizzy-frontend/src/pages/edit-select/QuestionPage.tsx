@@ -7,9 +7,7 @@ import { QuizzyRaw } from "@/data";
 import { Question } from "@quizzy/base/types";
 import { SearchResult } from "@quizzy/base/types";
 import Pagination from "@/components/Pagination";
-import QuestionPreviewDialog from "@/dialogs/QuestionPreviewDialog";
 import { SearchBox } from "@/components/SearchBox";
-import { useDialog } from "@/utils/chakra";
 import QuestionCard from "@/components/item-brief/QuestionCard";
 
 
@@ -25,11 +23,9 @@ const fetchSearchResult = async (searchTerm?: string, page?: number): Promise<Se
 };
 
 
-export const QuestionPage = () => {
+export const QuestionPage = ({ preview }: { preview?: (q: Question | undefined) => undefined }) => {
   const [searchResultFrozen, setSearchResultFrozen] = useState<SearchResult<Question>>();
   const [currentPage, setCurrentPage] = useState(0);
-
-  const dPreview = useDialog<Question | undefined, any>(QuestionPreviewDialog);
 
   const setPage = useCallback(async (page: number) => {
     setCurrentPage(page);
@@ -46,7 +42,7 @@ export const QuestionPage = () => {
     <VStack alignItems='stretch'>
       <SearchBox
         onFreezeResult={setSearchResultFrozen}
-        onSelectItem={dPreview.open}
+        onSelectItem={preview}
         fetchSearchResult={fetchSearchResult}
         renderItem={(q) => <>
           {q.title}
@@ -56,7 +52,7 @@ export const QuestionPage = () => {
       {searchResultFrozen?.result?.map((q) => <QuestionCard
         key={q.id}
         question={q}
-        preview={dPreview.open}
+        preview={preview}
       />)}
       {searchResultFrozen?.totalPages ? <Pagination
         nearPages={nearPages}
@@ -66,7 +62,6 @@ export const QuestionPage = () => {
       /> : undefined}
     </VStack>
 
-    <dPreview.Root />
   </>;
 };
 export default QuestionPage;

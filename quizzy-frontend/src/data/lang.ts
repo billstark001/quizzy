@@ -15,8 +15,6 @@ export const langRes: LanguageResource = {
 
   },
 
-
-
   meta: {
     question: {
       type: {
@@ -51,7 +49,12 @@ export const langRes: LanguageResource = {
       ok: ['OK', 'OK', '确定'],
       continue: ['Continue', '続ける', '继续'],
       confirm: ['Confirm', '確認', '确认'],
+
       select: ['Select', '選択', '选择'],
+      selectAll: ['Select All', '全てを選択', '全选'],
+      clearSelect: ['Clear Selection', '選択クリア', '清除选择'],
+      search: ['Search', '検索', '搜索'],
+
       cancel: ['Cancel', 'キャンセル', '取消'],
       start: ['Start', '開始', '开始'],
       stop: ['Stop', '停止', '停止'],
@@ -120,7 +123,17 @@ export const langRes: LanguageResource = {
           '与默认显示颜色一致',
         ]
       }
-    }
+    },
+    searchByTag: {
+      header: [
+        'Search Result',
+        '検索結果',
+        '搜索结果',
+      ],
+      body: {
+        
+      }
+    },
   },
 
   nav: {
@@ -217,6 +230,9 @@ export const langRes: LanguageResource = {
         
         create: ["New...", "新規作成", "新建"],
         upload: ["Upload", "アップロード", "上传"],
+
+        searchByTags: ['Search by Tags', 'タグで検索', '按标签搜索'],
+        searchByCategories: ['Search by Categories', '分類で検索', '按分类搜索'],
       },
 
       // TODO use data namespace

@@ -74,6 +74,9 @@ export const useSelection = () => {
       .map(([k]) => k),
     [selectedRecord]
   );
+  const clearSelection = useCallback(() => {
+    setSelectedRecord({});
+  }, [setSelectedRecord]);
 
   const isAnySelected = getAllSelected().length !== 0;
 
@@ -85,6 +88,7 @@ export const useSelection = () => {
     isSelected,
     getAllSelected,
     isAnySelected,
+    clearSelection,
   };
 };
 

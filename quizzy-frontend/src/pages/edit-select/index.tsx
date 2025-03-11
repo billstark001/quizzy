@@ -5,10 +5,15 @@ import { Tabs } from '@chakra-ui/react';
 import TagsPage from './TagsPage';
 import { useTranslation } from 'react-i18next';
 import BookmarksPage from './BookmarksPage';
+import { useDialog } from '@/utils/chakra';
+import { Question } from '@quizzy/base/types';
+import QuestionPreviewDialog from '@/dialogs/QuestionPreviewDialog';
 
 
 export const EditSelectPage = () => {
   const { t } = useTranslation();
+
+  const dPreview = useDialog<Question | undefined, any>(QuestionPreviewDialog);
 
   return <Tabs.Root variant="enclosed" defaultValue='paper'>
     <Tabs.List>
@@ -26,9 +31,11 @@ export const EditSelectPage = () => {
       </Tabs.Trigger>
     </Tabs.List>
     <Tabs.Content value="paper"><PaperSelectionPage /></Tabs.Content>
-    <Tabs.Content value="question"><QuestionPage /></Tabs.Content>
-    <Tabs.Content value="tag"><TagsPage /></Tabs.Content>
-    <Tabs.Content value="bookmark"><BookmarksPage /></Tabs.Content>
+    <Tabs.Content value="question"><QuestionPage preview={(q) => void dPreview.open(q)} /></Tabs.Content>
+    <Tabs.Content value="tag"><TagsPage preview={(q) => void dPreview.open(q)} /></Tabs.Content>
+    <Tabs.Content value="bookmark"><BookmarksPage preview={(q) => void dPreview.open(q)} /></Tabs.Content>
+
+    <dPreview.Root />
   </Tabs.Root>;
 };
 

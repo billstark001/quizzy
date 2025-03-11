@@ -4,7 +4,6 @@ import QuestionCard, { QuestionCardProps } from "@/components/item-brief/Questio
 import { Quizzy, QuizzyRaw } from "@/data";
 import { useBookmarks } from "@/data/bookmarks";
 import { BookmarkEditDialog } from "@/dialogs/BookmarkEditDialog";
-import QuestionPreviewDialog from "@/dialogs/QuestionPreviewDialog";
 import { useDialog } from "@/utils/chakra";
 import { Box, Button, Collapsible, HStack, Loader, Separator, VStack, Wrap } from "@chakra-ui/react";
 import { BOOKMARK_DEFAULT_CSS_COLOR, BookmarkType, Question } from "@quizzy/base/types";
@@ -117,12 +116,11 @@ const BookmarkItem = (props: {
   </Collapsible.Root>;
 };
 
-export const BookmarksPage = () => {
+export const BookmarksPage = ({ preview }: { preview?: (q: Question | undefined) => undefined }) => {
   const b = useBookmarks();
   const { t } = useTranslation();
   const c = useQueryClient();
 
-  const dPreview = useDialog<Question | undefined, any>(QuestionPreviewDialog);
   const dEdit = useDialog<BookmarkType | undefined, BookmarkType | undefined>(BookmarkEditDialog);
 
   const startEdit = async (data: BookmarkType | undefined) => {
@@ -152,12 +150,11 @@ export const BookmarksPage = () => {
 
     {b.bookmarkTypes.map((bm) => <BookmarkItem
       bm={bm}
-      preview={dPreview.open}
+      preview={preview}
       edit={startEdit}
       key={bm.id}
     />)}
 
-    <dPreview.Root />
     <dEdit.Root />
   </VStack>;
 };
