@@ -3,7 +3,7 @@ import {
   Button, Input, useCallbackRef, VStack,
   Wrap
 } from "@chakra-ui/react";
-import { useState, useCallback, useEffect, useRef, Key } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { Quizzy } from "@/data";
 import { debounce, DebounceReturn } from "@/utils/debounce";
@@ -14,7 +14,6 @@ import {
   DialogContent, DialogFooter, DialogHeader
 } from "./ui/dialog";
 import { DialogRootNoChildrenProps, UseDialogYieldedRootProps } from "@/utils/chakra";
-import useTags from "@/data/tags";
 
 export type TagSelectState = {
   object: Readonly<KeywordIndexed>;
@@ -39,7 +38,7 @@ export const TagSelectDialog = (
   const { object, tagIndex, isCategory } = data ?? {};
 
   const { t } = useTranslation();
-  const tags = useTags();
+  // const tags = useTags();
 
   const [currentTag, setCurrentTag] = useState('');
   const [origArr, setOrigArr] = useState<readonly string[]>([]);

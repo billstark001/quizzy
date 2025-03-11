@@ -177,7 +177,7 @@ export const PaperEditPage = (props: { paper?: string }) => {
 
   // editors
   const editorQuestion = useEditor({
-    value: editingState.question,
+    value: editingState.question ?? defaultQuestion(),
     onChange: (value) => patch.onEdit({ target: 'question', value }),
   });
   const editorPaper = useEditor({

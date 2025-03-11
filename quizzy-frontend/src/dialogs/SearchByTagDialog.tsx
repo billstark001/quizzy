@@ -20,10 +20,11 @@ export const SearchByTagDialog = (
 ) => {
   const { data, submit, cancelButtonRef, ...rest } = props;
   const open = rest.open;
-  const { tags, isCategory, preview } = data ?? {};
+  const { tags, preview } = data ?? {};
 
   const [searchCondition, setSearchCondition] = useState<string>();
-  const [currentPage, setCurrentPage] = useState(0);
+  // const [currentPage, setCurrentPage] = useState(0);
+  const currentPage = 0;
 
   useEffect(() => {
     if (!open) {
@@ -46,7 +47,7 @@ export const SearchByTagDialog = (
 
   const {
     result,
-    totalPages,
+    // totalPages,
   } = qSearch.data ?? {};
 
   const { t } = useTranslation();
