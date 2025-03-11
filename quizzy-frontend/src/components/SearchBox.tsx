@@ -40,7 +40,7 @@ export const SearchBox = <T extends DatabaseIndexed>(props: SearchBoxProps<T>) =
 
   const { data: searchResult } = useQuery({
     queryKey: ['search-result', searchTerm],
-    queryFn: () => fetchSearchResult(searchTerm),
+    queryFn: () => fetchSearchResult(searchTerm)?.then(x => x ?? null) ?? null,
   })
 
   const filteredItems = searchResult?.result ?? [];
