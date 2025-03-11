@@ -39,7 +39,7 @@ export const BookmarkDispIcon = (props: BookmarkDispIconProps) => {
   const { colors } = props;
 
   const colorTokens = useToken('colors', colors ?? []);
-  const bg = createBgColorStyle(colorTokens, 25, 75);
+  const bg = createBgColorStyle(colorTokens, 10, 90);
 
   if (!colors?.length) {
     return <Box color='gray.fg'>

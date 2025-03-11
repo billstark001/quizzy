@@ -194,7 +194,7 @@ export const useEditorContext = <T extends object>() => useContext(EditorContext
 
 type Updater<T> = (patch: Partial<T>) => void;
 export type EditorProps<T extends object> = {
-  value?: T;
+  value: T;
   onChange: (patch: Partial<T>) => void;
   pathCache?: QuickLRU<string, string[]>;
 };
@@ -253,6 +253,7 @@ export const useEditor = <T extends object>(props: EditorProps<T>) => {
   }, [onChangeRef, setFakeValue, setHasDebouncedChanges]);
 
   // this debounces the logical commission
+  // TODO change to useDebounced
   const debouncedOnChangeLogicalRef = useRef<DebounceReturn<Updater<T>>>(undefined);
   useEffect(() => {
     debouncedOnChangeLogicalRef.current = debounce((onChangeLogical), 5000, debounceProps);
@@ -334,5 +335,5 @@ export const useEditor = <T extends object>(props: EditorProps<T>) => {
     fakeValue,
     clearDebouncedChanges: debouncedOnChangeLogicalRef.current?.clear!,
     edit,
-  };
+  } satisfies EditorContextScheme<T>;
 };

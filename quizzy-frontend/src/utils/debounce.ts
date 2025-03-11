@@ -1,3 +1,5 @@
+import { useEffect, useRef } from "react";
+
 export type DebounceProps<T extends (...args: any[]) => any> = {
   immediate?: boolean;
   merge?: (current: Parameters<T>, last?: Parameters<T>) => Parameters<T>;
@@ -56,4 +58,18 @@ export const debounce = <T extends (...args: any[]) => any>(
   };
 
   return onFunctionCall as DebounceReturn<T>;
-}
+};
+
+export const useDebounced = <T extends (...args: any[]) => any>(
+  func: T, wait: number, props?: DebounceProps<T>
+) => {
+  const funcRef = useRef<DebounceReturn<T>>(undefined);
+  useEffect(() => {
+    funcRef.current?.clear();
+    funcRef.current = debounce((func), wait, props);
+  }, [func]);
+  if (!funcRef.current) {
+    funcRef.current = debounce((func), wait, props);
+  }
+  return funcRef.current;
+};

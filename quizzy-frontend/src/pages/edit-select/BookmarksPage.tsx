@@ -1,8 +1,9 @@
 import PageToolbar from "@/components/PageToolbar";
 import { PaperCard } from "@/components/item-brief/PaperCard";
 import QuestionCard, { QuestionCardProps } from "@/components/item-brief/QuestionCard";
-import { QuizzyRaw } from "@/data";
+import { Quizzy, QuizzyRaw } from "@/data";
 import { useBookmarks } from "@/data/bookmarks";
+import { BookmarkEditDialog } from "@/dialogs/BookmarkEditDialog";
 import QuestionPreviewDialog from "@/dialogs/QuestionPreviewDialog";
 import { useDialog } from "@/utils/chakra";
 import { Box, Button, Collapsible, HStack, Loader, Separator, VStack, Wrap } from "@chakra-ui/react";
@@ -66,13 +67,17 @@ const BookmarkItemInner = (props: { bm: BookmarkType, preview?: QuestionCardProp
 
 };
 
-const BookmarkItem = (props: { bm: BookmarkType, preview?: QuestionCardProps['preview'] }) => {
+const BookmarkItem = (props: { 
+  bm: BookmarkType, 
+  preview?: QuestionCardProps['preview'],
+  edit?: (bm: BookmarkType) => void,
+}) => {
 
-  const { bm, preview } = props;
+  const { bm, preview, edit } = props;
   const { t } = useTranslation();
   const c = useQueryClient();
 
-  return <Collapsible.Root lazyMount unmountOnExit>
+  return <Collapsible.Root lazyMount>
     <Collapsible.Trigger
       as={HStack}
       border='1px solid'
@@ -100,7 +105,7 @@ const BookmarkItem = (props: { bm: BookmarkType, preview?: QuestionCardProps['pr
       }}>{t('common.btn.refresh')}</Button>
       <Button onClick={(e) => {
         e.stopPropagation();
-        // TODO edit
+        edit?.(bm);
       }}>{t('common.btn.edit')}</Button>
 
     </Collapsible.Trigger>
@@ -115,12 +120,32 @@ const BookmarkItem = (props: { bm: BookmarkType, preview?: QuestionCardProps['pr
 export const BookmarksPage = () => {
   const b = useBookmarks();
   const { t } = useTranslation();
+  const c = useQueryClient();
 
   const dPreview = useDialog<Question | undefined, any>(QuestionPreviewDialog);
+  const dEdit = useDialog<BookmarkType | undefined, BookmarkType | undefined>(BookmarkEditDialog);
+
+  const startEdit = async (data: BookmarkType | undefined) => {
+    const res = await dEdit.open(data);
+    if (!res) {
+      return;
+    }
+    if (!data) {
+      // this is a newly created one
+      delete (res as any).id;
+      await Quizzy.createBookmarkType(res);
+    } else {
+      // this is an existent one
+      await Quizzy.updateBookmarkType(res.id, res);
+    }
+    c.invalidateQueries({ queryKey: ['bookmarks'] });
+    c.invalidateQueries({ queryKey: ['bookmark-p'] });
+    c.invalidateQueries({ queryKey: ['bookmark-q'] });
+  }
 
   return <VStack alignItems='stretch'>
     <PageToolbar>
-      <Button>
+      <Button onClick={() => startEdit(undefined)}>
         {t('page.edit.btn.create')}
       </Button>
     </PageToolbar>
@@ -128,10 +153,12 @@ export const BookmarksPage = () => {
     {b.bookmarkTypes.map((bm) => <BookmarkItem
       bm={bm}
       preview={dPreview.open}
+      edit={startEdit}
       key={bm.id}
     />)}
 
     <dPreview.Root />
+    <dEdit.Root />
   </VStack>;
 };
 

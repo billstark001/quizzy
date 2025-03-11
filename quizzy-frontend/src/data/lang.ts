@@ -2,6 +2,21 @@ import { LanguageResource, compileLanguageResource } from './lang-model';
 
 export const langOrder = Object.freeze(['en', 'ja', 'zh']);
 export const langRes: LanguageResource = {
+  data: {
+    bookmarkType: {
+      id: 'ID',
+      name: ['Name', 'ブックマーク名', '名称'],
+      names: ['Name (Multilingual)', 'ブックマーク名（多言語）', '名称（多语言）'],
+      dispCssColor: ['Color', '色', '颜色'],
+      dispCssColorDark: ['Color (Dark)', '色（暗黒モード）', '颜色（暗色模式）'],
+      desc: ['Description', '記述', '描述'],
+      descs: ['Description (Multilingual)', '記述（多言語）', '描述（多语言）'],
+    },
+
+  },
+
+
+
   meta: {
     question: {
       type: {
@@ -18,6 +33,11 @@ export const langRes: LanguageResource = {
   },
 
   common: {
+    ph: {
+      new: ['<New>', '<新アイテム>', '<新建>'],
+      empty: ['<Empty>', '<空白>', '<空白>'],
+      error: ['<Error>', '<エラー>', '<错误>'],
+    },
     select: {
       default: ['<Select>', '選択してください', '请选择'],
     },
@@ -86,6 +106,20 @@ export const langRes: LanguageResource = {
     },
     tagSelect: {
       header: ['Select Tag', 'タグを選択', '选择标签'],
+    },
+    bookmarkEdit: {
+      header: [
+        'Bookmark Edit: {{bmName}}',
+        'ブックマーク編集：{{bmName}}',
+        '编辑书签：{{bmName}}',
+      ],
+      body: {
+        colorDarkSameAsDefault: [
+          'Same as default',
+          'デフォルトと同じ',
+          '与默认显示颜色一致',
+        ]
+      }
     }
   },
 
@@ -185,6 +219,7 @@ export const langRes: LanguageResource = {
         upload: ["Upload", "アップロード", "上传"],
       },
 
+      // TODO use data namespace
       title: ['Title', 'タイトル', '标题'],
       type: ['Type', '種類', '类型'],
       tags: ['Tags', 'タグ', '标签'],

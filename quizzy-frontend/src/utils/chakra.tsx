@@ -126,6 +126,7 @@ export function useDialog<
   const onOpen = useCallback(async (data: TData): Promise<TResult> => {
     // if opened, return the opened one
     if (resultPromiseRef.current) {
+      setData(data);
       return resultPromiseRef.current.promise;
     }
 
@@ -164,6 +165,9 @@ export function useDialog<
       open={open}
       onOpenChange={(e) => {
         setOpen(e.open);
+        if (!e.open) {
+          onClose(false as any);
+        }
       }}
       {...rest}
     >

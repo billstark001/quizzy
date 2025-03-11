@@ -26,7 +26,7 @@ export const BookmarkIcon = (props: BookmarkIconProps) => {
   const { itemId, isQuestion = false, insideDialog, ...rest } = props;
 
   const b = useBookmarks();
-  const queryKey = [`bookmark-${isQuestion ? 'q' : 'p'}`, itemId, b.isBookmarkMapConstructed] as const;
+  const queryKey = [`bookmark-${isQuestion ? 'q' : 'p'}`, itemId, b.timestamp] as const;
 
   const c = useQueryClient();
   const qBookmarks = useQuery({

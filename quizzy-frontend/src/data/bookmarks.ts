@@ -37,15 +37,16 @@ export const useBookmarks = () => {
     queryFn: async () => {
       const ret = await Quizzy.listBookmarkTypes();
       const map: Map<string, Readonly<BookmarkType>> = new Map();
+      const timestamp = Date.now();
       for (const bm of ret ?? []) {
         map.set(bm.id, bm);
       }
-      return [ret, map] as [typeof ret, typeof map];
+      return [ret, map, timestamp] as [typeof ret, typeof map, number];
     },
     refetchOnWindowFocus: false,
   });
 
-  const [bookmarkList, bookmarkMap] = qBookmarkTypes.data ?? [[], undefined];
+  const [bookmarkList, bookmarkMap, timestamp] = qBookmarkTypes.data ?? [[], undefined, 0];
 
 
   const addBookmark = useCallback(async (
@@ -114,7 +115,7 @@ export const useBookmarks = () => {
 
   return {
     bookmarkTypes: bookmarkList,
-    isBookmarkMapConstructed: !!bookmarkMap,
+    timestamp,
     addBookmark,
     clearBookmark,
     clearAllBookmarks,
