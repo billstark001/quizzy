@@ -4,7 +4,7 @@ import {
   Input, NativeSelect, Switch,
   Textarea, TextareaProps, VStack
 } from "@chakra-ui/react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useEditorContext } from "@/utils/react-patch";
 import { MdAdd } from "react-icons/md";
@@ -48,12 +48,13 @@ export const QuestionEdit = () => {
   const { t } = useTranslation();
 
   // tags
-  const dTag = useDialog(TagSelectDialog);
-  const [dTagState, setDTagState] = useState<TagSelectState>({});
+  const dTag = useDialog<TagSelectState, Partial<Question>>(TagSelectDialog);
 
-  const open = async (s: TagSelectState) => {
-    setDTagState(s);
-    const result = await dTag.open<Partial<Question>>();
+  const open = async (tagIndex?: number, isCategory = false) => {
+    const result = await dTag.open({
+      object: question,
+      tagIndex, isCategory,
+    });
     onChangeImmediate(result);
   }
   
@@ -76,19 +77,19 @@ export const QuestionEdit = () => {
 
     <EditFormItem label={t('page.edit.tags')}>
       <TagList tags={question.tags}
-        onDoubleClick={(_, __, i) => open({ tagIndex: i })}
+        onDoubleClick={(_, __, i) => open(i)}
       >
-        <TagButton onClick={() => open({})}><IoAddOutline /></TagButton>
+        <TagButton onClick={() => open()}><IoAddOutline /></TagButton>
       </TagList>
     </EditFormItem>
 
     <EditFormItem label={t('page.edit.categories')}>
       <TagList tags={question.categories}
         onDoubleClick={(_, __, i) =>
-          open({ tagIndex: i, isCategory: true })}
+          open(i, true)}
       >
         <TagButton onClick={() =>
-          open({ isCategory: true })}><IoAddOutline /></TagButton>
+          open(undefined, true)}><IoAddOutline /></TagButton>
       </TagList>
     </EditFormItem>
 
@@ -139,7 +140,7 @@ export const QuestionEdit = () => {
       <Textarea2 {...edit('solution', { debounce: true })} />
     </EditFormItem>
 
-    <dTag.Root object={question} {...dTagState} />
+    <dTag.Root />
 
   </EditForm>;
 

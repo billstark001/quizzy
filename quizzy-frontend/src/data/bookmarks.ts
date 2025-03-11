@@ -1,7 +1,32 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Quizzy } from ".";
 import { BOOKMARK_DEFAULT_CSS_COLOR, BookmarkBase, BookmarkType, defaultBookmarkType, ID } from "@quizzy/base/types";
-import { useCallback, useMemo } from "react";
+import { useCallback } from "react";
+
+const getBookmarksNoMap = async (
+  bookmarkMap: Map<string, Readonly<BookmarkType>> | undefined,
+  id: ID,
+  isQuestion = true
+) => {
+  const bookmarks = await Quizzy.listBookmarks(
+    id, isQuestion
+  );
+  const typedBookmarks = bookmarks
+    .map((bookmark) => bookmarkMap?.get(bookmark.typeId) ?? defaultBookmarkType({
+      dispCssColor: BOOKMARK_DEFAULT_CSS_COLOR,
+      name: '#' + bookmark.id,
+    }));
+  typedBookmarks.sort((a, b) => {
+    if (a.name === 'default' || b.name === 'reported') {
+      return -1;
+    }
+    if (b.name === "default" || a.name === 'reported') {
+      return 1;
+    }
+    return a.name.localeCompare(b.name);
+  });
+  return typedBookmarks;
+};
 
 export const useBookmarks = () => {
 
@@ -9,21 +34,23 @@ export const useBookmarks = () => {
 
   const qBookmarkTypes = useQuery({
     queryKey: ['bookmarks'],
-    queryFn: () => Quizzy.listBookmarkTypes(),
+    queryFn: async () => {
+      const ret = await Quizzy.listBookmarkTypes();
+      const map: Map<string, Readonly<BookmarkType>> = new Map();
+      for (const bm of ret ?? []) {
+        map.set(bm.id, bm);
+      }
+      return [ret, map] as [typeof ret, typeof map];
+    },
     refetchOnWindowFocus: false,
   });
 
-  const bookmarkMap = useMemo(() => {
-    const ret: Map<string, Readonly<BookmarkType>> = new Map();
-    for (const bm of qBookmarkTypes.data ?? []) {
-      ret.set(bm.id, bm);
-    }
-    return ret;
-  }, [qBookmarkTypes.data]);
+  const [bookmarkList, bookmarkMap] = qBookmarkTypes.data ?? [[], undefined];
+
 
   const addBookmark = useCallback(async (
-    id: ID, 
-    bookmarkId: ID = 'default', 
+    id: ID,
+    bookmarkId: ID = 'default',
     isQuestion = true,
     note?: string,
   ) => {
@@ -37,8 +64,8 @@ export const useBookmarks = () => {
   }, []);
 
   const clearBookmark = useCallback(async (
-    id: ID, 
-    bookmarkId: ID = 'default', 
+    id: ID,
+    bookmarkId: ID = 'default',
     isQuestion = true,
   ) => {
     const tic: BookmarkBase = {
@@ -60,21 +87,13 @@ export const useBookmarks = () => {
     id: ID,
     isQuestion = true
   ) => {
-    const bookmarks = await Quizzy.listBookmarks(
-      id, isQuestion
-    );
-    const typedBookmarks = bookmarks
-      .map((bookmark) => bookmarkMap.get(bookmark.typeId) ?? defaultBookmarkType({
-        dispCssColor: BOOKMARK_DEFAULT_CSS_COLOR,
-        name: '#' + bookmark.id,
-      }));
-    return typedBookmarks;
+    return getBookmarksNoMap(bookmarkMap, id, isQuestion);
   }, [bookmarkMap]);
 
   const onSuccess = () => {
     c.invalidateQueries({ queryKey: ['bookmarks'] });
   }
-  
+
   const mCreateBookmarkType = useMutation({
     mutationFn: Quizzy.createBookmarkType.bind(Quizzy),
     onSuccess,
@@ -94,7 +113,8 @@ export const useBookmarks = () => {
 
 
   return {
-    bookmarkTypes: qBookmarkTypes.data ?? [],
+    bookmarkTypes: bookmarkList,
+    isBookmarkMapConstructed: !!bookmarkMap,
     addBookmark,
     clearBookmark,
     clearAllBookmarks,

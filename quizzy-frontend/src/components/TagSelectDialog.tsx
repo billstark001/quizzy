@@ -3,7 +3,7 @@ import {
   Button, Input, useCallbackRef, VStack,
   Wrap
 } from "@chakra-ui/react";
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useEffect, useRef, Key } from "react";
 import { useTranslation } from "react-i18next";
 import { Quizzy } from "@/data";
 import { debounce, DebounceReturn } from "@/utils/debounce";
@@ -17,6 +17,7 @@ import { DialogRootNoChildrenProps, UseDialogYieldedRootProps } from "@/utils/ch
 import useTags from "@/data/tags";
 
 export type TagSelectState = {
+  object: Readonly<KeywordIndexed>;
   tagIndex?: number,
   isCategory?: boolean,
 };
@@ -26,18 +27,16 @@ const _d = (): TagSearchResult => ({
 });
 
 export const TagSelectDialog = (
-  props: {
-    object: Readonly<KeywordIndexed>,
-  } & TagSelectState
-    & DialogRootNoChildrenProps
-    & UseDialogYieldedRootProps<Partial<Question>>
+  props: DialogRootNoChildrenProps & 
+  UseDialogYieldedRootProps<TagSelectState, Partial<Question>>
 ) => {
 
   const {
-    isCategory, tagIndex,
-    object, submit,
+    data, submit,
     ...dialogProps
   } = props;
+
+  const { object, tagIndex, isCategory } = data ?? {};
 
   const { t } = useTranslation();
   const tags = useTags();
@@ -49,7 +48,7 @@ export const TagSelectDialog = (
     if (!open) {
       return;
     }
-    const origArr = (isCategory ? object.categories : object.tags) ?? [];
+    const origArr = (isCategory ? object?.categories : object?.tags) ?? [];
     setOrigArr(origArr ?? []);
     const orig = (tagIndex == null ? undefined : origArr?.[tagIndex]) ?? '';
     setCurrentTag(orig);

@@ -2,13 +2,13 @@ import { QuizPaper } from "@quizzy/base/types";
 import { AiOutlineCheck } from "react-icons/ai";
 import {
   Card, Heading, Text, Image,
-  Button, Wrap,
-  Tag, IconButton,
+  Button, Wrap, IconButton,
   Box,
 } from "@chakra-ui/react";
 import { useTranslation } from "react-i18next";
 import { useColorMode } from "./ui/color-mode";
 import BookmarkIcon from "./bookmark/BookmarkIcon";
+import TagDisplay from "./common/TagDisplay";
 
 export type PaperCardProps = Omit<Card.RootProps, 'children' | 'onSelect'> & {
   paper: QuizPaper,
@@ -54,16 +54,8 @@ export const PaperCard = (props: PaperCardProps) => {
           {paper.desc}
         </Text>
         <Wrap mt='3'>
-          {paper.categories?.map((category, i) => (
-            <Tag.Root key={`category-${i}`} variant="outline">
-              <Tag.Label>{category}</Tag.Label>
-            </Tag.Root>
-          ))}
-          {paper.tags?.map((tag, i) => (
-            <Tag.Root key={`tag-${i}`}>
-              <Tag.Label>{tag}</Tag.Label>
-            </Tag.Root>
-          ))}
+          <TagDisplay tags={paper.categories} isCategory />
+          <TagDisplay tags={paper.tags} />
         </Wrap>
       </Card.Body>
       <Card.Footer justifyContent="space-between">

@@ -9,7 +9,6 @@ import { Textarea2 } from "./question-edit/QuestionEdit";
 import EditForm, { EditFormItem } from "./common/EditForm";
 import TagList, { TagButton } from "./common/TagList";
 import TagSelectDialog, { TagSelectState } from "./TagSelectDialog";
-import { useState } from "react";
 import { useDialog } from "@/utils/chakra";
 
 
@@ -20,12 +19,13 @@ export const PaperEdit = () => {
   const { t } = useTranslation();
 
   // tags
-  const dTag = useDialog(TagSelectDialog);
-  const [dTagState, setDTagState] = useState<TagSelectState>({});
+  const dTag = useDialog<TagSelectState, Partial<QuizPaper>>(TagSelectDialog);
 
-  const open = async (s: TagSelectState) => {
-    setDTagState(s);
-    const result = await dTag.open<Partial<QuizPaper>>();
+  const open = async (tagIndex?: number, isCategory = false) => {
+    const result = await dTag.open({
+      object: paper,
+      tagIndex, isCategory,
+    });
     onChangeImmediate(result);
   }
   return <EditForm>
@@ -36,19 +36,19 @@ export const PaperEdit = () => {
 
     <EditFormItem label={t('page.edit.tags')}>
       <TagList tags={paper.tags} 
-        onDoubleClick={(_, __, i) => open({ tagIndex: i })}
+        onDoubleClick={(_, __, i) => open(i)}
       >
-        <TagButton onClick={() => open({})} children={<IoAddOutline />} />
+        <TagButton onClick={() => open()} children={<IoAddOutline />} />
       </TagList>
     </EditFormItem>
 
     <EditFormItem label={t('page.edit.categories')}>
       <TagList tags={paper.categories} 
         onDoubleClick={(_, __, i) => 
-          open({ tagIndex: i, isCategory: true  })}
+          open(i, true)}
       >
         <TagButton onClick={() => 
-          open({ isCategory: true })} children={<IoAddOutline />} />
+          open(undefined, true)} children={<IoAddOutline />} />
       </TagList>
     </EditFormItem>
 
@@ -73,7 +73,7 @@ export const PaperEdit = () => {
     </EditFormItem>
 
 
-    <dTag.Root object={paper} {...dTagState} />
+    <dTag.Root />
   </EditForm>;
 
 };

@@ -5,6 +5,15 @@ export type BookmarkDispIconProps = {
   colors?: string[];
 };
 
+const generateDataUrl = (svgContent: string) => {
+  const base64Data = btoa(unescape(encodeURIComponent(svgContent))); // Base64 编码
+  const dataUrl = `data:image/svg+xml;base64,${base64Data}`;
+  return dataUrl;
+};
+
+const IoBookmarkData = `<svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 512 512" height="1em" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M400 480a16 16 0 0 1-10.63-4L256 357.41 122.63 476A16 16 0 0 1 96 464V96a64.07 64.07 0 0 1 64-64h192a64.07 64.07 0 0 1 64 64v368a16 16 0 0 1-16 16z"></path></svg>`
+const IoBookmarkDataUrl = generateDataUrl(IoBookmarkData);
+
 const createBgColorStyle = (colors: string[], start = 0, end = 100) => {
   if (colors.length === 0) {
     return undefined;
@@ -41,8 +50,8 @@ export const BookmarkDispIcon = (props: BookmarkDispIconProps) => {
   return (
     <Box
       background={bg}
-      mask='url(#my-svg)'
-      WebkitMask='url(#my-svg)'
+      mask={`url(${IoBookmarkDataUrl})`}
+      WebkitMask={`url(${IoBookmarkDataUrl})`}
       maskRepeat='no-repeat'
       WebkitMaskRepeat='no-repeat'
       maskSize='contain'

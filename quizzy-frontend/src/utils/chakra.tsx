@@ -1,6 +1,6 @@
-import { DialogRootProps, useDisclosure, UseDisclosureReturn } from "@chakra-ui/react";
+import { DialogRootProps, UseDisclosureReturn } from "@chakra-ui/react";
 import { DialogCloseTrigger, DialogContent, DialogRoot } from "@/components/ui/dialog";
-import { ComponentType, RefObject, useCallback, useRef } from "react";
+import { ComponentType, RefObject, useCallback, useRef, useState } from "react";
 import { WithOptional } from ".";
 
 /**
@@ -29,24 +29,34 @@ export type MinimumDialogRootProps =
 
 export type UseDialogComponentType = ComponentType<MinimumDialogRootProps>;
 
-export type UseDialogYieldedRootProps<TResult = unknown> = {
+export type UseDialogYieldedRootProps<TData, TResult> = {
   submit: (result: TResult) => void;
   cancelButtonRef: RefObject<HTMLButtonElement | null>;
-};
+} & ({
+  open: false;
+  data: undefined;
+} | {
+  open: true;
+  data: TData;
+});
 
 export interface UseDialogProps<P = MinimumDialogRootProps> {
   component?: ComponentType<P>;
 }
 
-export interface UseDialogReturn<TResult = unknown, P extends MinimumDialogRootProps = MinimumDialogRootProps> {
-  state: UseDisclosureReturn;
+export interface UseDialogReturn<TData, TResult, P extends MinimumDialogRootProps> {
+  state: {
+    open: boolean;
+    data: TData | undefined;
+  };
   Root: ComponentType<
-    P extends UseDialogYieldedRootProps<infer _T>
-    ? WithOptional<P, 'initialFocusEl' | 'open' | 'onOpenChange' | 'submit' | 'cancelButtonRef'>
+    P extends UseDialogYieldedRootProps<infer _T, infer __T>
+    ? WithOptional<P, 'initialFocusEl' | 'open' | 'onOpenChange' 
+    | 'data' | 'submit' | 'cancelButtonRef'>
     : WithOptional<P, 'initialFocusEl' | 'open' | 'onOpenChange'>
   >;
   submit: (result: TResult) => void;
-  open: <R = TResult>() => Promise<R>;
+  open: (data: TData) => Promise<TResult>;
   cancelButtonRef: RefObject<HTMLButtonElement | null>;
 }
 
@@ -56,37 +66,47 @@ type InferType<T> = T extends infer U ? U : never;
 export type UseDialog = typeof useDialog;
 
 
+
 type _P<T> = T extends ComponentType<infer R>
 ? R extends MinimumDialogRootProps
 ? R
 : DialogRootProps
 : DialogRootProps;
 
-export function useDialog<
-  TResult = void,
->(
-  component?: ComponentType<DialogRootProps>
-): UseDialogReturn<TResult, DialogRootProps>;
+export function useDialog(
+  component?: ComponentType<DialogRootProps> | ComponentType<DialogRootNoChildrenProps>
+): UseDialogReturn<void, void, DialogRootNoChildrenProps>;
 
 export function useDialog<
-  TResult = void,
+  TData,
+  TResult,
+>(
+  component: ComponentType<DialogRootProps & UseDialogYieldedRootProps<TData, TResult>>
+   | ComponentType<DialogRootNoChildrenProps & UseDialogYieldedRootProps<TData, TResult>>
+): UseDialogReturn<TData, TResult, DialogRootNoChildrenProps>;
+
+export function useDialog<
+  TData,
+  TResult,
   T extends ComponentType<any> = InferType<Parameters<typeof useDialog>[0]>,
   P extends MinimumDialogRootProps = _P<T>
 >(
   component: T
-): UseDialogReturn<TResult, P>;
+): UseDialogReturn<TData, TResult, P>;
 
 export function useDialog<
+  TData = void,
   TResult = void,
   T extends ComponentType<any> | undefined = InferType<Parameters<typeof useDialog>[0]>,
   P extends MinimumDialogRootProps = _P<T>
 >(
   component?: T
-): UseDialogReturn<TResult, P> {
+): UseDialogReturn<TData, TResult, P> {
 
   const Component = (component ?? DialogRoot) as ComponentType<DialogRootProps>;
 
-  const dialogState = useDisclosure();
+  const [open, setOpen] = useState(false);
+  const [data, setData] = useState<TData | undefined>(undefined);
 
   const resultPromiseRef = useRef<{
     promise: Promise<TResult>;
@@ -100,10 +120,10 @@ export function useDialog<
       resultPromiseRef.current.resolve(result);
       resultPromiseRef.current = undefined;
     }
-    dialogState.onClose();
-  }, [dialogState.onClose]);
+    setOpen(false);
+  }, [setOpen]);
 
-  const onOpen = useCallback(async (): Promise<TResult> => {
+  const onOpen = useCallback(async (data: TData): Promise<TResult> => {
     // if opened, return the opened one
     if (resultPromiseRef.current) {
       return resultPromiseRef.current.promise;
@@ -121,10 +141,11 @@ export function useDialog<
     };
 
     // set open
-    dialogState.onOpen();
+    setData(data);
+    setOpen(true);
 
     return promise;
-  }, [dialogState.onOpen]);
+  }, [setData, setOpen]);
 
 
   const Root = useCallback((props: P) => {
@@ -135,25 +156,26 @@ export function useDialog<
       ...rest
     } = props;
     // pass the props to the component
+    (rest as any).data = data;
     (rest as any).submit = onClose;
     (rest as any).cancelButtonRef = cancelButtonRef;
     return <Component
       initialFocusEl={() => cancelButtonRef.current}
-      open={dialogState.open}
+      open={open}
       onOpenChange={(e) => {
-        dialogState.setOpen(e.open);
+        setOpen(e.open);
       }}
       {...rest}
     >
       {children}
     </Component>;
-  }, [dialogState.open, dialogState.setOpen, onClose, cancelButtonRef]);
+  }, [open, setOpen, onClose, cancelButtonRef]);
 
   return {
-    state: dialogState,
+    state: { open, data },
     Root: Root as any,
     submit: onClose,
-    open: onOpen as any,
+    open: onOpen,
     cancelButtonRef,
   };
 }

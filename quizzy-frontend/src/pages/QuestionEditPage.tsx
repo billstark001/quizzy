@@ -1,7 +1,6 @@
 import { QuestionEdit } from "@/components/question-edit/QuestionEdit";
 import { defaultQuestion, Question } from "@quizzy/base/types";
 import { openDialog, withHandler } from "@/components/handler";
-import { useDisclosureWithData } from "@/utils/disclosure";
 import { applyPatch, Patch } from "@quizzy/base/utils";
 import { EditorContextProvider, useEditor, usePatch } from "@/utils/react-patch";
 import { Quizzy, QuizzyCache, QuizzyCacheRaw, QuizzyRaw } from "@/data";
@@ -12,6 +11,7 @@ import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import BookmarkIcon from "@/components/bookmark/BookmarkIcon";
+import { useDialog } from "@/utils/chakra";
 
 const RECORD_KEY = 'edit:question';
 
@@ -123,7 +123,8 @@ export const QuestionEditPage = (props: { question?: string }) => {
   }, [questionId]);
 
   // preview
-  const { data: dPreviewQuestion, ...dPreview } = useDisclosureWithData<Question | undefined>(undefined);
+
+  const dPreview = useDialog<Question | undefined, any>(QuestionPreviewDialog);
 
   // render
 
@@ -142,7 +143,7 @@ export const QuestionEditPage = (props: { question?: string }) => {
         <Button onClick={saveRecordToCache}>{t('page.edit.btn.saveDraft')}</Button>
         <Button onClick={deleteCurrent}>{t('page.edit.btn.delete')}</Button>
         <Button onClick={() => {
-          dPreview.onOpen(editorQuestion.fakeValue ?? editorQuestion.value);
+          dPreview.open(editorQuestion.fakeValue ?? editorQuestion.value);
         }}>{t('page.edit.btn.preview')}</Button>
         <Box flex='1' p={1} />
         <BookmarkIcon
@@ -158,7 +159,6 @@ export const QuestionEditPage = (props: { question?: string }) => {
 
     </VStack>
 
-    <QuestionPreviewDialog {...dPreview} question={dPreviewQuestion} />
-
+    <dPreview.Root />
   </>;
 };

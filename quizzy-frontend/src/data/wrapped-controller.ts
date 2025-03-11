@@ -50,6 +50,8 @@ const keys: Readonly<{[key in keyof QuizzyController]: undefined}> = Object.free
   'findQuizPaper': undefined,
   'findQuestionByTags': undefined,
   'findQuizPaperByTags': undefined,
+  'listQuestionByBookmark': undefined,
+  'listQuizPaperByBookmark': undefined,
 
   // tags
 

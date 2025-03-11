@@ -4,7 +4,6 @@ import { QuestionSelectionDialog } from "@/components/QuestionSelectionDialog";
 import { defaultQuestion, defaultQuizPaper, Question, QuizPaper } from "@quizzy/base/types";
 import { ID } from "@quizzy/base/types";
 import { openDialog, withHandler } from "@/components/handler";
-import { useDisclosureWithData } from "@/utils/disclosure";
 import { applyPatch, Patch } from "@quizzy/base/utils";
 import { EditorContextProvider, useEditor, usePatch } from "@/utils/react-patch";
 import { uuidV4B64 } from "@quizzy/base/utils";
@@ -19,6 +18,7 @@ import { useQuery } from "@tanstack/react-query";
 import { defaultToaster } from "@/components/ui/toaster";
 import BaseQuestionPanelWithBookmark from "@/components/question-display/BaseQuestionPanelWithBookmark";
 import BookmarkIcon from "@/components/bookmark/BookmarkIcon";
+import { useDialog } from "@/utils/chakra";
 
 
 type EditState = Readonly<{
@@ -260,7 +260,7 @@ export const PaperEditPage = (props: { paper?: string }) => {
   }, [paperId]);
 
   // preview
-  const { data: dPreviewQuestion, ...dPreview } = useDisclosureWithData<Question | undefined>(undefined);
+  const dPreview = useDialog<Question | undefined, any>(QuestionPreviewDialog);
 
   // question edit
   const questionMap = useRef<Record<number, ID>>({});
@@ -301,7 +301,7 @@ export const PaperEditPage = (props: { paper?: string }) => {
         <Button onClick={saveRecordToCache}>{t('page.edit.btn.saveDraft')}</Button>
         <Button onClick={deleteCurrent}>{t('page.edit.btn.delete')}</Button>
         <Button onClick={() => {
-          dPreview.onOpen(editorQuestion.fakeValue ?? editorQuestion.value);
+          dPreview.open(editorQuestion.fakeValue ?? editorQuestion.value);
         }}>{t('page.edit.btn.preview')}</Button>
         <Box flex='1' p={1} />
         <BookmarkIcon
@@ -349,8 +349,8 @@ export const PaperEditPage = (props: { paper?: string }) => {
     >
       {questionPreview && <BaseQuestionPanelWithBookmark w='100%' question={questionPreview} />}
     </QuestionSelectionDialog>
-    
-    <QuestionPreviewDialog {...dPreview} question={dPreviewQuestion} />
+
+    <dPreview.Root />
 
   </>;
 };

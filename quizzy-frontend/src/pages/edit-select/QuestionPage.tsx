@@ -1,19 +1,16 @@
 import {
-  Button,
+  useBreakpointValue,
   VStack
 } from "@chakra-ui/react";
 import { useCallback, useState } from "react";
 import { QuizzyRaw } from "@/data";
 import { Question } from "@quizzy/base/types";
 import { SearchResult } from "@quizzy/base/types";
-import { useNavigate } from "react-router-dom";
-import Sheet, { Column, withSheetRow } from "@/components/common/Sheet";
 import Pagination from "@/components/Pagination";
-import { DateTime } from "luxon";
-import { useTranslation } from "react-i18next";
 import QuestionPreviewDialog from "@/dialogs/QuestionPreviewDialog";
-import { useDisclosureWithData } from "@/utils/disclosure";
 import { SearchBox } from "@/components/SearchBox";
+import { useDialog } from "@/utils/chakra";
+import QuestionCard from "@/components/question-brief/QuestionCard";
 
 
 const fetchSearchResult = async (searchTerm?: string, page?: number): Promise<SearchResult<Question> | undefined> => {
@@ -27,31 +24,12 @@ const fetchSearchResult = async (searchTerm?: string, page?: number): Promise<Se
   }
 };
 
-const EditButton = withSheetRow<Question, { preview?: (item?: Question) => void }>((props) => {
-  const { item, preview } = props;
-  const { t } = useTranslation();
-  const navigate = useNavigate();
-
-  const nav = () => {
-    const params = new URLSearchParams({ question: item?.id ?? '' }).toString();
-    navigate('/edit?' + params);
-  }
-
-  return <>
-    <Button onClick={() => preview?.(item)}>
-      {t('common.btn.preview')}
-    </Button>
-    <Button onClick={nav}>
-      {t('common.btn.edit')}
-    </Button>
-  </>;
-});
-
 
 export const QuestionPage = () => {
   const [searchResultFrozen, setSearchResultFrozen] = useState<SearchResult<Question>>();
   const [currentPage, setCurrentPage] = useState(0);
-  const { data: dPreviewQuestion, ...dPreview } = useDisclosureWithData<Question | undefined>(undefined);
+
+  const dPreview = useDialog<Question | undefined, any>(QuestionPreviewDialog);
 
   const setPage = useCallback(async (page: number) => {
     setCurrentPage(page);
@@ -59,36 +37,36 @@ export const QuestionPage = () => {
     setSearchResultFrozen(res);
   }, [setCurrentPage, searchResultFrozen, setSearchResultFrozen]);
 
+  const nearPages = useBreakpointValue({
+    base: 3,
+    md: 5,
+  });
+
   return <>
     <VStack alignItems='stretch'>
       <SearchBox
         onFreezeResult={setSearchResultFrozen}
-        onSelectItem={dPreview.onOpen}
+        onSelectItem={dPreview.open}
         fetchSearchResult={fetchSearchResult}
         renderItem={(q) => <>
           {q.title}
           {q.content}
         </>}
       />
-      <Sheet data={searchResultFrozen?.result ?? []}>
-        <Column field='categories' />
-        <Column field='tags' />
-        <Column field='type' />
-        <Column field='title' />
-        <Column field='content' />
-        <Column field='lastUpdate' render={(x: number) => DateTime.fromMillis(x || 0).toISO()} />
-        <Column>
-          <EditButton preview={dPreview.onOpen} />
-        </Column>
-      </Sheet>
+      {searchResultFrozen?.result?.map((q) => <QuestionCard
+        key={q.id}
+        question={q}
+        preview={dPreview.open}
+      />)}
       {searchResultFrozen?.totalPages ? <Pagination
-        currentPage={currentPage}
+        nearPages={nearPages}
+        currentPage={currentPage + 1}
         totalPages={searchResultFrozen?.totalPages ?? 0}
         setPage={setPage}
       /> : undefined}
     </VStack>
 
-    <QuestionPreviewDialog {...dPreview} question={dPreviewQuestion} />
+    <dPreview.Root />
   </>;
 };
 export default QuestionPage;

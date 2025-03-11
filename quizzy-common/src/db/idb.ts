@@ -30,7 +30,7 @@ import { createMergableTagsFinder, diffTags, mergeTags } from "./tag";
 
 
 export const DB_KEY = 'Quizzy';
-export const VERSION = 2;
+export const VERSION = 3;
 
 const STORE_KEY_PAPERS = 'papers';
 const STORE_KEY_RECORDS = 'records';
@@ -46,6 +46,7 @@ const STORE_KEY_GENERAL = 'general';
 
 const ticIndices: readonly ((keyof BookmarkBase) & TICIndex)[] = ['typeId', 'itemId', 'category'];
 const icIndices: readonly ((keyof BookmarkBase) & TICIndex)[] = ['itemId', 'category'];
+const tcIndices: readonly ((keyof BookmarkBase) & TICIndex)[] = ['typeId', 'category'];
 
 
 const updaters: Record<number, DatabaseUpdateDefinition> = {
@@ -124,6 +125,10 @@ const updaters: Record<number, DatabaseUpdateDefinition> = {
         id: w,
       }));
     }
+  },
+  [2]: (_, tx) => {
+    const bookmarkStore = tx.objectStore(STORE_KEY_BOOKMARKS);
+    bookmarkStore.createIndex('TC', tcIndices as any);
   },
 } as const;
 
@@ -484,7 +489,7 @@ export class IDBController extends IDBCore implements QuizzyController {
     return this._import(STORE_KEY_PAPERS, papers);
   }
 
-
+  // TODO replace with repetitive tasks
   async findQuestion(query: string, count?: number, page?: number): Promise<SearchResult<Question>> {
     await this.refreshSearchIndices();
     const queryKeywords = await this._getKeywords(query, STORE_KEY_QUESTIONS);
@@ -507,6 +512,29 @@ export class IDBController extends IDBCore implements QuizzyController {
     queryKeywords[0] !== query && queryKeywords.splice(0, 0, query);
     return this._search(STORE_KEY_PAPERS, query, queryKeywords, true, count, page);
   }
+
+  async listQuestionByBookmark(id: string) {
+    const bookmarks: Bookmark[] = (await this.db.getAllFromIndex(
+      STORE_KEY_BOOKMARKS, 'TC', [id, 'question']
+    )).filter(x => !x.deleted);
+    const items: Question[] = (await Promise.all(bookmarks.map(
+      x => this.db.get(STORE_KEY_QUESTIONS, x.itemId)
+    ))).filter(x => x && !x.deleted);
+    items.forEach(x => sanitizeIndices(x, true));
+    return items;
+  }
+  
+  async listQuizPaperByBookmark(id: string) {
+    const bookmarks: Bookmark[] = (await this.db.getAllFromIndex(
+      STORE_KEY_BOOKMARKS, 'TC', [id, 'paper']
+    )).filter(x => !x.deleted);
+    const items: QuizPaper[] = (await Promise.all(bookmarks.map(
+      x => this.db.get(STORE_KEY_PAPERS, x.itemId)
+    ))).filter(x => x && !x.deleted);
+    items.forEach(x => sanitizeIndices(x, true));
+    return items;
+  }
+
 
   // TODO manual replacement if conflict detected
   async importCompleteQuizPapers(...papers: CompleteQuizPaperDraft[]): Promise<string[]> {

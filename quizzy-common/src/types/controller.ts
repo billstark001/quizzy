@@ -100,6 +100,8 @@ export interface QuizzyController {
   findQuizPaper(query: string, count?: number, page?: number): Promise<SearchResult<QuizPaper>>;
   findQuestionByTags(query: string, count?: number, page?: number): Promise<SearchResult<Question>>;
   findQuizPaperByTags(query: string, count?: number, page?: number): Promise<SearchResult<QuizPaper>>;
+  listQuestionByBookmark(id: ID): Promise<Question[]>;
+  listQuizPaperByBookmark(id: ID): Promise<QuizPaper[]>;
 
   // tags
 

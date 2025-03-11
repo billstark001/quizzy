@@ -1,20 +1,20 @@
 import { Question } from "@quizzy/base/types";
-import { Button, DialogRootProps, UseDisclosureReturn } from "@chakra-ui/react";
+import { Button } from "@chakra-ui/react";
 import { useTranslation } from "react-i18next";
 import { 
   DialogRoot, DialogBody, DialogCloseTrigger, 
   DialogContent, DialogFooter, DialogHeader, 
 } from "@/components/ui/dialog";
-import { getDialogController } from "@/utils/chakra";
+import { DialogRootNoChildrenProps, UseDialogYieldedRootProps } from "@/utils/chakra";
 import QuestionPanelWithBookmark from "@/components/question-display/QuestionPanelWithBookmark";
 
-export const QuestionPreviewDialog = (props: Omit<DialogRootProps, 'children'> & {
-  question?: Question;
-} & UseDisclosureReturn) => {
-  const { question, ...dPreview } = props;
+export const QuestionPreviewDialog = (
+  props: DialogRootNoChildrenProps & UseDialogYieldedRootProps<Question, any>,
+) => {
+  const { data: question, submit, ...dPreview } = props;
   const { t } = useTranslation();
 
-  return <DialogRoot {...dPreview} {...getDialogController(dPreview)} size='xl'>
+  return <DialogRoot size='xl' {...dPreview}>
     <DialogContent>
       <DialogCloseTrigger />
       <DialogHeader>
@@ -29,7 +29,7 @@ export const QuestionPreviewDialog = (props: Omit<DialogRootProps, 'children'> &
         />
       </DialogBody>
       <DialogFooter>
-        <Button onClick={() => dPreview.onClose()}>
+        <Button onClick={submit}>
           {t('common.btn.close')}
         </Button>
       </DialogFooter>

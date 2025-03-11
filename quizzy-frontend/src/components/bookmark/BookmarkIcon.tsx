@@ -23,11 +23,11 @@ export type BookmarkIconProps = {
 
 export const BookmarkIcon = (props: BookmarkIconProps) => {
 
-  const { itemId, isQuestion, insideDialog, ...rest } = props;
-
-  const queryKey = [`bookmark-${isQuestion ? 'q' : 'p'}`, itemId] as const;
+  const { itemId, isQuestion = false, insideDialog, ...rest } = props;
 
   const b = useBookmarks();
+  const queryKey = [`bookmark-${isQuestion ? 'q' : 'p'}`, itemId, b.isBookmarkMapConstructed] as const;
+
   const c = useQueryClient();
   const qBookmarks = useQuery({
     queryKey,
@@ -39,7 +39,8 @@ export const BookmarkIcon = (props: BookmarkIconProps) => {
       }
       return [bms, bmMap] as [typeof bms, typeof bmMap];
     },
-    refetchOnWindowFocus: false,
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
   });
 
   const [bookmarks, bookmarksMap] = qBookmarks.data ?? [[], {}];
@@ -72,7 +73,7 @@ export const BookmarkIcon = (props: BookmarkIconProps) => {
       if (await openDialog(
         t('btn.bookmark.dialog.clearAll'),
         'ok-cancel',
-        'clear-all-tags'
+        'clear-all-bookmarks'
       )) {
         await clearBookmarks();
       }
@@ -157,17 +158,17 @@ export const BookmarkIcon = (props: BookmarkIconProps) => {
           {t('btn.bookmark.btn.' + (bookmarksMap['default'] ? 'remove' : 'add'))}
         </MenuItem>
         <MenuItem value="add-report" {..._ii}>
-        {t('btn.bookmark.btn.' + (bookmarksMap['reported'] ? 'removeReport' : 'report'))}
+          {t('btn.bookmark.btn.' + (bookmarksMap['reported'] ? 'removeReport' : 'report'))}
         </MenuItem>
         <MenuItem value="clear-all" {..._ii}>
-        {t('btn.bookmark.btn.clearAll')}
+          {t('btn.bookmark.btn.clearAll')}
         </MenuItem>
 
 
         <Separator />
 
         <Box fontSize='sm' p={2} userSelect='none'>
-        {t('btn.bookmark.btn.addTo')}
+          {t('btn.bookmark.btn.addTo')}
         </Box>
 
         <VStack
