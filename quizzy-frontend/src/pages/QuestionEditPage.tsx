@@ -6,10 +6,12 @@ import { applyPatch, Patch } from "@quizzy/base/utils";
 import { EditorContextProvider, useEditor, usePatch } from "@/utils/react-patch";
 import { Quizzy, QuizzyCache, QuizzyCacheRaw, QuizzyRaw } from "@/data";
 import QuestionPreviewDialog from "@/dialogs/QuestionPreviewDialog";
-import { Button, Separator, HStack, useCallbackRef, VStack } from "@chakra-ui/react";
+import { Button, Separator, HStack, useCallbackRef, VStack, Box } from "@chakra-ui/react";
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
+import BookmarkIcon from "@/components/bookmark/BookmarkIcon";
 
 const RECORD_KEY = 'edit:question';
 
@@ -22,6 +24,8 @@ export const QuestionEditPage = (props: { question?: string }) => {
   const {
     question: questionIdProp,
   } = props;
+
+  const { t } = useTranslation();
 
   // fetch the question we need
   const fetchQuestion = withHandler(async (): Promise<Readonly<Question> | undefined> => {
@@ -132,14 +136,19 @@ export const QuestionEditPage = (props: { question?: string }) => {
 
       {/* toolbar */}
       <HStack>
-        <Button onClick={patch.onUndo}>undo</Button>
-        <Button onClick={patch.onRedo}>redo</Button>
-        <Button onClick={save}>save</Button>
-        <Button onClick={saveRecordToCache}>save draft</Button>
-        <Button onClick={deleteCurrent}>delete</Button>
+        <Button onClick={patch.onUndo}>{t('page.edit.btn.undo')}</Button>
+        <Button onClick={patch.onRedo}>{t('page.edit.btn.redo')}</Button>
+        <Button onClick={save}>{t('page.edit.btn.save')}</Button>
+        <Button onClick={saveRecordToCache}>{t('page.edit.btn.saveDraft')}</Button>
+        <Button onClick={deleteCurrent}>{t('page.edit.btn.delete')}</Button>
         <Button onClick={() => {
           dPreview.onOpen(editorQuestion.fakeValue ?? editorQuestion.value);
-        }}>preview</Button>
+        }}>{t('page.edit.btn.preview')}</Button>
+        <Box flex='1' p={1} />
+        <BookmarkIcon
+          itemId={editorQuestion.fakeValue?.id ?? editorQuestion.value?.id ?? ''}
+          isQuestion
+        />
       </HStack>
 
       <Separator />

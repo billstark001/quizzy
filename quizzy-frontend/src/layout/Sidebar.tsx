@@ -301,7 +301,6 @@ export const SidebarWithHeader = (props: SidebarWithHeaderProps) => {
       maxW='1280px'
       p={4}
       mx='auto'
-      overflowY='auto'
     >
       {children}
     </Box>

@@ -162,6 +162,18 @@ export const langRes: LanguageResource = {
         },
       },
 
+      btn: {
+        undo: ["Undo", "元に戻す", "撤销"],
+        redo: ["Redo", "やり直す", "重做"],
+        save: ["Save", "保存", "保存"],
+        saveDraft: ["Save Draft", "下書きを保存", "保存草稿"],
+        delete: ["Delete", "削除", "删除"],
+        preview: ["Preview", "プレビュー", "预览"],
+        
+        create: ["New...", "新規作成", "新建"],
+        upload: ["Upload", "アップロード", "上传"],
+      },
+
       title: ['Title', 'タイトル', '标题'],
       type: ['Type', '種類', '类型'],
       tags: ['Tags', 'タグ', '标签'],

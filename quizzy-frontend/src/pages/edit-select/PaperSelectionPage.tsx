@@ -1,17 +1,25 @@
+import PageToolbar from "@/components/PageToolbar";
 import { PaperCard } from "@/components/PaperCard";
 import { usePapers } from "@/data/papers";
-import { Button, HStack, VStack, Wrap } from "@chakra-ui/react";
+import { Button, VStack, Wrap } from "@chakra-ui/react";
+import { useTranslation } from "react-i18next";
 
 export const PaperSelectionPage = () => {
 
   const papers = usePapers();
+  const { t } = useTranslation();
 
   return <VStack alignItems='stretch' minH='700px'>
-    <HStack>
-    <Button onClick={papers.create}>create</Button>
-    <Button onClick={papers.upload}>upload</Button>
-    <Button>random [TODO]</Button>
-    </HStack>
+
+    <PageToolbar>
+      <Button onClick={papers.create}>
+        {t('page.edit.btn.create')}
+      </Button>
+      <Button onClick={papers.upload}>
+        {t('page.edit.btn.upload')}
+      </Button>
+    </PageToolbar>
+
     <Wrap>
       {papers.value.map(p => <PaperCard
         key={p.id}

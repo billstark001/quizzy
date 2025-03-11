@@ -4,9 +4,11 @@ import {
   Card, Heading, Text, Image,
   Button, Wrap,
   Tag, IconButton,
+  Box,
 } from "@chakra-ui/react";
 import { useTranslation } from "react-i18next";
 import { useColorMode } from "./ui/color-mode";
+import BookmarkIcon from "./bookmark/BookmarkIcon";
 
 export type PaperCardProps = Omit<Card.RootProps, 'children' | 'onSelect'> & {
   paper: QuizPaper,
@@ -64,7 +66,7 @@ export const PaperCard = (props: PaperCardProps) => {
           ))}
         </Wrap>
       </Card.Body>
-      <Card.Footer justifyContent="flex-end">
+      <Card.Footer justifyContent="space-between">
         {useSelect && (
           <IconButton 
             children={<AiOutlineCheck />} 
@@ -74,6 +76,13 @@ export const PaperCard = (props: PaperCardProps) => {
             mr="2"
           />
         )}
+
+        <BookmarkIcon
+          itemId={paper.id}
+        />
+
+        <Box flex='1' />
+
         <Button variant='solid' colorPalette='purple' onClick={onStart}>
           {t('common.btn.start')}
         </Button>

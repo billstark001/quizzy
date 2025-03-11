@@ -8,6 +8,7 @@ export const QuestionPanelWithBookmark = (
   return <QuestionPanel
     {...props}
     bookmark={<BookmarkIcon 
+      insideDialog
       position='absolute'
       top='8px'
       right='8px'

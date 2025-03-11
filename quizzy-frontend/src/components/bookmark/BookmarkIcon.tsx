@@ -18,11 +18,12 @@ import { useTranslation } from "react-i18next";
 export type BookmarkIconProps = {
   itemId: string;
   isQuestion?: boolean;
+  insideDialog?: boolean;
 } & IconButtonProps;
 
 export const BookmarkIcon = (props: BookmarkIconProps) => {
 
-  const { itemId, isQuestion, ...rest } = props;
+  const { itemId, isQuestion, insideDialog, ...rest } = props;
 
   const queryKey = [`bookmark-${isQuestion ? 'q' : 'p'}`, itemId] as const;
 
@@ -89,7 +90,7 @@ export const BookmarkIcon = (props: BookmarkIconProps) => {
   const [noClose, setNoClose] = useState(0);
   const _i = (e: any) => {
     e.preventDefault();
-    setNoClose(x => x + 1);
+    insideDialog && setNoClose(x => x + 1);
   };
   const _ii = { onMouseEnter: _i };
 
@@ -105,7 +106,7 @@ export const BookmarkIcon = (props: BookmarkIconProps) => {
       onClick={onIconClicked}
       onContextMenu={(e) => {
         e.preventDefault();
-        setNoClose(1);
+        insideDialog && setNoClose(1);
         setOpen(true);
       }}
       border='1px solid'
@@ -129,9 +130,8 @@ export const BookmarkIcon = (props: BookmarkIconProps) => {
       onOpenChange={(e) => {
         if (!e.open) {
           if (noClose > 0) {
-            setNoClose(x => x - 1);
-          }
-          else {
+            insideDialog && setNoClose(x => x - 1);
+          } else {
             setOpen(false);
           }
         }
@@ -187,7 +187,7 @@ export const BookmarkIcon = (props: BookmarkIconProps) => {
               overflowY='auto'
               p={1}
               onClick={() => {
-                setNoClose(x => x + 1);
+                insideDialog && setNoClose(x => x + 1);
                 toggleBookmark(bm.id);
               }}
             >

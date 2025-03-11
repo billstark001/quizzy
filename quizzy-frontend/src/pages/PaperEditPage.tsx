@@ -18,6 +18,7 @@ import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { defaultToaster } from "@/components/ui/toaster";
 import BaseQuestionPanelWithBookmark from "@/components/question-display/BaseQuestionPanelWithBookmark";
+import BookmarkIcon from "@/components/bookmark/BookmarkIcon";
 
 
 type EditState = Readonly<{
@@ -255,7 +256,7 @@ export const PaperEditPage = (props: { paper?: string }) => {
       return;
     }
     await Quizzy.deleteQuizPaper(paperId ?? '');
-    navigate('/papers');
+    navigate('/edit-select');
   }, [paperId]);
 
   // preview
@@ -294,14 +295,18 @@ export const PaperEditPage = (props: { paper?: string }) => {
 
       {/* toolbar */}
       <HStack>
-        <Button onClick={patch.onUndo}>undo</Button>
-        <Button onClick={patch.onRedo}>redo</Button>
-        <Button onClick={save}>save</Button>
-        <Button onClick={saveRecordToCache}>save draft</Button>
-        <Button onClick={deleteCurrent}>delete</Button>
+        <Button onClick={patch.onUndo}>{t('page.edit.btn.undo')}</Button>
+        <Button onClick={patch.onRedo}>{t('page.edit.btn.redo')}</Button>
+        <Button onClick={save}>{t('page.edit.btn.save')}</Button>
+        <Button onClick={saveRecordToCache}>{t('page.edit.btn.saveDraft')}</Button>
+        <Button onClick={deleteCurrent}>{t('page.edit.btn.delete')}</Button>
         <Button onClick={() => {
           dPreview.onOpen(editorQuestion.fakeValue ?? editorQuestion.value);
-        }}>preview</Button>
+        }}>{t('page.edit.btn.preview')}</Button>
+        <Box flex='1' p={1} />
+        <BookmarkIcon
+          itemId={editorPaper.fakeValue?.id ?? editorPaper.value?.id ?? ''}
+        />
       </HStack>
 
       <Separator />
@@ -311,7 +316,11 @@ export const PaperEditPage = (props: { paper?: string }) => {
         <PaperEdit />
       </EditorContextProvider>
       <HStack justifyContent='space-between'>
-        <Box>{t('page.edit.nowEditing', { questionIndex })}</Box>
+        <Box flex='1'>{t('page.edit.nowEditing', { questionIndex })}</Box>
+        <BookmarkIcon
+          itemId={editorQuestion.fakeValue?.id ?? editorQuestion.value?.id ?? ''}
+          isQuestion
+        />
         <IconButton colorPalette='purple' aria-label={t('page.edit.selectQuestions')} children={<RxDragHandleDots2 />}
           onClick={() => {
             selectQuestionPreview(1);

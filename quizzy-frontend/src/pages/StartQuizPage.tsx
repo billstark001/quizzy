@@ -4,7 +4,6 @@ import { Quizzy } from "@/data";
 import { usePapers } from "@/data/papers";
 import {
   Button,
-  HStack,
   Tabs,
   useCallbackRef,
   VStack,
@@ -12,6 +11,7 @@ import {
 } from "@chakra-ui/react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import PageToolbar from "@/components/PageToolbar";
 
 
 export const StartQuizPage = () => {
@@ -57,7 +57,7 @@ export const StartQuizPage = () => {
   // global
   const startRandomDisabled = !selectionByTab[tabIndex]?.isAnySelected;
 
-  const tabs = <Tabs.Root variant='enclosed' 
+  const tabs = <Tabs.Root variant='enclosed'
     defaultValue='0'
     onValueChange={(e) => onTabIndexChange(Number(e.value))}
   >
@@ -91,15 +91,15 @@ export const StartQuizPage = () => {
   </Tabs.Root>;
 
   return <VStack alignItems='stretch'>
-    {tabs}
-    <HStack>
+    <PageToolbar>
       <Button
         colorPalette="purple" disabled={startRandomDisabled}
         onClick={() => startRandomWithTab(selectionByTab[tabIndex].getAllSelected())}
       >
         {t('dialog.startQuiz.btn.startRandom')}
       </Button>
-    </HStack>
+    </PageToolbar>
+    {tabs}
   </VStack>;
 };
 
