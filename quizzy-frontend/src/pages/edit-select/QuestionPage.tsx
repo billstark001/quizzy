@@ -10,7 +10,7 @@ import Pagination from "@/components/Pagination";
 import QuestionPreviewDialog from "@/dialogs/QuestionPreviewDialog";
 import { SearchBox } from "@/components/SearchBox";
 import { useDialog } from "@/utils/chakra";
-import QuestionCard from "@/components/question-brief/QuestionCard";
+import QuestionCard from "@/components/item-brief/QuestionCard";
 
 
 const fetchSearchResult = async (searchTerm?: string, page?: number): Promise<SearchResult<Question> | undefined> => {

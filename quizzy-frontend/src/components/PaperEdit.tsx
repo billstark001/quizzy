@@ -1,12 +1,13 @@
 import { QuizPaper } from "@quizzy/base/types";
 import { IoAddOutline } from "react-icons/io5";
 import {
-  Input, InputProps
+  DataList,
+  Input, InputProps,
+  useBreakpointValue
 } from "@chakra-ui/react";
 import { useTranslation } from "react-i18next";
 import { useEditorContext } from "@/utils/react-patch";
 import { Textarea2 } from "./question-edit/QuestionEdit";
-import EditForm, { EditFormItem } from "./common/EditForm";
 import TagList, { TagButton } from "./common/TagList";
 import TagSelectDialog, { TagSelectState } from "./TagSelectDialog";
 import { useDialog } from "@/utils/chakra";
@@ -27,32 +28,42 @@ export const PaperEdit = () => {
       tagIndex, isCategory,
     });
     onChangeImmediate(result);
-  }
-  return <EditForm>
-    
-    <EditFormItem label={t('page.edit.title')}>
-      <Input {...edit('name', { debounce: true })} />
-    </EditFormItem>
+  };
 
-    <EditFormItem label={t('page.edit.tags')}>
-      <TagList tags={paper.tags} 
+  const o = useBreakpointValue({
+    base: 'vertical',
+    md: 'horizontal',
+  }) as any;
+
+  return <DataList.Root orientation={o}>
+
+    <DataList.Item >
+      <DataList.ItemLabel>{t('page.edit.title')}</DataList.ItemLabel>
+      <Input {...edit('name', { debounce: true })} />
+    </DataList.Item>
+
+    <DataList.Item >
+      <DataList.ItemLabel>{t('page.edit.tags')}</DataList.ItemLabel>
+      <TagList tags={paper.tags}
         onDoubleClick={(_, __, i) => open(i)}
       >
         <TagButton onClick={() => open()} children={<IoAddOutline />} />
       </TagList>
-    </EditFormItem>
+    </DataList.Item>
 
-    <EditFormItem label={t('page.edit.categories')}>
-      <TagList tags={paper.categories} 
-        onDoubleClick={(_, __, i) => 
+    <DataList.Item >
+      <DataList.ItemLabel>{t('page.edit.categories')}</DataList.ItemLabel>
+      <TagList tags={paper.categories}
+        onDoubleClick={(_, __, i) =>
           open(i, true)}
       >
-        <TagButton onClick={() => 
+        <TagButton onClick={() =>
           open(undefined, true)} children={<IoAddOutline />} />
       </TagList>
-    </EditFormItem>
+    </DataList.Item>
 
-    <EditFormItem label={t('page.edit.duration')}>
+    <DataList.Item >
+      <DataList.ItemLabel>{t('page.edit.duration')}</DataList.ItemLabel>
       <Input {...edit<InputProps, number>('duration', {
         debounce: true,
         get: (x) => {
@@ -66,14 +77,15 @@ export const PaperEdit = () => {
           return t;
         },
       })} />
-    </EditFormItem>
+    </DataList.Item>
 
-    <EditFormItem label={t('page.edit.desc')}>
+    <DataList.Item >
+      <DataList.ItemLabel>{t('page.edit.desc')}</DataList.ItemLabel>
       <Textarea2 {...edit('desc', { debounce: true })} />
-    </EditFormItem>
+    </DataList.Item>
 
 
     <dTag.Root />
-  </EditForm>;
+  </DataList.Root>;
 
 };

@@ -2,7 +2,7 @@ import { Box, Button, Stack, StackProps, Text, VStack, Wrap } from "@chakra-ui/r
 import { Question } from "@quizzy/base/types";
 import BookmarkIcon from "../bookmark/BookmarkIcon";
 import { useTranslation } from "react-i18next";
-import TagDisplay from "../common/TagDisplay";
+import TagDisplay from "./TagDisplay";
 import { useNavigate } from "react-router-dom";
 
 export type QuestionCardProps = {

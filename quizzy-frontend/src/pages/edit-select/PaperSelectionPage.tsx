@@ -1,5 +1,5 @@
 import PageToolbar from "@/components/PageToolbar";
-import { PaperCard } from "@/components/PaperCard";
+import { PaperCard } from "@/components/item-brief/PaperCard";
 import { usePapers } from "@/data/papers";
 import { Button, VStack, Wrap } from "@chakra-ui/react";
 import { useTranslation } from "react-i18next";

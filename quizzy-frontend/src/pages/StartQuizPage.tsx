@@ -1,4 +1,4 @@
-import { PaperCard } from "@/components/PaperCard";
+import { PaperCard } from "@/components/item-brief/PaperCard";
 import { useSelection } from "@/utils/react";
 import { Quizzy } from "@/data";
 import { usePapers } from "@/data/papers";

@@ -39,6 +39,7 @@ export const langRes: LanguageResource = {
       load: ['Load', '読み込む', '加载'],
       discard: ['Discard', '破棄', '放弃'],
       dismiss: ['Dismiss', '閉じる', '关闭'],
+      refresh: ['Refresh', '更新', '刷新'],
     },
     dialog: {
       title: {
@@ -160,6 +161,16 @@ export const langRes: LanguageResource = {
             '已从本地缓存加载数据。'
           ],
         },
+        noPaper: [
+          'No paper.',
+          '問題冊子はありません。',
+          '没有试卷。',
+        ],
+        noQuestion: [
+          'No question.',
+          '問題はありません。',
+          '没有试题。',
+        ],
       },
 
       btn: {
@@ -191,10 +202,14 @@ export const langRes: LanguageResource = {
       selectQuestions: ['Select Questions', '問題を選択', '选择问题'],
 
       choice: {
-        _: ['Choice', '選択肢', '选项'],
+        _: ['Choices', '選択肢', '选项'],
         addTop: ['Add at Top', '先頭に追加', '添加到顶部'],
         multiple: ['Multiple Choices', '複数選択', '多选题'],
-      }
+      },
+      blank: {
+        _: ['Blanks', '空欄', '空栏'],
+        addTop: ['Add at Top', '先頭に追加', '添加到顶部'],
+      },
     },
     settings: {
       btn: {

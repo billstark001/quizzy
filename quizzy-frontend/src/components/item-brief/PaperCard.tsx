@@ -6,9 +6,9 @@ import {
   Box,
 } from "@chakra-ui/react";
 import { useTranslation } from "react-i18next";
-import { useColorMode } from "./ui/color-mode";
-import BookmarkIcon from "./bookmark/BookmarkIcon";
-import TagDisplay from "./common/TagDisplay";
+import { useColorMode } from "../ui/color-mode";
+import BookmarkIcon from "../bookmark/BookmarkIcon";
+import TagDisplay from "./TagDisplay";
 
 export type PaperCardProps = Omit<Card.RootProps, 'children' | 'onSelect'> & {
   paper: QuizPaper,

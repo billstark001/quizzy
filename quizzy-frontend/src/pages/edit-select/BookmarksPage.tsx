@@ -1,13 +1,13 @@
 import PageToolbar from "@/components/PageToolbar";
-import { PaperCard } from "@/components/PaperCard";
-import QuestionCard, { QuestionCardProps } from "@/components/question-brief/QuestionCard";
+import { PaperCard } from "@/components/item-brief/PaperCard";
+import QuestionCard, { QuestionCardProps } from "@/components/item-brief/QuestionCard";
 import { QuizzyRaw } from "@/data";
 import { useBookmarks } from "@/data/bookmarks";
 import QuestionPreviewDialog from "@/dialogs/QuestionPreviewDialog";
 import { useDialog } from "@/utils/chakra";
 import { Box, Button, Collapsible, HStack, Loader, Separator, VStack, Wrap } from "@chakra-ui/react";
 import { BOOKMARK_DEFAULT_CSS_COLOR, BookmarkType, Question } from "@quizzy/base/types";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { IoBookmark } from "react-icons/io5";
 
@@ -40,7 +40,7 @@ const BookmarkItemInner = (props: { bm: BookmarkType, preview?: QuestionCardProp
     {query.data && <>
 
       <Box padding="4" >
-        {t('page.edit.tab.paper')}
+        {t(query.data?.papers.length ? 'page.edit.tab.paper' : 'page.edit.toast.noPaper')}
       </Box>
       <Wrap alignItems='stretch' p={2} overflow='visible'>
         {query.data?.papers.map((q) => <PaperCard
@@ -52,7 +52,7 @@ const BookmarkItemInner = (props: { bm: BookmarkType, preview?: QuestionCardProp
       <Separator />
 
       <Box padding="4" >
-        {t('page.edit.tab.question')}
+        {t(query.data?.questions.length ? 'page.edit.tab.question' : 'page.edit.toast.noQuestion')}
       </Box>
       <VStack alignItems='stretch' p={2} overflow='visible'>
         {query.data?.questions.map((q) => <QuestionCard
@@ -70,8 +70,9 @@ const BookmarkItem = (props: { bm: BookmarkType, preview?: QuestionCardProps['pr
 
   const { bm, preview } = props;
   const { t } = useTranslation();
+  const c = useQueryClient();
 
-  return <Collapsible.Root lazyMount>
+  return <Collapsible.Root lazyMount unmountOnExit>
     <Collapsible.Trigger
       as={HStack}
       border='1px solid'
@@ -93,7 +94,14 @@ const BookmarkItem = (props: { bm: BookmarkType, preview?: QuestionCardProps['pr
       <Box>{bm.name}</Box>
       <Box flex='1' />
 
-      <Button>{t('common.btn.edit')}</Button>
+      <Button onClick={(e) => {
+        e.stopPropagation();
+        c.invalidateQueries({ queryKey: ['bm-list-result'] });
+      }}>{t('common.btn.refresh')}</Button>
+      <Button onClick={(e) => {
+        e.stopPropagation();
+        // TODO edit
+      }}>{t('common.btn.edit')}</Button>
 
     </Collapsible.Trigger>
 

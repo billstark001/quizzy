@@ -1,8 +1,8 @@
 import { Question } from "@quizzy/base/types";
 import {
-  Box, Button, HStack,
+  Box, Button, DataList, HStack,
   Input, NativeSelect, Switch,
-  Textarea, TextareaProps, VStack
+  Textarea, TextareaProps, useBreakpointValue, VStack
 } from "@chakra-ui/react";
 import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
@@ -11,7 +11,6 @@ import { MdAdd } from "react-icons/md";
 import { ChoiceQuestionOptionsEdit } from "./ChoiceQuestionOptionsEdit";
 import { normalizeOptionOrBlankArray } from "@quizzy/base/db/question-id";
 import { BlankQuestionBlanksEdit } from "./BlankQuestionBlankEdit";
-import EditForm, { EditFormItem } from "../common/EditForm";
 import TagList, { TagButton } from "../common/TagList";
 import { IoAddOutline } from "react-icons/io5";
 import TagSelectDialog, { TagSelectState } from "../TagSelectDialog";
@@ -57,13 +56,20 @@ export const QuestionEdit = () => {
     });
     onChangeImmediate(result);
   }
-  
-  return <EditForm>
-    <EditFormItem label={t('page.edit.title')}>
-      <Input {...edit('title', { debounce: true })} />
-    </EditFormItem>
 
-    <EditFormItem label={t('page.edit.type')}>
+  const o = useBreakpointValue({
+    base: 'vertical',
+    md: 'horizontal',
+  }) as any;
+
+  return <DataList.Root orientation={o}>
+    <DataList.Item >
+      <DataList.ItemLabel>{t('page.edit.title')}</DataList.ItemLabel>
+      <Input {...edit('title', { debounce: true })} />
+    </DataList.Item>
+
+    <DataList.Item >
+      <DataList.ItemLabel>{t('page.edit.type')}</DataList.ItemLabel>
       <NativeSelect.Root {...edit('type')}>
         <NativeSelect.Field>
           <option value=''>{t('common.select.default')}</option>
@@ -73,17 +79,19 @@ export const QuestionEdit = () => {
         </NativeSelect.Field>
         <NativeSelect.Indicator />
       </NativeSelect.Root>
-    </EditFormItem>
+    </DataList.Item>
 
-    <EditFormItem label={t('page.edit.tags')}>
+    <DataList.Item >
+      <DataList.ItemLabel>{t('page.edit.tags')}</DataList.ItemLabel>
       <TagList tags={question.tags}
         onDoubleClick={(_, __, i) => open(i)}
       >
         <TagButton onClick={() => open()}><IoAddOutline /></TagButton>
       </TagList>
-    </EditFormItem>
+    </DataList.Item>
 
-    <EditFormItem label={t('page.edit.categories')}>
+    <DataList.Item >
+      <DataList.ItemLabel>{t('page.edit.categories')}</DataList.ItemLabel>
       <TagList tags={question.categories}
         onDoubleClick={(_, __, i) =>
           open(i, true)}
@@ -91,22 +99,25 @@ export const QuestionEdit = () => {
         <TagButton onClick={() =>
           open(undefined, true)}><IoAddOutline /></TagButton>
       </TagList>
-    </EditFormItem>
+    </DataList.Item>
 
-    <EditFormItem label={t('page.edit.content')}>
+    <DataList.Item >
+      <DataList.ItemLabel>{t('page.edit.content')}</DataList.ItemLabel>
       <Textarea2 {...edit('content', { debounce: true })} />
-    </EditFormItem>
+    </DataList.Item>
 
-    {question.type === 'choice' && <EditFormItem label={
-      <VStack alignItems='flex-start'>
+    {question.type === 'choice' && <DataList.Item>
+      <DataList.ItemLabel as={VStack} alignItems='flex-start'>
         <Box>{t('page.edit.choice._')}</Box>
-        <Button onClick={() => {
-          onChangeImmediate({
-            options: normalizeOptionOrBlankArray(
-              [{ content: '' }, ...(question.options ?? [])]
-            )
-          })
-        }}><MdAdd /> {t('page.edit.choice.addTop')}</Button>
+        <Button size='sm'
+          p={1} variant='outline' minH={0}
+          onClick={() => {
+            onChangeImmediate({
+              options: normalizeOptionOrBlankArray(
+                [{ content: '' }, ...(question.options ?? [])]
+              )
+            })
+          }}><MdAdd /> {t('page.edit.choice.addTop')}</Button>
         <HStack>
           <Box>{t('page.edit.choice.multiple')}</Box>
           <Switch.Root {...edit('multiple', { debounce: true, key: 'checked' })}>
@@ -116,32 +127,33 @@ export const QuestionEdit = () => {
             </Switch.Control>
           </Switch.Root>
         </HStack>
-      </VStack>
-    }>
+      </DataList.ItemLabel>
       <ChoiceQuestionOptionsEdit question={question} />
-    </EditFormItem>}
+    </DataList.Item>}
 
-    {question.type === 'blank' && <EditFormItem label={
-      <VStack alignItems='flex-start'>
+    {question.type === 'blank' && <DataList.Item>
+      <DataList.ItemLabel as={VStack} alignItems='flex-start'>
         <Box>{t('page.edit.blank._')}</Box>
-        <Button onClick={() => {
-          onChangeImmediate({
-            blanks: normalizeOptionOrBlankArray(
-              [{ key: 'key-0' }, ...(question.blanks ?? [])]
-            )
-          })
-        }}><MdAdd /> {t('page.edit.choice.addTop')}</Button>
-      </VStack>
-    }>
+        <Button size='sm'
+          p={1} variant='outline' minH={0}
+          onClick={() => {
+            onChangeImmediate({
+              blanks: normalizeOptionOrBlankArray(
+                [{ key: 'key-0' }, ...(question.blanks ?? [])]
+              )
+            })
+          }}><MdAdd /> {t('page.edit.blank.addTop')}</Button>
+      </DataList.ItemLabel>
       <BlankQuestionBlanksEdit question={question} />
-    </EditFormItem>}
+    </DataList.Item>}
 
-    <EditFormItem label={t('page.edit.solution')}>
+    <DataList.Item >
+      <DataList.ItemLabel>{t('page.edit.solution')}</DataList.ItemLabel>
       <Textarea2 {...edit('solution', { debounce: true })} />
-    </EditFormItem>
+    </DataList.Item>
 
     <dTag.Root />
 
-  </EditForm>;
+  </DataList.Root>;
 
 };
