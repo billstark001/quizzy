@@ -1,4 +1,4 @@
-import { DatabaseIndexed, ID, KeywordIndexed, MarkdownString } from "./technical";
+import { DatabaseIndexed, ID, SearchIndexed, MarkdownString } from "./technical";
 import { Question, QuestionWithOptionalId } from "./question";
 
 type QuizPaperBase = {
@@ -13,7 +13,7 @@ type QuizPaperBase = {
 
 export type QuizPaper = QuizPaperBase & {
   questions: ID[];
-} & DatabaseIndexed & KeywordIndexed;
+} & DatabaseIndexed & SearchIndexed;
 
 export type QuizPaperDraft = QuizPaperBase & {
   questions: ID[];

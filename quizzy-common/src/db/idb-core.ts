@@ -4,9 +4,9 @@ import {
   sanitizeIndices, SearchResult
 } from "../types/technical";
 import { applyPatch, Patch } from "../utils/patch";
-import { generateKeywords } from "./keywords";
+import { generateKeywords, generateSearchKeywordCache } from "../search/keywords";
 import QuickLRU from "quick-lru";
-import { buildTrieTree, loadTrieTree } from "./search";
+import { buildTrieTree, loadTrieTree } from "../search/search";
 
 
 export type Bm25Cache = {
@@ -51,7 +51,7 @@ type _TX = IDBPTransaction<unknown, ArrayLike<string>, 'readwrite'>;
 
 export type LogicalDeleteStrategy = 'new' | 'override' | 'error';
 
-export type BuildBm25CacheOptions<T> = {
+export type BuildBm25CacheDbOptions<T> = {
   forceReindexing?: boolean,
   /**
    * true -> logically deleted records will not be handled
@@ -250,7 +250,7 @@ export class IDBCore {
     T extends DatabaseIndexed & KeywordIndexed = DatabaseIndexed & KeywordIndexed
   >(
     storeIds: string[], 
-    options?: BuildBm25CacheOptions<T>,
+    options?: BuildBm25CacheDbOptions<T>,
     forceReindexingForPreparation = false,
   ) {
     if (this.readyForSearch && !forceReindexingForPreparation) {
@@ -294,7 +294,7 @@ export class IDBCore {
     if (!query) {
       return [];
     }
-    const [orig, _] = generateKeywords(query);
+    const orig = generateKeywords(query);
     return orig;
   }
 
@@ -389,7 +389,7 @@ export class IDBCore {
 
   protected async _buildBm25Cache<T extends DatabaseIndexed & KeywordIndexed>(
     storeId: string,
-    options?: BuildBm25CacheOptions<T>,
+    options?: BuildBm25CacheDbOptions<T>,
   ): Promise<ID[]> {
     const {
       forceReindexing = false,
@@ -427,7 +427,7 @@ export class IDBCore {
 
       if (needsReindexing) {
         // update it in-place
-        const [words, freq] = generateKeywords(
+        const { filteredWords: words, frequency: freq } = generateSearchKeywordCache(
           Object.entries(object)
             .filter(([k]) => !excludedKeysSet.has(k as any))
             .map(([, v]) => v)

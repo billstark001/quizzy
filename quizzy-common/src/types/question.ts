@@ -1,4 +1,4 @@
-import { DatabaseIndexed, ID, KeywordIndexed, MarkdownString } from "./technical";
+import { DatabaseIndexed, ID, SearchIndexed, MarkdownString } from "./technical";
 
 
 export type ChoiceQuestionOption = {
@@ -30,7 +30,7 @@ type _BaseQuestion = {
   type: QuestionType;
 };
 
-export type BaseQuestion = _BaseQuestion & DatabaseIndexed & KeywordIndexed;
+export type BaseQuestion = _BaseQuestion & DatabaseIndexed & SearchIndexed;
 
 type _ChoiceQuestion = {
   type: 'choice';
@@ -58,7 +58,7 @@ export type ChoiceQuestion = BaseQuestion & _ChoiceQuestion;
 export type TextQuestion = BaseQuestion & _TextQuestion;
 
 export type Question = BaseQuestion & _Question;
-export type QuestionWithOptionalId = _BaseQuestion & _Question & { id?: ID } & KeywordIndexed;
+export type QuestionWithOptionalId = _BaseQuestion & _Question & { id?: ID } & SearchIndexed;
 
 
 export const defaultQuestion = (p?: Partial<Question>): Question => ({ id: '', type: 'choice', content: '', options: [], ...p } as Question);

@@ -24,7 +24,7 @@ import { startQuiz, updateQuiz } from "./quiz";
 import { initWeightedState } from "../utils/random-seq";
 import { createStatFromQuizResults } from "./stats";
 import { normalizeQuestion } from "./question-id";
-import IDBCore, { BuildBm25CacheOptions, trieSearchByQuery } from "./idb-core";
+import IDBCore, { BuildBm25CacheDbOptions, trieSearchByQuery } from "./idb-core";
 import { Bookmark, BookmarkBase, BookmarkReservedColors, BookmarkReservedWords, BookmarkType, defaultBookmark, defaultBookmarkType } from "../types/bookmark";
 import { createMergableTagsFinder, diffTags, mergeTags } from "./tag";
 
@@ -616,7 +616,7 @@ export class IDBController extends IDBCore implements QuizzyController {
     forceReindexingForPreparation = false,
     ignoreDeleted = true
   ) {
-    const options: BuildBm25CacheOptions<QuizPaper> = {
+    const options: BuildBm25CacheDbOptions<QuizPaper> = {
       forceReindexing, ignoreDeleted, excludedKeys: ['id', 'questions', 'keywords'],
     }
     return await this._prepareForSearch(
