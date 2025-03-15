@@ -15,7 +15,7 @@
     "./db/*": "./dist/db/*.js"
   },
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && tsc-alias",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
@@ -24,6 +24,7 @@
   "devDependencies": {
     "@types/random-js": "^2.0.0",
     "@types/tiny-segmenter": "^0.2.0",
+    "tsc-alias": "^1.8.11",
     "typescript": "^5.8.2"
   },
   "dependencies": {

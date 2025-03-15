@@ -11,47 +11,47 @@ export type DatabaseIndexed = {
 
 // keyword indexed
 
-/**
- * @deprecated use `SearchIndexed`.
- */
-export type KeywordIndexed = {
-  tags?: string[];
-  categories?: string[];
+// /**
+//  * @deprecated use `SearchIndexed`.
+//  */
+// export type KeywordIndexed = {
+//   tags?: string[];
+//   categories?: string[];
   
-  keywords?: string[];
-  keywordsFrequency?: Record<string, number>;
-  tagsFrequency?: Record<string, number>;
-  keywordsUpdatedTime?: number;
-  keywordsCacheInvalidated?: boolean;
-};
+//   keywords?: string[];
+//   keywordsFrequency?: Record<string, number>;
+//   tagsFrequency?: Record<string, number>;
+//   keywordsUpdatedTime?: number;
+//   keywordsCacheInvalidated?: boolean;
+// };
 
-/**
- * @deprecated use `SearchIndexed`.
- */
-export const needsReindexing = (currentObject: KeywordIndexed & { lastUpdate?: number }) => {
-  return currentObject.keywordsCacheInvalidated
-  || currentObject.keywords == null
-  || currentObject.keywordsUpdatedTime == null
-  || (currentObject.lastUpdate != null && currentObject.keywordsUpdatedTime < currentObject.lastUpdate)
-  || currentObject.keywordsFrequency == null
-  || currentObject.tagsFrequency == null;
-};
+// /**
+//  * @deprecated use `SearchIndexed`.
+//  */
+// export const needsReindexing = (currentObject: KeywordIndexed & { lastUpdate?: number }) => {
+//   return currentObject.keywordsCacheInvalidated
+//   || currentObject.keywords == null
+//   || currentObject.keywordsUpdatedTime == null
+//   || (currentObject.lastUpdate != null && currentObject.keywordsUpdatedTime < currentObject.lastUpdate)
+//   || currentObject.keywordsFrequency == null
+//   || currentObject.tagsFrequency == null;
+// };
 
-/**
- * @deprecated use `SearchIndexed`.
- */
-export const clearKeywordIndices = <T extends KeywordIndexed>(
-  object: T,
-  inPlace: boolean = false,
-) => {
-  const ret = inPlace ? object : { ...object };
-  delete ret.keywords;
-  delete ret.keywordsFrequency;
-  delete ret.tagsFrequency;
-  delete ret.keywordsUpdatedTime;
-  delete ret.keywordsCacheInvalidated;
-  return ret;
-};
+// /**
+//  * @deprecated use `SearchIndexed`.
+//  */
+// export const clearKeywordIndices = <T extends KeywordIndexed>(
+//   object: T,
+//   inPlace: boolean = false,
+// ) => {
+//   const ret = inPlace ? object : { ...object };
+//   delete ret.keywords;
+//   delete ret.keywordsFrequency;
+//   delete ret.tagsFrequency;
+//   delete ret.keywordsUpdatedTime;
+//   delete ret.keywordsCacheInvalidated;
+//   return ret;
+// };
 
 // search indexed
 
@@ -74,21 +74,21 @@ export const clearSearchIndices = <T extends SearchIndexed>(
 
 // tool functions
 
-export const sanitizeIndices = <T extends DatabaseIndexed & KeywordIndexed>(
+export const sanitizeIndices = <T extends DatabaseIndexed & SearchIndexed>(
   object: T,
   inPlace: boolean = false,
-  retainTags: boolean = true,
+  // retainTags: boolean = true,
 ) => {
   const ret = inPlace ? object : { ...object };
   if (!ret.deleted) {
     delete ret.deleted;
   }
   // delete ret.lastUpdate;
-  clearKeywordIndices(ret, true);
+  // clearKeywordIndices(ret, true);
+  // if (!retainTags) {
+  //   delete ret.tags;
+  // }
   clearSearchIndices(ret as any, true);
-  if (!retainTags) {
-    delete ret.tags;
-  }
   return ret;
 };
 

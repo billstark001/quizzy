@@ -2,7 +2,6 @@ import { francAll } from 'franc';
 import TinySegmenter from 'tiny-segmenter';
 import { default as init, cut_for_search } from 'jieba-wasm/web';
 import { isStopword } from './stopwords';
-import TrieSearch from 'trie-search';
 
 await init();
 
@@ -60,25 +59,4 @@ export const segmentSearchWords = (words: string): string[] => {
   ret.sort();
 
   return ret;
-};
-
-type _K = { key: string };
-
-export const buildTrieTree = (keywords: string[]) => {
-  const tree = new TrieSearch<_K>('key');
-  tree.addAll(keywords.map(key => ({ key })));
-  const root = tree.root;
-  return { tree, root, size: (tree as any).size as number };
-};
-
-export const loadTrieTree = (root: any, size: number) => {
-  const tree = new TrieSearch<_K>('key');
-  tree.root = root;
-  (tree as any).size = size;
-  tree.clearCache();
-  const searchFunc = (word: string) => {
-    const ret = tree.search(word).map(({ key }) => key);
-    return ret;
-  }
-  return { tree, searchFunc };
 };

@@ -1,70 +1,54 @@
-import { IDBPDatabase, IDBPTransaction } from "idb";
+import { IDBPCursorWithValue, IDBPDatabase, IDBPTransaction } from "idb";
 import {
-  DatabaseIndexed, ID, KeywordIndexed,
-  sanitizeIndices, SearchResult
+  DatabaseIndexed, ID,
+  sanitizeIndices, SearchIndexed, SearchResult
 } from "../types/technical";
 import { applyPatch, Patch } from "../utils/patch";
-import { generateKeywords, generateSearchKeywordCache } from "../search/keywords";
+import { generateKeywords, SearchKeywordCache } from "../search/keywords";
 import QuickLRU from "quick-lru";
-import { buildTrieTree, loadTrieTree } from "../search/search";
+import { Bm25GlobalCache, buildBm25Cache, BuildBm25CacheOptions, buildBm25QueryScore, BuildBm25QueryScoreParameters, defaultBm25GlobalCache } from "@/search/bm25";
+import { Nullable } from "@/utils";
+import { buildTrieTree, buildTrieTreeIterative, CachedTrieTree, expandQuery, LoadedTrieTree, loadTrieTree } from "@/search/trie";
 
-
-export type Bm25Cache = {
-  wordAppeared: Record<string, number>;
-  tagAppeared: Record<string, number>;
-  averageDocLength: number;
-  averageDocLengthTag: number;
-  totalDocs: number;
-  idf: Record<string, number>;
-  idfTag: Record<string, number>;
-  trie: any,
-  trieSize: number,
-  trieTags: any,
-  trieSizeTags: number,
-};
-
-export const defaultBm25Cache = (): Bm25Cache => ({
-  idf: {},
-  idfTag: {},
-  averageDocLength: 0,
-  averageDocLengthTag: 0,
-  trie: {},
-  trieTags: {},
-  trieSize: 0,
-  trieSizeTags: 0,
-  wordAppeared: {},
-  tagAppeared: {},
-  totalDocs: 0
-})
-
-export const trieSearchByQuery = (
-  query: string, cache?: Bm25Cache, isTag?: boolean
-) =>
-  cache?.[isTag ? 'trieTags' : 'trie']
-    ? loadTrieTree(
-      cache?.[isTag ? 'trieTags' : 'trie'],
-      cache?.[isTag ? 'trieSizeTags' : 'trieSize'])
-      .searchFunc(query)
-    : [];
 
 type _TX = IDBPTransaction<unknown, ArrayLike<string>, 'readwrite'>;
 
 export type LogicalDeleteStrategy = 'new' | 'override' | 'error';
 
-export type BuildBm25CacheDbOptions<T> = {
-  forceReindexing?: boolean,
+export type ImportConflictStrategy = 'existent' | 'imported' | 'both' | 'error';
+
+export type ImportResult = {
+  newlyImported: ID[];
+  conflict: ID[];
+};
+
+export type BuildBm25CacheDbOptions = {
+  forceReindexing?: boolean;
   /**
    * true -> logically deleted records will not be handled
    */
-  ignoreDeleted?: boolean,
-  excludedKeys?: readonly (keyof T)[],
+  ignoreDeleted?: boolean;
+  cacheKey?: string;
+};
+
+export type PrepareForSearchOptions = {
+  fieldsByStore: { [storeId: string]: readonly string[] };
+  forceReindexingForPreparation?: boolean;
+} & BuildBm25CacheDbOptions;
+
+type DefaultDatabaseType = {
+  [key: string]: {
+    key: string;
+    value: any;
+    indexes: Record<string, any>;
+  }
 }
 
 export class IDBCore {
 
   protected readonly db: IDBPDatabase;
-  private readonly queryCache: QuickLRU<string, [string, number][]>;
-  private readonly bm25Cache: QuickLRU<string, Bm25Cache>;
+  private readonly queryCache: QuickLRU<string, any>;
+  private readonly hotCache: QuickLRU<string, any>;
   private readonly cacheStoreKey: string;
   private readyForSearch: boolean;
 
@@ -72,28 +56,49 @@ export class IDBCore {
     db: IDBPDatabase,
     cacheStoreKey: string,
     queryCacheSize = 128,
-    bm25CacheSize = 16,
+    hotCacheSize = 64,
   ) {
     this.db = db;
     this.cacheStoreKey = cacheStoreKey;
     this.queryCache = new QuickLRU({
       maxSize: Math.max(queryCacheSize, 4),
     });
-    this.bm25Cache = new QuickLRU({
-      maxSize: Math.max(bm25CacheSize, 4),
+    this.hotCache = new QuickLRU({
+      maxSize: Math.max(hotCacheSize, 4),
     });
     this.readyForSearch = false;
   }
 
   // data import & export
 
-  protected async _import<T extends DatabaseIndexed>(store: string, items: T[]): Promise<ID[]> {
+  protected async _import<T extends DatabaseIndexed>(store: string, items: T[]) {
     const tx = this.db.transaction(store, 'readwrite');
-    const ids: ID[] = [];
+    const ids: ImportResult = {
+      newlyImported: [],
+      conflict: [],
+    };
+    // logic of single import
+    // TODO more advanced key conflict detection
+    const _i = async (item: T) => {
+      const _item = await tx.store.get(item.id);
+      if (_item) {
+        if (_item.deleted) {
+          await tx.store.put(item);
+          ids.newlyImported.push(item.id);
+          return;
+        }
+        // TODO apply strategy, but override for now
+        await tx.store.put(item);
+        ids.conflict.push(item.id);
+        return;
+      }
+      await tx.store.add(item);
+      ids.newlyImported.push(item.id);
+    };
+    // execute import on all objects
     const promises: Promise<any>[] = [];
     for (const q of items) {
-      promises.push(tx.store.add(q));
-      ids.push(q.id);
+      promises.push(_i(q));
     }
     await Promise.all(promises);
     await tx.done;
@@ -146,13 +151,13 @@ export class IDBCore {
       await tx.done;
     }
     // invalidate cache
-    this._invalidateCache(id);
+    this._invalidateCacheByItem(id);
     return true;
   }
 
   protected async _get<T extends DatabaseIndexed>(
-      storeId: string, id: string, tx?: _TX, 
-      returnEvenLogicallyDeleted = true
+    storeId: string, id: string, tx?: _TX,
+    returnEvenLogicallyDeleted = true
   ) {
     if (!id) {
       return undefined;
@@ -187,7 +192,7 @@ export class IDBCore {
   /**
    * will create transaction, sequential
    */
-  protected async _update<T extends DatabaseIndexed & KeywordIndexed>(
+  protected async _update<T extends DatabaseIndexed & SearchIndexed>(
     storeId: string, id: ID, patch: Patch<T>,
     invalidateKeywordsCache = false,
     logicalDeleteStrategy: LogicalDeleteStrategy = 'new',
@@ -223,7 +228,7 @@ export class IDBCore {
     modified.lastUpdate = Date.now();
     // invalidate cache if necessary
     if (invalidateKeywordsCache) {
-      modified.keywordsCacheInvalidated = true;
+      modified.searchCacheInvalidated = true;
     }
     await store.put(modified);
 
@@ -232,61 +237,96 @@ export class IDBCore {
     }
 
     // invalidate cache
-    this._invalidateCache(id);
+    this._invalidateCacheByItem(id);
 
     return id;
   }
 
+  // cache
 
-  // search related
-
-  protected async _invalidateCache(...id: ID[]) {
+  protected async _invalidateCacheByItem(...id: ID[]) {
     this.queryCache.clear();
-    this.bm25Cache.clear();
+    this.hotCache.clear();
     this.readyForSearch = false;
   }
 
-  protected async _prepareForSearch<
-    T extends DatabaseIndexed & KeywordIndexed = DatabaseIndexed & KeywordIndexed
-  >(
-    storeIds: string[], 
-    options?: BuildBm25CacheDbOptions<T>,
-    forceReindexingForPreparation = false,
+  protected async _dumpCache<T>(type: string, key: string, value: T) {
+    const cacheKey = `${type}::${key}`;
+    const result = await this.db.put(this.cacheStoreKey, {
+      id: cacheKey, type, key, value
+    });
+    this.hotCache.delete(cacheKey);
+    return result;
+  }
+
+  protected async _loadCache<T, R = T>(
+    type: string, key: string,
+    forceDirect = false,
+    transform?: (raw: T) => R,
+  ): Promise<R | undefined> {
+    const cacheKey = `${type}::${key}`;
+    if (!forceDirect && this.hotCache.has(cacheKey)) {
+      return this.hotCache.get(cacheKey)!;
+    }
+    const obj = await this.db.get(this.cacheStoreKey, cacheKey);
+    const cacheRaw = obj?.value as T;
+
+    if (cacheRaw) {
+      const cache = transform
+        ? transform(cacheRaw)
+        : cacheRaw;
+      this.hotCache.set(cacheKey, cache);
+      return cache as any;
+    }
+
+    return;
+  }
+
+  protected async _invalidateCache(
+    type: string, key?: string,
   ) {
+    // invalidate hot cache
+    for (const k of this.hotCache.keys()) {
+      if (k.startsWith(type + '::')) {
+        this.hotCache.delete(k);
+      }
+    }
+    // invalidate persistent cache
+    if (key == null) {
+
+      const keys = await this.db.getAllKeysFromIndex(
+        this.cacheStoreKey,
+        'type', type,
+      );
+      await Promise.all(keys.map(x => this.db.delete(this.cacheStoreKey, x)));
+    } else {
+      const cacheKey = `${type}::${key}`;
+      await this.db.delete(this.cacheStoreKey, cacheKey);
+    }
+  }
+
+  // search related
+
+  protected async _prepareForSearch(
+    options: PrepareForSearchOptions,
+  ) {
+    const {
+      fieldsByStore,
+      forceReindexingForPreparation = false,
+      ...rest
+    } = options;
     if (this.readyForSearch && !forceReindexingForPreparation) {
       return 0;
     }
     // this includes an invalidate operation
+    // document
     let count = 0;
-    for (const storeId of storeIds) {
-      count += (await this._buildBm25Cache(storeId, options)).length;
+    for (const [storeId, fields] of Object.entries(fieldsByStore)) {
+      count += (await this._buildBm25Cache(storeId, fields, rest))
+        .length;
     }
     this.readyForSearch = true;
     return count;
-  }
-
-  protected async _loadCache<T>(key: string): Promise<T | undefined> {
-    const obj = await this.db.get(this.cacheStoreKey, key);
-    return obj?.value as T;
-  }
-
-  protected async _dumpCache<T>(key: string, value: T) {
-    return await this.db.put(this.cacheStoreKey, { id: key, value });
-  }
-
-  protected async _loadBm25Cache(storeId: string): Promise<Bm25Cache> {
-    const bm25CacheKey = 'bm25_' + storeId;
-    if (this.bm25Cache.has(bm25CacheKey)) {
-      return this.bm25Cache.get(bm25CacheKey)!;
-    }
-    const cache = await this._loadCache<Bm25Cache>(bm25CacheKey);
-
-    if (cache) {
-      this.bm25Cache.set(bm25CacheKey, cache);
-      return cache;
-    }
-
-    return defaultBm25Cache();
   }
 
 
@@ -298,75 +338,105 @@ export class IDBCore {
     return orig;
   }
 
-  protected async _buildQueryScore<T extends DatabaseIndexed & KeywordIndexed>(
-    cacheKey: string,
-    storeId: string, query: string[], useTag: boolean,
-    k1 = 1.5, b = 0.75, threshold = 1e-10,
+  protected async _buildBm25Cache<T extends DatabaseIndexed & SearchIndexed>(
+    storeId: string,
+    includedKeys: readonly string[],
+    options?: BuildBm25CacheDbOptions,
+  ): Promise<ID[]> {
+    const {
+      forceReindexing = false,
+      ignoreDeleted = true,
+      cacheKey = 'bm25',
+    } = options ?? {};
+
+    const tx = this.db.transaction(storeId, 'readwrite');
+    const updated: ID[] = [];
+
+    let cursor = await tx.store.openCursor();
+
+    const buildOptions: BuildBm25CacheOptions<T> = {
+      nextObject() {
+        const value = cursor?.value as T;
+        if (!value || (ignoreDeleted && value.deleted)) {
+          return;
+        }
+        if (forceReindexing || !value.searchCache) {
+          return [value, undefined];
+        }
+        return [value, value.searchCache];
+      },
+      async onProcessed(cache) {
+        if (cache) {
+          const value = cursor!.value as T;
+          delete value.searchCacheInvalidated;
+          value.searchCacheLastUpdated = Date.now();
+          value.searchCache = cache;
+          updated.push(value.id);
+          await cursor!.update(value);
+        }
+        cursor = await cursor!.continue();
+      },
+      fields: includedKeys,
+    };
+
+    const bm25Body = await buildBm25Cache(buildOptions);
+
+    await tx.done;
+
+    // write back to database
+    await this._invalidateCacheByItem();
+    await this._dumpCache(cacheKey, storeId, bm25Body);
+
+    return updated;
+  }
+
+  protected async _buildQueryScore<T extends DatabaseIndexed & SearchIndexed>(
+    queryCacheKey: string,
+    storeId: string, query: string[],
+    params?: Partial<BuildBm25QueryScoreParameters>,
   ) {
     // load the current cache
-    const {
-      idf, idfTag,
-      averageDocLength, averageDocLengthTag,
-      trie, trieSize, trieTags, trieSizeTags
-    } = await this._loadBm25Cache(storeId);
-
-    const trieTree = loadTrieTree(!useTag ? trie : trieTags, !useTag ? trieSize : trieSizeTags);
+    const bm25Cache = await this._loadCache<Bm25GlobalCache>(
+      'bm25',
+      storeId
+    ) ?? defaultBm25GlobalCache();
 
     // refresh scores
 
     const tx = this.db.transaction(storeId, 'readonly');
-    const scores: Record<string, number> = {};
-
-    const l = useTag ? averageDocLengthTag : averageDocLength;
-    const _idf = useTag ? idfTag : idf;
 
     let cursor = await tx.store.openCursor();
-    let expandedQuery = new Set<string>();
-    for (const qi of query) {
-      expandedQuery.add(qi);
-      for (const qj of trieTree.searchFunc(qi)) {
-        expandedQuery.add(qj);
+    const nextObject = async () => {
+      const value = cursor?.value as T;
+      const cache = value?.searchCache;
+      cursor = await cursor?.continue() ?? null;
+      if (cache) {
+        return [value.id, cache] as [string, SearchKeywordCache];
       }
-    }
-    // calculate & accumulate the scores
-    while (cursor != null) {
-      const doc = cursor.value as T;
-      const cacheList = useTag ? [...doc.tags ?? [], ...doc.categories ?? []] : doc.keywords;
-      const docLength = cacheList?.length || 1;
-      const freq = (useTag ? doc.tagsFrequency : doc.keywordsFrequency) ?? {};
-      let score = 0;
-      for (const qi of expandedQuery) {
-        const f_qi = freq[qi] ?? 0;
-        const localTerm = (_idf[qi] ?? 0)
-          * (f_qi * (k1 + 1))
-          / (f_qi + k1 * (1 - b + b * docLength / l));
-        score += localTerm;
-      }
-      if (score > threshold) {
-        scores[doc.id] = score;
-      }
-      cursor = await cursor.continue();
-    }
-    await tx.done;
+    };
 
-    // sort scores
-    const scoresSorted = Object.entries(scores);
-    scoresSorted.sort((a, b) => b[1] - a[1]); // descending
+    // calculate the scores
+    const scoresSorted = await buildBm25QueryScore({
+      bm25Cache,
+      query,
+      nextObject,
+      ...params,
+    });
 
-    this.queryCache.set(cacheKey, scoresSorted);
+    this.queryCache.set(queryCacheKey, scoresSorted);
     return scoresSorted;
   }
 
-  protected async _search<T extends DatabaseIndexed & KeywordIndexed>(
-    store: string, query: string, keywords: string[], useTag: boolean,
+  protected async _search<T extends DatabaseIndexed & SearchIndexed>(
+    store: string, query: string, keywords: string[],
     count?: number, page?: number,
-    k1 = 1.5, b = 0.75, threshold = 1e-10,
+    params?: Partial<BuildBm25QueryScoreParameters>,
   ): Promise<SearchResult<T>> {
 
-    const queryCacheKey = JSON.stringify([store, keywords, useTag, k1, b, threshold]);
+    const queryCacheKey = JSON.stringify(['search', store, keywords, params]);
     const scores = this.queryCache.has(queryCacheKey)
-      ? this.queryCache.get(queryCacheKey)
-      : await this._buildQueryScore(queryCacheKey, store, keywords, useTag, k1, b, threshold);
+      ? (this.queryCache.get(queryCacheKey) as [string, number][])
+      : await this._buildQueryScore(queryCacheKey, store, keywords, params);
 
     count = Math.max(count ?? 1, 1);
     page = Math.max(page ?? 0, 0); // 0-based
@@ -387,117 +457,175 @@ export class IDBCore {
     };
   }
 
-  protected async _buildBm25Cache<T extends DatabaseIndexed & KeywordIndexed>(
-    storeId: string,
-    options?: BuildBm25CacheDbOptions<T>,
-  ): Promise<ID[]> {
-    const {
-      forceReindexing = false,
-      ignoreDeleted = true,
-      excludedKeys = [],
-    } = options ?? {};
+  // tag search related
 
-    const tx = this.db.transaction(storeId, 'readwrite');
-    const updated: ID[] = [];
+  protected async _buildTrieCache<T extends DatabaseIndexed>(
+    cacheKey: string,
+    storeIds: string[],
+    getWords: (x: T) => Nullable<string | string[]>,
+    force = false,
+  ) {
 
-    // build bm25 cache
-    const wordAppeared: Record<string, number> = {};
-    const tagAppeared: Record<string, number> = {};
-    let totalLength = 0;
-    let totalLengthTag = 0;
-    let totalDocs = 0;
-
-    // filter all re-indexing required
-    let cursor = await tx.store.openCursor();
-    let excludedKeysSet = new Set(excludedKeys);
-    while (cursor) {
-      const object = cursor.value as T;
-      if (object.deleted && ignoreDeleted) {
-        continue;
+    if (!force) {
+      // do not build again if the current exists
+      const current = await this._loadTrieCache(cacheKey);
+      if (current) {
+        return;
       }
-      // check if re-indexing is needed
-      const needsReindexing =
-        forceReindexing
-        || object.keywordsCacheInvalidated
-        || object.keywords == null
-        || object.keywordsUpdatedTime == null
-        || (object.lastUpdate != null && object.keywordsUpdatedTime < object.lastUpdate)
-        || object.keywordsFrequency == null
-        || object.tagsFrequency == null;
-
-      if (needsReindexing) {
-        // update it in-place
-        const { filteredWords: words, frequency: freq } = generateSearchKeywordCache(
-          Object.entries(object)
-            .filter(([k]) => !excludedKeysSet.has(k as any))
-            .map(([, v]) => v)
-        );
-        object.keywordsUpdatedTime = Date.now();
-        object.keywordsFrequency = freq;
-        object.keywords = words;
-
-        // tags
-        const tagFreq: Record<string, number> = {};
-        for (const tag of object.tags ?? []) {
-          tagFreq[tag] = 1;
-        }
-        for (const tag of object.categories ?? []) {
-          tagFreq[tag] = 4;
-        }
-        object.tagsFrequency = tagFreq;
-
-        delete object.keywordsCacheInvalidated;
-
-        // commit the updated record to database
-        await cursor.update(object);
-        updated.push(object.id);
-      }
-
-      // accumulate records' frequency data
-      for (const key of Object.keys(object.keywordsFrequency ?? {})) {
-        wordAppeared[key] = (wordAppeared[key] || 0) + 1;
-      }
-      for (const key of Object.keys(object.tagsFrequency ?? {})) {
-        tagAppeared[key] = (tagAppeared[key] || 0) + 1;
-      }
-      totalLength += object.keywords?.length ?? 0;
-      totalLengthTag += (object.tags?.length ?? 0) + (object.categories?.length ?? 0);
-      totalDocs += 1;
-
-      cursor = await cursor.continue();
     }
+
+    const tx = this.db.transaction(storeIds);
+
+    let currentStore = 1;
+    let cursor = storeIds[0]
+      ? await tx.objectStore(storeIds[0]).openCursor()
+      : null;
+
+    const nextFunc: Parameters<typeof buildTrieTreeIterative>[0] = async () => {
+      if (!cursor) {
+        const storeId = storeIds[currentStore];
+        if (storeId) {
+          cursor = await tx.objectStore(storeId).openCursor();
+          currentStore++;
+          return '';
+        }
+        return;
+      }
+      // the reason to return an empty string is 
+      // to inform the builder that the cursor is not exhausted yet
+      if (!cursor.value) {
+        cursor = await cursor.continue();
+        return '';
+      }
+      const result = getWords(cursor.value);
+      cursor = await cursor.continue();
+      return result || '';
+    }
+
+    const trie = await buildTrieTreeIterative(nextFunc);
     await tx.done;
+    await this._dumpCache('trie', cacheKey, trie);
+    return;
+  }
 
-    // build trie trees
-    const { root: trie, size: trieSize, } = buildTrieTree(Object.keys(wordAppeared));
-    const { root: trieTags, size: trieSizeTags, } = buildTrieTree(Object.keys(tagAppeared));
+  protected async _loadTrieCache(
+    cacheKey: string,
+    forceDirect = false,
+  ) {
+    const trie = await this._loadCache(
+      'trie',
+      cacheKey,
+      forceDirect,
+      loadTrieTree,
+    );
 
-    // create IDF scores
-    const idf: Record<string, number> = Object.fromEntries(
-      Object.entries(wordAppeared).map(
-        ([k, n]) => [k, Math.max(1e-8, Math.log((totalDocs - n + 0.5) / (n + 0.5)))]
-      )
-    );
-    const idfTag: Record<string, number> = Object.fromEntries(
-      Object.entries(tagAppeared).map(
-        ([k, n]) => [k, Math.max(1e-8, Math.log((totalDocs - n + 0.5) / (n + 0.5)))]
-      )
-    );
-    const averageDocLength = totalLength / (totalDocs || 1);
-    const averageDocLengthTag = totalLengthTag / (totalDocs || 1);
-    const bm25Body: Bm25Cache = {
-      wordAppeared, tagAppeared,
-      averageDocLength, averageDocLengthTag,
-      totalDocs, idf, idfTag,
-      trie, trieSize, trieTags, trieSizeTags,
+    return trie;
+  }
+
+  protected async _buildTagSearchScore<T extends DatabaseIndexed & {
+    tags?: string[], categories?: string[],
+  }>(
+    storeId: string,
+    trieRaw: LoadedTrieTree,
+    query: string[],
+    useCategory: boolean | null = null,
+  ) {
+
+    const queryCacheKey = JSON.stringify(['tag-search', storeId, query, useCategory]);
+
+    const initialQuery = new Set(query);
+    const expandedQuery = expandQuery(trieRaw!, query);
+
+    // results
+    const searchScore: Record<string, [number, T]> = {};
+    const objectArrays: T[][] = [];
+
+    for (const tagCandidate of expandedQuery) {
+      // gather objects
+      objectArrays.push(await this.db.getAllFromIndex(
+        storeId,
+        useCategory ? 'categories' : 'tags',
+        tagCandidate
+      ))
+      if (useCategory == null) {
+        // both tags and categories are applicable
+        objectArrays.push(await this.db.getAllFromIndex(
+          storeId,
+          'categories',
+          tagCandidate
+        ));
+      }
+    }
+    // calculate object search scores
+    for (const _arr of objectArrays) {
+      for (const obj of _arr) {
+        if (searchScore[obj.id]) {
+          // already calculated
+          continue;
+        }
+        let score = 0;
+        for (const c of obj.categories ?? []) {
+          if (initialQuery.has(c)) {
+            score += 6;
+          } else if (expandedQuery.has(c)) {
+            score += 4;
+          }
+        }
+        for (const t of obj.tags ?? []) {
+          if (initialQuery.has(t)) {
+            score += 3;
+          } else if (expandedQuery.has(t)) {
+            score += 1;
+          }
+        }
+        searchScore[obj.id] = [score, obj];
+      }
+    }
+
+    const results = Object.values(searchScore);
+    results.sort((a, b) => b[0] - a[0]); // descend
+
+    const ret = {
+      results,
+      keywords: [...expandedQuery],
     };
 
-    // write back to database
-    const bm25CacheId = 'bm25_' + storeId;
-    await this._invalidateCache();
-    await this._dumpCache(bm25CacheId, bm25Body);
+    this.queryCache.set(queryCacheKey, ret);
 
-    return updated;
+    return ret;
+  }
+
+  protected async _searchByTag<T extends DatabaseIndexed & {
+    tags?: string[], categories?: string[],
+  }>(
+    storeId: string,
+    trieRaw: LoadedTrieTree,
+    query: string,
+    useCategory: boolean | null = null,
+    count?: number,
+    page?: number,
+  ): Promise<SearchResult<T>> {
+    const queryArray = query.split(' ').filter(x => !!x);
+    queryArray[0] !== query && queryArray.splice(0, 0, query);
+
+    const queryCacheKey = JSON.stringify(['tag-search', storeId, queryArray, useCategory]);
+    const { results: scores, keywords } = this.queryCache.has(queryCacheKey)
+      ? (this.queryCache.get(queryCacheKey) as Awaited<ReturnType<typeof this._buildTagSearchScore<T>>>)
+      : await this._buildTagSearchScore<T>(storeId, trieRaw, queryArray, useCategory);
+
+    count = Math.max(count ?? 1, 1);
+    page = Math.max(page ?? 0, 0); // 0-based
+
+    const elementToJump = count * page;
+    const pageCount = Math.ceil(scores.length / page);
+
+    const returnObjects = scores.slice(elementToJump, elementToJump + count);
+    return {
+      query,
+      result: returnObjects.map(x => x[1]),
+      keywords: [...keywords],
+      totalPages: pageCount,
+    }
   }
 }
 

@@ -6,7 +6,8 @@ import {
   Stat, StatBase, TempTagListResult, TagSearchResult, 
   TICIndex, Tag, TagBase,
   UpdateQuizOptions, 
-  defaultTag
+  defaultTag,
+  BaseQuestion
 } from "../types";
 import { IDBPDatabase, IDBPTransaction } from "idb";
 import { separatePaperAndQuestions, toCompleted } from "./paper-id";
@@ -24,13 +25,13 @@ import { startQuiz, updateQuiz } from "./quiz";
 import { initWeightedState } from "../utils/random-seq";
 import { createStatFromQuizResults } from "./stats";
 import { normalizeQuestion } from "./question-id";
-import IDBCore, { BuildBm25CacheDbOptions, trieSearchByQuery } from "./idb-core";
+import IDBCore from "./idb-core";
 import { Bookmark, BookmarkBase, BookmarkReservedColors, BookmarkReservedWords, BookmarkType, defaultBookmark, defaultBookmarkType } from "../types/bookmark";
 import { createMergableTagsFinder, diffTags, mergeTags } from "./tag";
 
 
 export const DB_KEY = 'Quizzy';
-export const VERSION = 3;
+export const VERSION = 4;
 
 const STORE_KEY_PAPERS = 'papers';
 const STORE_KEY_RECORDS = 'records';
@@ -48,6 +49,17 @@ const ticIndices: readonly ((keyof BookmarkBase) & TICIndex)[] = ['typeId', 'ite
 const icIndices: readonly ((keyof BookmarkBase) & TICIndex)[] = ['itemId', 'category'];
 const tcIndices: readonly ((keyof BookmarkBase) & TICIndex)[] = ['typeId', 'category'];
 
+// TODO replace with strict typing
+type DatabaseType = {
+  [STORE_KEY_GENERAL]: {
+    key: string;
+    value: any;
+  },
+  [STORE_KEY_QUESTIONS]: {
+    key: string;
+    value: Question;
+  },
+};
 
 const updaters: Record<number, DatabaseUpdateDefinition> = {
   [0]: (db) => {
@@ -70,8 +82,8 @@ const updaters: Record<number, DatabaseUpdateDefinition> = {
       store.createIndex('name', 'name');
       store.createIndex('tags', 'tags', { multiEntry: true });
       store.createIndex('categories', 'categories', { multiEntry: true });
-      store.createIndex('keywords', 'keywords', { multiEntry: true });
-      store.createIndex('keywordsUpdatedTime', 'keywordsUpdatedTime', {});
+      // store.createIndex('keywords', 'keywords', { multiEntry: true });
+      // store.createIndex('keywordsUpdatedTime', 'keywordsUpdatedTime', {});
     }
 
     for (const key of [
@@ -130,6 +142,11 @@ const updaters: Record<number, DatabaseUpdateDefinition> = {
     const bookmarkStore = tx.objectStore(STORE_KEY_BOOKMARKS);
     bookmarkStore.createIndex('TC', tcIndices as any);
   },
+  [3]: (_, tx) => {
+    const generalStore = tx.objectStore(STORE_KEY_GENERAL);
+    generalStore.createIndex('type', 'type');
+    generalStore.createIndex('key', 'key');
+  }
 } as const;
 
 export class IDBController extends IDBCore implements QuizzyController {
@@ -140,6 +157,26 @@ export class IDBController extends IDBCore implements QuizzyController {
 
   static async connect() {
     const db = await openDatabase(DB_KEY, VERSION, updaters);
+
+    // const tx = db.transaction([STORE_KEY_PAPERS, STORE_KEY_QUESTIONS], 'readwrite');
+    
+    // let cursor = await tx.objectStore(STORE_KEY_PAPERS).openCursor();
+    // while (cursor != null) {
+    //   const obj = cursor.value;
+    //   clearKeywordIndices(obj, true);
+    //   cursor.update(obj);
+    //   cursor = await cursor.continue();
+    // }
+    // let cursor2 = await tx.objectStore(STORE_KEY_QUESTIONS).openCursor();
+    // while (cursor2 != null) {
+    //   const obj = cursor2.value;
+    //   clearKeywordIndices(obj, true);
+    //   cursor2.update(obj);
+    //   cursor2 = await cursor2.continue();
+    // }
+
+    // await tx.done;
+
     return new IDBController(db);
   }
 
@@ -357,12 +394,14 @@ export class IDBController extends IDBCore implements QuizzyController {
     return this._list<Tag>(STORE_KEY_TAGS);
   }
 
-  updateTag(id: ID, tag: Patch<Tag>) {
-    return this._update(STORE_KEY_TAGS, id, tag);
+  async updateTag(id: ID, tag: Patch<Tag>) {
+    await this._invalidateCache('trie');
+    return await this._update(STORE_KEY_TAGS, id, tag);
   }
 
-  deleteTag(id: ID) {
-    return this._delete(STORE_KEY_TAGS, id, true);
+  async deleteTag(id: ID) {
+    await this._invalidateCache('trie');
+    return await this._delete(STORE_KEY_TAGS, id, true);
   }
 
   async mergeTags(ids: ID[]) {
@@ -449,14 +488,14 @@ export class IDBController extends IDBCore implements QuizzyController {
     return [allMainIds, allDeletedIds] as [ID[], ID[]];
   }
 
-  async generateTagHint(query: string, _?: number, __?: number): Promise<TagSearchResult> {
-    const cachePapers = await this._loadBm25Cache(STORE_KEY_PAPERS);
-    const cacheQuestions = await this._loadBm25Cache(STORE_KEY_QUESTIONS);
+  async generateTagHint(query: string, limit?: number, __?: number): Promise<TagSearchResult> {
+    const trieRaw = await this._loadTrieCache('tags-categories');
+    const trieObj = await this._loadTrieCache('tag-objects');
     return {
-      paper: trieSearchByQuery(query, cachePapers, false),
-      paperTags: trieSearchByQuery(query, cachePapers, true),
-      question: trieSearchByQuery(query, cacheQuestions, false),
-      questionTags: trieSearchByQuery(query, cacheQuestions, true),
+      paper: trieRaw?.searchFunc(query, limit) ?? [],
+      paperTags: trieObj?.searchFunc(query, limit) ?? [],
+      question: [],
+      questionTags: [],
     };
   }
 
@@ -482,35 +521,43 @@ export class IDBController extends IDBCore implements QuizzyController {
 
   async importQuestions(...questions: Question[]): Promise<ID[]> {
     questions.forEach(q => normalizeQuestion(q));
-    return this._import(STORE_KEY_QUESTIONS, questions);
+    // TODO
+    return this._import(STORE_KEY_QUESTIONS, questions).then(x => x.newlyImported);
   }
 
   async importQuizPapers(...papers: QuizPaper[]): Promise<ID[]> {
-    return this._import(STORE_KEY_PAPERS, papers);
+    // TODO
+    return this._import(STORE_KEY_PAPERS, papers).then(x => x.newlyImported);
   }
 
   // TODO replace with repetitive tasks
+
   async findQuestion(query: string, count?: number, page?: number): Promise<SearchResult<Question>> {
     await this.refreshSearchIndices();
     const queryKeywords = await this._getKeywords(query, STORE_KEY_QUESTIONS);
-    return this._search(STORE_KEY_QUESTIONS, query, queryKeywords, false, count, page);
+    return this._search(STORE_KEY_QUESTIONS, query, queryKeywords, count, page);
   }
+
   async findQuizPaper(query: string, count?: number, page?: number): Promise<SearchResult<QuizPaper>> {
     await this.refreshSearchIndices();
     const queryKeywords = await this._getKeywords(query, STORE_KEY_PAPERS);
-    return this._search(STORE_KEY_PAPERS, query, queryKeywords, false, count, page);
+    return this._search(STORE_KEY_PAPERS, query, queryKeywords, count, page);
   }
+
   async findQuestionByTags(query: string, count?: number, page?: number): Promise<SearchResult<Question>> {
     await this.refreshSearchIndices();
-    const queryKeywords = query.split(' ').filter(x => !!x);
-    queryKeywords[0] !== query && queryKeywords.splice(0, 0, query);
-    return this._search(STORE_KEY_QUESTIONS, query, queryKeywords, true, count, page);
+    const trieRaw = await this._loadTrieCache('tags-categories');
+    return this._searchByTag<Question>(
+      STORE_KEY_QUESTIONS, trieRaw!, query, null, count, page,
+    );
   }
+
   async findQuizPaperByTags(query: string, count?: number, page?: number): Promise<SearchResult<QuizPaper>> {
     await this.refreshSearchIndices();
-    const queryKeywords = query.split(' ').filter(x => !!x);
-    queryKeywords[0] !== query && queryKeywords.splice(0, 0, query);
-    return this._search(STORE_KEY_PAPERS, query, queryKeywords, true, count, page);
+    const trieRaw = await this._loadTrieCache('tags-categories');
+    return this._searchByTag<QuizPaper>(
+      STORE_KEY_PAPERS, trieRaw!, query, null, count, page,
+    );
   }
 
   async listQuestionByBookmark(id: string) {
@@ -595,18 +642,22 @@ export class IDBController extends IDBCore implements QuizzyController {
   }
 
 
-  updateQuestion(id: ID, patch: Patch<Question>): Promise<ID> {
-    return this._update(STORE_KEY_QUESTIONS, id, patch);
+  async updateQuestion(id: ID, patch: Patch<Question>): Promise<ID> {
+    await this._invalidateCache('trie');
+    return await this._update(STORE_KEY_QUESTIONS, id, patch);
   }
-  updateQuizPaper(id: ID, paper: Patch<QuizPaper>): Promise<ID> {
-    return this._update(STORE_KEY_PAPERS, id, paper);
+  async updateQuizPaper(id: ID, paper: Patch<QuizPaper>): Promise<ID> {
+    await this._invalidateCache('trie');
+    return await this._update(STORE_KEY_PAPERS, id, paper);
   }
 
-  deleteQuestion(id: ID): Promise<boolean> {
-    return this._delete(STORE_KEY_QUESTIONS, id, true);
+  async deleteQuestion(id: ID): Promise<boolean> {
+    await this._invalidateCache('trie');
+    return await this._delete(STORE_KEY_QUESTIONS, id, true);
   }
-  deleteQuizPaper(id: ID): Promise<boolean> {
-    return this._delete(STORE_KEY_PAPERS, id, true);
+  async deleteQuizPaper(id: ID): Promise<boolean> {
+    await this._invalidateCache('trie');
+    return await this._delete(STORE_KEY_PAPERS, id, true);
   }
 
   // search
@@ -616,14 +667,44 @@ export class IDBController extends IDBCore implements QuizzyController {
     forceReindexingForPreparation = false,
     ignoreDeleted = true
   ) {
-    const options: BuildBm25CacheDbOptions<QuizPaper> = {
-      forceReindexing, ignoreDeleted, excludedKeys: ['id', 'questions', 'keywords'],
-    }
-    return await this._prepareForSearch(
-      [STORE_KEY_QUESTIONS, STORE_KEY_PAPERS],
-      options,
+    const ret = await this._prepareForSearch({
+      fieldsByStore: {
+        [STORE_KEY_PAPERS]: [
+          'name', 'desc', 'tags', 'categories'
+        ], // satisfies (keyof QuizPaper),
+        [STORE_KEY_QUESTIONS]: [
+          'name', 'tags', 'categories', 
+          'title', 'content', 'solution', 
+          'options', 'blanks', 'answer'
+        ], // satisfies (keyof Question)[],
+      },
+      forceReindexing,
       forceReindexingForPreparation,
+      ignoreDeleted,
+    });
+    // TODO apply forceReindexingForPreparation
+    await this._buildTrieCache(
+      'tags-categories',
+      [STORE_KEY_PAPERS, STORE_KEY_QUESTIONS],
+      (x: QuizPaper & BaseQuestion) => {
+        return [
+          ...x.categories ?? [],
+          ...x.tags ?? [],
+        ];
+      },
+      forceReindexing,
     );
+    await this._buildTrieCache(
+      'tag-objects',
+      [STORE_KEY_TAGS],
+      (x: Tag) => [
+        x.mainName,
+        ...Object.values(x.mainNames ?? {}).filter(x => !!x) as string[],
+        ...x.alternatives ?? [],
+      ],
+      forceReindexing,
+    );
+    return ret;
   }
 
   async deleteUnlinked(logical = true) {
@@ -696,7 +777,8 @@ export class IDBController extends IDBCore implements QuizzyController {
   // records
 
   importQuizRecords(...records: QuizRecord[]): Promise<ID[]> {
-    return this._import(STORE_KEY_RECORDS, records);
+    // TODO
+    return this._import(STORE_KEY_RECORDS, records).then(x => x.newlyImported);
   }
 
   getQuizRecord(id: ID): Promise<QuizRecord | undefined> {
@@ -857,7 +939,8 @@ export class IDBController extends IDBCore implements QuizzyController {
   }
 
   importQuizResults(...results: QuizResult[]): Promise<ID[]> {
-    return this._import(STORE_KEY_RESULTS, results);
+    // TODO
+    return this._import(STORE_KEY_RESULTS, results).then(x => x.newlyImported);
   }
 
   getQuizResult(id: ID): Promise<QuizResult | undefined> {

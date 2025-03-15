@@ -33,9 +33,9 @@ export const TagsPage = ({ preview }: { preview?: (q: Question | undefined) => u
       }}>
         {t('page.edit.btn.searchByTags')}
       </Button>
-      <Button disabled={!s.isAnySelected}>
+      {/* <Button disabled={!s.isAnySelected}>
         {t('page.edit.btn.searchByCategories')} (TODO)
-      </Button>
+      </Button> */}
     </PageToolbar>
     <TagSelector tags={tags.tagList} isSelected={s.isSelected} toggleSelected={s.toggleSelected} />
 

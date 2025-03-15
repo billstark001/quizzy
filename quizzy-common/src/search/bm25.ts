@@ -1,3 +1,4 @@
+import { Nullable } from "@/utils";
 import { generateSearchKeywordCache, SearchKeywordCache } from "./keywords";
 import { calculatePositionalScore } from "./position";
 
@@ -11,13 +12,15 @@ export type Bm25GlobalCache = {
   totalDocs: number;
 };
 
-export type BuildBm25CacheOptions<T> = {
-  nextObject: () => Nullable<[T, Nullable<SearchKeywordCache>]> | Promise<Nullable<[T, Nullable<SearchKeywordCache>]>>,
-  onProcessed: (cache: SearchKeywordCache | null) => void | Promise<void>,
-  fields: readonly string[],
-};
-
-type Nullable<T> = T | null | undefined;
+export const defaultBm25GlobalCache = () => ({
+  wordAppeared: {},
+  averageDocLength: 0,
+  wordAppeared2: {},
+  averageDocLength2: 0,
+  idf: {},
+  idf2: {},
+  totalDocs: 0
+} satisfies Bm25GlobalCache);
 
 const generate2GramArray = (arr: readonly string[]) => {
   const ret: string[] = [];
@@ -26,6 +29,12 @@ const generate2GramArray = (arr: readonly string[]) => {
     ret.push(currentWord);
   }
   return ret;
+};
+
+export type BuildBm25CacheOptions<T> = {
+  nextObject: () => Nullable<[T, Nullable<SearchKeywordCache>]> | Promise<Nullable<[T, Nullable<SearchKeywordCache>]>>,
+  onProcessed: (cache: SearchKeywordCache | null) => void | Promise<void>,
+  fields: readonly string[],
 };
 
 export const buildBm25Cache = async <T extends object>(
@@ -104,22 +113,25 @@ export const buildBm25Cache = async <T extends object>(
   return bm25Body;
 };
 
+export type BuildBm25QueryScoreParameters = {
+  k1: number,
+  b: number,
+  discardThreshold: number,
+  unigramRatio: number,
+  // positional
+  calcPosScore: boolean,
+  calcPosScoreMinCount: number,
+  calcPosScoreRatio: number,
+  maxDistance: number,
+  distanceWeight: number,
+};
+
 export type BuildBm25QueryScoreOptions<T> = {
   bm25Cache: Readonly<Bm25GlobalCache>,
   query: readonly string[],
   query2?: readonly string[],
   nextObject: () => Nullable<[string, T]> | Promise<Nullable<[string, T]>>,
-  k1?: number,
-  b?: number,
-  discardThreshold?: number,
-  unigramRatio?: number,
-  // positional
-  calcPosScore?: boolean,
-  calcPosScoreMinCount?: number,
-  calcPosScoreRatio?: number,
-  maxDistance?: number,
-  distanceWeight?: number,
-};
+} & Partial<BuildBm25QueryScoreParameters>;
 
 
 export const buildBm25QueryScore = async <T extends SearchKeywordCache = SearchKeywordCache>(
@@ -161,8 +173,11 @@ export const buildBm25QueryScore = async <T extends SearchKeywordCache = SearchK
   ) => {
     let score = 0;
     for (const qi of query) {
-      const f_qi = freq[qi] ?? 0;
-      const localTerm = (idf[qi] ?? 0)
+      const f_qi = freq[qi];
+      if (!f_qi || !idf[qi]) {
+        continue;
+      }
+      const localTerm = (idf[qi])
         * (f_qi * (k1 + 1))
         / (f_qi + k1 * (1 - b + b * docLength / avgLength));
       score += localTerm;

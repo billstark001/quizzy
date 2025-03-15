@@ -1,5 +1,5 @@
-import { segmentSearchWords } from "./search";
-import { removeDuplicates } from "utils/array";
+import { segmentSearchWords } from "./tokenize";
+import { removeDuplicates } from "@/utils/array";
 
 const extractStrings = (object: any) => {
   const str: string[] = [];

@@ -1,9 +1,16 @@
 import { DBSchema, IDBPDatabase, IDBPTransaction, IndexNames, openDB, StoreNames } from "idb";
 
-export type DatabaseUpdateDefinition = (db: IDBPDatabase, tx: IDBPTransaction<unknown, string[], "versionchange">) => void;
 
-export const openDatabase = async (key: string, version: number, updaters: Readonly<Record<number, DatabaseUpdateDefinition>>) => {
-  const db = await openDB(key, version, {
+export type Nullable<T> = T | null | undefined;
+
+export type DatabaseUpdateDefinition<T = unknown> = (db: IDBPDatabase<T>, tx: IDBPTransaction<T, ArrayLike<StoreNames<T>>, "versionchange">) => void;
+
+export const openDatabase = async <T = unknown>(
+  key: string, 
+  version: number, 
+  updaters: Readonly<Record<number, DatabaseUpdateDefinition<T>>>
+) => {
+  const db = await openDB<T>(key, version, {
     upgrade(db, oldVersion, newVersion, transaction) {
       if (newVersion == null || newVersion < oldVersion) {
         return; // either delete or errored
