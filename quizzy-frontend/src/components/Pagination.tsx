@@ -2,14 +2,16 @@ import React, { JSX, useState } from "react";
 import {
   Box,
   Button,
+  ButtonGroup,
   HStack,
   IconButton,
   NumberInputRoot,
   StackProps,
 } from "@chakra-ui/react";
-import { 
-  AiFillStepBackward, AiFillStepForward, AiOutlineCheck,  
-  AiFillCaretLeft, AiFillCaretRight } from "react-icons/ai";
+import {
+  AiFillStepBackward, AiFillStepForward, AiOutlineCheck,
+  AiFillCaretLeft, AiFillCaretRight
+} from "react-icons/ai";
 import { NumberInputField } from "./ui/number-input";
 
 export type PaginationProps = StackProps & {
@@ -93,11 +95,13 @@ export const Pagination: React.FC<PaginationProps> = (props) => {
   };
 
   return (
-    <HStack gap={2} justifyContent='center' {...divProps}>
+    <ButtonGroup variant='ghost' 
+      as={HStack} gap={2} justifyContent='center' {...divProps}
+    >
       <IconButton
         aria-label="first"
         children={<AiFillStepBackward />}
-        onClick={() => handlePageChange(1)} 
+        onClick={() => handlePageChange(1)}
         disabled={currentPageRaw <= 1}
       />
       <IconButton
@@ -144,7 +148,7 @@ export const Pagination: React.FC<PaginationProps> = (props) => {
           }
         }}
       />
-    </HStack>
+    </ButtonGroup>
   );
 };
 

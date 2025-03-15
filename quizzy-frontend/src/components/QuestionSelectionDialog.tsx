@@ -106,11 +106,12 @@ const RenderButton = (props: RenderButtonProps) => {
   } = useSortable({ id: indexOfArray });
 
   let indexButton = <Button
+  variant='surface'
     w={12}
     colorPalette={preview === indexOfPaper ? 'purple' : undefined}
     onClick={() => onSelectPreview?.(indexOfPaper)}
-    border={selected === indexOfPaper ? '1px solid' : 'none'}
-    borderColor='gray.500'
+    border={selected === indexOfPaper ? '1.5px solid' : undefined}
+    borderRadius='10px'
   >
     {indexOfPaper}
   </Button>;

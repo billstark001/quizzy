@@ -128,7 +128,10 @@ export const QuestionEdit = () => {
           </Switch.Root>
         </HStack>
       </DataList.ItemLabel>
-      <ChoiceQuestionOptionsEdit question={question} />
+      <DataList.ItemValue as={VStack} alignItems='stretch'>
+
+        <ChoiceQuestionOptionsEdit question={question} />
+      </DataList.ItemValue>
     </DataList.Item>}
 
     {question.type === 'blank' && <DataList.Item>

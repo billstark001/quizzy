@@ -74,6 +74,7 @@ export const SearchBox = <T extends DatabaseIndexed>(props: SearchBoxProps<T>) =
       !disableBlur && setOpen(false);
     }}>
       <InputGroup
+        width='100%'
         startElement={<IoSearch color="lightgray" />}
       >
         <Input

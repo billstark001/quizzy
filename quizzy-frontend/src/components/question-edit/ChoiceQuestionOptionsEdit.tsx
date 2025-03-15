@@ -1,7 +1,7 @@
 import { ChoiceQuestion, ChoiceQuestionOption } from "@quizzy/base/types";
 import { numberToLetters } from "@quizzy/base/utils";
 import {
-  Box, BoxProps, Code, HStack, IconButton,
+  Box, BoxProps, ButtonGroup, Code, HStack, IconButton,
   Input, Switch,
   VStack
 } from "@chakra-ui/react";
@@ -105,6 +105,8 @@ const OptionEdit = (props: OptionEditProps) => {
           <Switch.Thumb />
         </Switch.Control>
       </Switch.Root>
+      <ButtonGroup variant='surface'>
+        
       <IconButton
         aria-label={t("common.btn.edit")}
         {...attributes}
@@ -124,6 +126,7 @@ const OptionEdit = (props: OptionEditProps) => {
       >
         <MdDelete />
       </IconButton>
+      </ButtonGroup>
     </HStack>
   );
 };
@@ -205,7 +208,7 @@ export const ChoiceQuestionOptionsEdit = (props: {
         items={items.map((_, i) => String(i))}
         strategy={verticalListSortingStrategy}
       >
-        <VStack>
+        <VStack alignItems='stretch'>
           {items.map((option, index) => (
             <OptionEdit
               key={option.id || `item-${index}`}
