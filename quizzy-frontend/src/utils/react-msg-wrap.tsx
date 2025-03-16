@@ -6,7 +6,7 @@ import {
   createToaster,
   CreateToasterReturn,
 } from "@chakra-ui/react";
-import { isValidElement, ReactNode, useEffect, useRef, useState } from "react";
+import { isValidElement, ReactNode, StrictMode, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { NonCallable, WithHandlerOptions, withHandlerRaw } from "./react-msg";
 import ReactDOM from "react-dom/client";
@@ -159,15 +159,12 @@ export const WrappedHandlerRoot = (props: WrappedHandlerRootProps) => {
     onHandlerUpdated,
   ]);
 
-  return <Provider>
+  return <>
     <Toaster toaster={toaster} />
     <LoadingScreen isLoading={isLoading} />
     <AsyncDialog onOpenDialogChanged={(f) => setOpenDialog({ f })} />
     <DialogRoot
-      initialFocusEl={() => {
-        console.log(cancelRef.current);
-        return cancelRef.current;
-      }}
+      initialFocusEl={() => cancelRef.current}
       closeOnInteractOutside={false}
       open={open}
       onOpenChange={(e) => setOpen(e.open)}
@@ -192,7 +189,7 @@ export const WrappedHandlerRoot = (props: WrappedHandlerRootProps) => {
 
       </DialogContent>
     </DialogRoot>
-  </Provider>;
+  </>;
 
 };
 
@@ -214,13 +211,16 @@ export const createStandaloneHandler = (props?: Omit<WrappedHandlerRootProps, 'o
     pauseOnPageIdle: true,
   });
 
-  const root = <
-    WrappedHandlerRoot {...props}
+  const root = <WrappedHandlerRoot {...props}
     toaster={toaster}
     onHandlerUpdated={onHandlerUpdated}
   />;
   const rootNode = ReactDOM.createRoot(document.getElementById('toast')!);
-  rootNode.render(root);
+  rootNode.render(<StrictMode>
+    <Provider>
+      {root}
+    </Provider>
+  </StrictMode>);
 
   return [wrappedHandler, toaster, wrappedDialog] as [_H, CreateToasterReturn, DialogOpener];
 }

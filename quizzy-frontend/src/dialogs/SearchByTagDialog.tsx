@@ -5,7 +5,7 @@ import { DialogRootNoChildrenProps, UseDialogYieldedRootProps } from "@/utils/ch
 import { Button, VStack } from "@chakra-ui/react";
 import { Tag } from "@quizzy/base/types";
 import { useQuery } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 export type SearchByTagDialogData = {
@@ -18,13 +18,15 @@ export const SearchByTagDialog = (
   props: DialogRootNoChildrenProps
     & UseDialogYieldedRootProps<SearchByTagDialogData | undefined, any>
 ) => {
-  const { data, submit, cancelButtonRef, ...rest } = props;
+  const { data, submit, ...rest } = props;
   const open = rest.open;
   const { tags, preview } = data ?? {};
 
   const [searchCondition, setSearchCondition] = useState<string>();
   // const [currentPage, setCurrentPage] = useState(0);
   const currentPage = 0;
+
+  const cancelButtonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     if (!open) {

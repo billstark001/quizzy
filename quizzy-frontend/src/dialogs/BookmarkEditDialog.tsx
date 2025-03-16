@@ -6,7 +6,7 @@ import { useEditor } from "@/utils/react-patch";
 import { Box, Button, DataList, HStack, Input, Switch, useBreakpointValue } from "@chakra-ui/react";
 import { BOOKMARK_DEFAULT_CSS_COLOR, BookmarkType, defaultBookmarkType } from "@quizzy/base/types";
 import { applyPatch } from "@quizzy/base/utils";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 
@@ -15,8 +15,10 @@ export const BookmarkEditDialog = (
   props: DialogRootNoChildrenProps
     & UseDialogYieldedRootProps<BookmarkType | undefined, any>
 ) => {
-  const { data, submit, cancelButtonRef, ...rest } = props;
+  const { data, submit, ...rest } = props;
   const open = rest.open;
+
+  const cancelButtonRef = useRef<HTMLButtonElement>(null);
 
   const [initialData, setInitialData] = useState(defaultBookmarkType);
   const [currentData, setCurrentData] = useState(defaultBookmarkType);
@@ -140,7 +142,7 @@ export const BookmarkEditDialog = (
         <Button colorPalette='red' ref={cancelButtonRef} onClick={submit}>
           {t('common.btn.cancel')}
         </Button>
-        <Button colorPalette='purple' ref={cancelButtonRef} onClick={() => {
+        <Button colorPalette='purple' onClick={() => {
           submit(currentData);
         }}>
           {t('common.btn.save')}
