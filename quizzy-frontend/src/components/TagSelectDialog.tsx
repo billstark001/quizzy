@@ -1,4 +1,4 @@
-import { KeywordIndexed, Question, TagSearchResult } from "@quizzy/base/types";
+import { Question, TagSearchResult } from "@quizzy/base/types";
 import {
   Button, Input, useCallbackRef, VStack,
   Wrap
@@ -16,7 +16,10 @@ import {
 import { DialogRootNoChildrenProps, UseDialogYieldedRootProps } from "@/utils/chakra";
 
 export type TagSelectState = {
-  object: Readonly<KeywordIndexed>;
+  object: Readonly<{
+    tags?: string[];
+    categories?: string[];
+  }>;
   tagIndex?: number,
   isCategory?: boolean,
 };

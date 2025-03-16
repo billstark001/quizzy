@@ -3,23 +3,24 @@ import {
   Box,
   Center,
   Spinner,
-  DialogCloseTrigger,
-  DialogContent,
-  DialogHeader,
-  DialogBody,
   createToaster,
   CreateToasterReturn,
 } from "@chakra-ui/react";
-import { useDisclosureWithData, UseDisclosureWithDataProps } from "./disclosure";
 import { isValidElement, ReactNode, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { NonCallable, WithHandlerOptions, withHandlerRaw } from "./react-msg";
 import ReactDOM from "react-dom/client";
 import AsyncDialog, { DialogOpener } from "./react-dialog";
-import { DialogFooter, DialogRoot } from "@/components/ui/dialog";
+import {
+  DialogFooter,
+  DialogRoot,
+  DialogCloseTrigger,
+  DialogContent,
+  DialogHeader,
+  DialogBody,
+} from "@/components/ui/dialog";
 import { Provider } from "@/components/ui/provider";
 import { Toaster } from "@/components/ui/toaster";
-import { getDialogController } from "./chakra";
 
 export type UseToastOptions = Parameters<CreateToasterReturn['create']>[0];
 
@@ -81,7 +82,6 @@ export type WrappedHandlerRootProps = {
    */
   useToastOptions?: UseToastOptions,
   withHandlerOptions?: WithHandlerOptions<NonCallable | UseToastOptions, any>,
-  useDisclosureWithDataProps?: UseDisclosureWithDataProps<_M>,
   toaster: CreateToasterReturn,
   onHandlerUpdated: (handler: _H, dialog: DialogOpener) => void,
 };
@@ -93,7 +93,6 @@ export const WrappedHandlerRoot = (props: WrappedHandlerRootProps) => {
     cache,
     toaster,
     withHandlerOptions,
-    useDisclosureWithDataProps,
     onHandlerUpdated,
   } = props;
 
@@ -102,12 +101,11 @@ export const WrappedHandlerRoot = (props: WrappedHandlerRootProps) => {
     ? t('common.notify.success.header')
     : t('common.notify.error.header');
 
-
-  const { data, ...disclosure } = useDisclosureWithData<_M>({}, useDisclosureWithDataProps);
-
+  const [data, setData] = useState<_M>({});
+  const [open, setOpen] = useState(false);
   const { message, success } = data;
 
-  const cancelRef = useRef<any>(null);
+  const cancelRef = useRef<HTMLButtonElement>(null);
 
   const [isLoading, setIsLoading] = useState(false);
 
@@ -127,7 +125,8 @@ export const WrappedHandlerRoot = (props: WrappedHandlerRootProps) => {
           !success && typeof payload === 'string'
         );
         if (shouldShowDialog) {
-          disclosure.onOpen({ message: payload, success });
+          setData({ message: payload, success });
+          setOpen(true);
         } else {
           toaster.create(typeof payload === 'string' ? {
             title: _h(success),
@@ -156,20 +155,22 @@ export const WrappedHandlerRoot = (props: WrappedHandlerRootProps) => {
 
   }, [
     async, cache, openDialog.f,
-    t, toaster, disclosure.onOpen, setIsLoading, withHandlerOptions,
+    t, toaster, setData, setOpen, setIsLoading, withHandlerOptions,
     onHandlerUpdated,
   ]);
-
-
 
   return <Provider>
     <Toaster toaster={toaster} />
     <LoadingScreen isLoading={isLoading} />
     <AsyncDialog onOpenDialogChanged={(f) => setOpenDialog({ f })} />
     <DialogRoot
-      initialFocusEl={cancelRef as any}
+      initialFocusEl={() => {
+        console.log(cancelRef.current);
+        return cancelRef.current;
+      }}
       closeOnInteractOutside={false}
-      {...getDialogController(disclosure)}
+      open={open}
+      onOpenChange={(e) => setOpen(e.open)}
     >
       <DialogContent>
         <DialogCloseTrigger />
@@ -182,10 +183,13 @@ export const WrappedHandlerRoot = (props: WrappedHandlerRootProps) => {
         </DialogBody>
 
         <DialogFooter>
-          <Button colorPalette='red' onClick={disclosure.onClose} ml={3}>
+          <Button colorPalette='red' onClick={() => setOpen(false)} ml={3}
+            ref={cancelRef}
+          >
             {t('common.btn.dismiss')}
           </Button>
         </DialogFooter>
+
       </DialogContent>
     </DialogRoot>
   </Provider>;

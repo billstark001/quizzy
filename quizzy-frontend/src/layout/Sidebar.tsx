@@ -20,7 +20,7 @@ import {
   MenuTrigger,
   MenuSeparator
 } from "@/components/ui/menu"
-import { PropsWithChildren, ReactNode, useContext, useEffect, useRef } from 'react'
+import { PropsWithChildren, ReactNode, useCallback, useContext, useEffect, useRef } from 'react'
 import {
   FiMenu,
   FiSun,
@@ -33,7 +33,6 @@ import {
   DrawerBackdrop,
   DrawerContent, DrawerRoot
 } from '@/components/ui/drawer';
-import { getDialogController } from '@/utils/chakra';
 export interface LinkItemProps {
   name: ReactNode;
   icon?: ReactNode;
@@ -132,7 +131,7 @@ const NavItem = ({ link, children, collapsed, ...rest }: NavItemProps) => {
       onClick={onClick ?? (to ? () => {
         navigate(to);
         if (isMobile) {
-          sidebarDisclosure.onClose();
+          sidebarDisclosure.setOpen(false);
         }
       } : undefined)}
       style={{ textDecoration: 'none' }}
@@ -280,14 +279,14 @@ export const SidebarWithHeader = (props: SidebarWithHeaderProps) => {
   const finalFocusRef = useRef<any>(null);
 
   const { collapsed, isMobile, sidebarDisclosure } = useContext(LayoutContext);
-  const { open, onOpen, onClose } = sidebarDisclosure;
+  const { open, setOpen } = sidebarDisclosure;
 
   useEffect(() => {
     if (isMobile) {
 
       return;
     }
-    onClose();
+    setOpen(false);
   }, [isMobile]);
 
   const coreContent = <Box
@@ -304,14 +303,16 @@ export const SidebarWithHeader = (props: SidebarWithHeaderProps) => {
     >
       {children}
     </Box>
-  </Box>
+  </Box>;
+
+  const onClose = useCallback(() => setOpen(false), [setOpen]);
 
   return (
     <>
       
       <HeaderNavBar
         logo={logo}
-        onOpen={onOpen}
+        onOpen={() => setOpen(true)}
         ml={{
           base: 0,
           md: `${collapsed ? SIDEBAR_SIZE_FOLDED_PX : SIDEBAR_SIZE_EXPANDED_PX}px`,
@@ -324,10 +325,11 @@ export const SidebarWithHeader = (props: SidebarWithHeaderProps) => {
 
       <LogoEnvironmentContext.Provider value='menu'>
         <DrawerRoot
-          {...getDialogController({ open, onClose })}
           placement="start"
           size="xs"
           initialFocusEl={() => finalFocusRef.current}
+          open={open}
+          onOpenChange={(e) => setOpen(e.open)}
         >
           <DrawerBackdrop onClick={onClose} />
           <DrawerContent background="transparent" boxShadow="none" onClick={onClose}>
@@ -340,7 +342,7 @@ export const SidebarWithHeader = (props: SidebarWithHeaderProps) => {
       {coreContent}
 
     </>
-  )
+  );
 };
 
 export default SidebarWithHeader;

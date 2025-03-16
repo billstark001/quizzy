@@ -814,11 +814,11 @@ export class IDBController extends IDBCore implements QuizzyController {
 
   async updateQuestion(id: ID, patch: Patch<Question>): Promise<ID> {
     await this._invalidateCache('trie');
-    return await this._update(STORE_KEY_QUESTIONS, id, patch);
+    return await this._update(STORE_KEY_QUESTIONS, id, patch, true);
   }
   async updateQuizPaper(id: ID, paper: Patch<QuizPaper>): Promise<ID> {
     await this._invalidateCache('trie');
-    return await this._update(STORE_KEY_PAPERS, id, paper);
+    return await this._update(STORE_KEY_PAPERS, id, paper, true);
   }
 
   async deleteQuestion(id: ID): Promise<boolean> {

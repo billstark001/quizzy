@@ -1,23 +1,8 @@
-import { DialogRootProps, UseDisclosureReturn } from "@chakra-ui/react";
+import { DialogOpenChangeDetails, DialogRootProps } from "@chakra-ui/react";
 import { DialogCloseTrigger, DialogContent, DialogRoot } from "@/components/ui/dialog";
 import { ComponentType, RefObject, useCallback, useRef, useState } from "react";
 import { WithOptional } from ".";
 
-/**
- * @deprecated in favor of `useDialog`
- * @param o 
- * @returns 
- */
-export const getDialogController = (
-  o: Pick<UseDisclosureReturn, 'open' | 'onClose'>
-) => {
-  return {
-    open: o.open,
-    onOpenChange: (e) => {
-      if (!e.open) o.onClose();
-    }
-  } satisfies Partial<DialogRootProps>;
-};
 
 export type DialogRootNoChildrenProps = Omit<DialogRootProps, 'children'> & Partial<Pick<DialogRootProps, 'children'>>;
 
@@ -55,6 +40,7 @@ export interface UseDialogReturn<TData, TResult, P extends MinimumDialogRootProp
     | 'data' | 'submit' | 'cancelButtonRef'>
     : WithOptional<P, 'initialFocusEl' | 'open' | 'onOpenChange'>
   >;
+  rootProps: () => Partial<P>;
   submit: (result: TResult) => void;
   open: (data: TData) => Promise<TResult>;
   cancelButtonRef: RefObject<HTMLButtonElement | null>;
@@ -175,9 +161,27 @@ export function useDialog<
     </Component>;
   }, [open, setOpen, onClose, cancelButtonRef]);
 
+  
+  const rootProps = useCallback(() => {
+    return {
+      data,
+      submit: onClose,
+      cancelButtonRef,
+      initialFocusEl: () => cancelButtonRef.current,
+      open,
+      onOpenChange: (e: DialogOpenChangeDetails) => {
+        setOpen(e.open);
+        if (!e.open) {
+          onClose(false as any);
+        }
+      }
+    } as unknown as Partial<P>;
+  }, [open, setOpen, onClose, cancelButtonRef]);
+
   return {
     state: { open, data },
     Root: Root as any,
+    rootProps,
     submit: onClose,
     open: onOpen,
     cancelButtonRef,

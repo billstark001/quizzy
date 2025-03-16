@@ -10,7 +10,7 @@ import { uuidV4B64 } from "@quizzy/base/utils";
 import { Quizzy, QuizzyCache, QuizzyCacheRaw, QuizzyRaw } from "@/data";
 import QuestionPreviewDialog from "@/dialogs/QuestionPreviewDialog";
 import { RxDragHandleDots2 } from "react-icons/rx";
-import { Box, Button, Separator, HStack, IconButton, useCallbackRef, useDisclosure, VStack } from "@chakra-ui/react";
+import { Box, Button, Separator, HStack, IconButton, useCallbackRef, VStack } from "@chakra-ui/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
@@ -104,7 +104,6 @@ export const PaperEditPage = (props: { paper?: string }) => {
   // const [question, setQuestion] = useState<Readonly<Question>>();
   // const questionId = question?.id;
 
-  const dQuestionSelect = useDisclosure();
   const { t } = useTranslation();
 
   // at this point, paper <-> paperId, question <-> questionId are linked
@@ -261,6 +260,7 @@ export const PaperEditPage = (props: { paper?: string }) => {
 
   // preview
   const dPreview = useDialog<Question | undefined, any>(QuestionPreviewDialog);
+  const dSelect = useDialog();
 
   // question edit
   const questionMap = useRef<Record<number, ID>>({});
@@ -325,7 +325,7 @@ export const PaperEditPage = (props: { paper?: string }) => {
           onClick={() => {
             selectQuestionPreview(1);
             questionMap.current = {};
-            dQuestionSelect.onOpen();
+            dSelect.open();
           }} />
       </HStack>
 
@@ -345,7 +345,7 @@ export const PaperEditPage = (props: { paper?: string }) => {
       allowEdit
       onAdd={onAddQuestion}
       onEdit={onQuestionSort}
-      {...dQuestionSelect}
+      {...dSelect.rootProps() as any}
     >
       {questionPreview && <BaseQuestionPanelWithBookmark w='100%' question={questionPreview} />}
     </QuestionSelectionDialog>

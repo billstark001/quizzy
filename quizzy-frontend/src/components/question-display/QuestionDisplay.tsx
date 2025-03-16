@@ -2,7 +2,7 @@ import Pagination from "@/components/Pagination";
 import { Answers, BlankAnswers, ChoiceAnswers, ChoiceQuestion, Question, TextAnswers } from "@quizzy/base/types";
 import { formatMilliseconds } from "@/utils/time";
 import { RxDragHandleDots2 } from "react-icons/rx";
-import { Box, Button, HStack, IconButton, Progress, StackProps, useDisclosure, VStack } from "@chakra-ui/react";
+import { Box, Button, HStack, IconButton, Progress, StackProps, VStack } from "@chakra-ui/react";
 import { Dispatch, ElementType, ReactNode, SetStateAction, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { getTagStyle } from "@/utils/react";
@@ -12,6 +12,7 @@ import { QuestionPanelProps } from "./QuestionPanel";
 import { QuestionSelectionDialog } from "../QuestionSelectionDialog";
 import BaseQuestionPanelWithBookmark from "./BaseQuestionPanelWithBookmark";
 import QuestionPanelWithBookmark from "./QuestionPanelWithBookmark";
+import { useDialog } from "@/utils/chakra";
 
 
 export type QuestionDisplayProps = {
@@ -119,7 +120,7 @@ export const QuestionDisplay = (props: QuestionDisplayProps) => {
       type === 'choice' ? choice : blank;
 
   const { t } = useTranslation();
-  const q = useDisclosure();
+  const dSelect = useDialog();
 
   return <VStack alignItems='stretch' minH='700px'>
     <HStack w='100%' alignItems='flex-end'>
@@ -170,7 +171,7 @@ export const QuestionDisplay = (props: QuestionDisplayProps) => {
       <IconButton colorPalette='purple' aria-label={t('panel.question.btn.questions')}  
         onClick={() => {
           setQuestionSelect(currentQuestion);
-          q.onOpen();
+          dSelect.open();
         }}><RxDragHandleDots2 /></IconButton>
       <Button colorPalette='purple'
         onClick={
@@ -187,7 +188,7 @@ export const QuestionDisplay = (props: QuestionDisplayProps) => {
         setQuestionSelect(i);
         return onPreviewQuestionChanged?.(i);
       }} onSelect={onQuestionChanged}
-      {...q}
+      {...dSelect.rootProps() as any}
     >
       {question ? <BaseQuestionPanelWithBookmark w='100%' question={previewQuestion ?? question} /> : <></>}
     </QuestionSelectionDialog>

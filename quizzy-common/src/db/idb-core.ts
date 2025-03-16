@@ -508,7 +508,7 @@ export class IDBCore {
         if (!value || (ignoreDeleted && value.deleted)) {
           return;
         }
-        if (forceReindexing || !value.searchCache) {
+        if (forceReindexing || !value.searchCache || value.searchCacheInvalidated) {
           return [value, undefined];
         }
         return [value, value.searchCache];

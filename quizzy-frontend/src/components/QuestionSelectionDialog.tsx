@@ -4,8 +4,8 @@ import { FiMinus } from "react-icons/fi";
 import { MdAdd } from "react-icons/md";
 import { AiOutlineQuestionCircle } from "react-icons/ai";
 import {
-  Box, Button, DialogRootProps, HStack, IconButton, IconButtonProps,
-  Switch, useCallbackRef, UseDisclosureReturn, Wrap
+  Box, Button, HStack, IconButton, IconButtonProps,
+  Switch, useCallbackRef, Wrap
 } from "@chakra-ui/react";
 import {
   DialogActionTrigger, DialogBody, DialogCloseTrigger,
@@ -29,10 +29,10 @@ import {
   useSortable,
 } from '@dnd-kit/sortable';
 import { CSS as CssDnD } from '@dnd-kit/utilities';
-import { getDialogController } from "@/utils/chakra";
+import { DialogRootNoChildrenProps, UseDialogYieldedRootProps } from "@/utils/chakra";
 
 
-export type QuestionSelectionDialogProps = Omit<DialogRootProps, "children"> & {
+export type QuestionSelectionDialogProps = DialogRootNoChildrenProps & UseDialogYieldedRootProps<void, void> & {
   children?: ReactNode;
   header?: ReactNode;
 
@@ -45,7 +45,7 @@ export type QuestionSelectionDialogProps = Omit<DialogRootProps, "children"> & {
   allowEdit?: boolean;
   onAdd?: (index: number) => boolean | Promise<boolean>;
   onEdit?: (indices: readonly number[]) => void;
-} & UseDisclosureReturn;
+};
 
 const smallIcon = <IconButton
   display='none' className='h'
@@ -171,6 +171,7 @@ export const QuestionSelectionDialog = (props: QuestionSelectionDialogProps) => 
     preview, selected, total, children, header,
     onSelectPreview: onSelectPreviewProp, onSelect,
     allowEdit, onAdd, onEdit,
+    submit, data,
     ...dialogProps
   } = props;
 
@@ -182,7 +183,7 @@ export const QuestionSelectionDialog = (props: QuestionSelectionDialogProps) => 
   // select
   const onSelectClick = () => {
     onSelect?.(preview);
-    dialogProps.onClose();
+    submit();
   }
 
 
@@ -267,7 +268,6 @@ export const QuestionSelectionDialog = (props: QuestionSelectionDialogProps) => 
     closeOnInteractOutside={false}
     size="xl"
     {...dialogProps}
-    {...getDialogController(dialogProps)}
   >
     <DialogContent onKeyDown={isEditing ? editPatch.onKeyInput : undefined}>
       <DialogHeader>
@@ -331,7 +331,7 @@ export const QuestionSelectionDialog = (props: QuestionSelectionDialogProps) => 
       <DialogFooter>
         <HStack width="100%" justifyContent="space-between">
           <DialogActionTrigger asChild>
-            <Button onClick={dialogProps.onClose}>{t('common.btn.close')}</Button>
+            <Button onClick={() => submit()}>{t('common.btn.close')}</Button>
           </DialogActionTrigger>
           <HStack>
             {allowEdit && (
