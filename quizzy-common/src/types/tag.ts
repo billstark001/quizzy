@@ -1,4 +1,5 @@
-import { DatabaseIndexed } from "./technical";
+import { objectHash } from "@/utils";
+import { DatabaseIndexed, VersionIndexed } from "./technical";
 
 export type TagBase = {
   mainName: string;
@@ -6,10 +7,11 @@ export type TagBase = {
   alternatives: string[];
 };
 
-export type Tag = TagBase & DatabaseIndexed;
+export type Tag = TagBase & DatabaseIndexed & VersionIndexed;
 
 export const defaultTag = (t?: Partial<Tag>): Tag => ({
   id: '',
+  currentVersion: t ? ('0000-' + objectHash(t)) : 'default',
   mainName: '',
   mainNames: {},
   alternatives: [],

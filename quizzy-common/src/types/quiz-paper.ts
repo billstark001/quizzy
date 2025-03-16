@@ -1,5 +1,6 @@
-import { DatabaseIndexed, ID, SearchIndexed, MarkdownString } from "./technical";
+import { DatabaseIndexed, ID, SearchIndexed, MarkdownString, VersionIndexed } from "./technical";
 import { Question, QuestionWithOptionalId } from "./question";
+import { objectHash } from "@/utils";
 
 type QuizPaperBase = {
   name: string; // display
@@ -13,7 +14,7 @@ type QuizPaperBase = {
 
 export type QuizPaper = QuizPaperBase & {
   questions: ID[];
-} & DatabaseIndexed & SearchIndexed;
+} & DatabaseIndexed & SearchIndexed & VersionIndexed;
 
 export type QuizPaperDraft = QuizPaperBase & {
   questions: ID[];
@@ -31,5 +32,11 @@ export type CompleteQuizPaperDraft = QuizPaperBase & {
 };
 
 export const defaultQuizPaper = (p?: Partial<QuizPaper>): QuizPaper => (
-  { id: '', name: '', questions: [], ...p }
+  { 
+    id: '', 
+    currentVersion: p ? ('0000-' + objectHash(p)) : 'default',
+    name: '', 
+    questions: [], 
+    ...p,
+  }
 );

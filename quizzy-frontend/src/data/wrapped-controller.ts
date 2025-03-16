@@ -89,6 +89,10 @@ const keys: Readonly<{[key in keyof QuizzyController]: undefined}> = Object.free
   'listStats': undefined,
   'getStat': undefined,
   'deleteStat': undefined,
+
+  // version control
+  'listVersionConflictRecords': undefined,
+  'resolveVersionConflictRecord': undefined,
 });
 
 export const toWrapped = (

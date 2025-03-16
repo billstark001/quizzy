@@ -1,4 +1,5 @@
 import { type SearchKeywordCache } from "@/search/keywords";
+import { Patch } from "@/utils";
 
 export type ID = string;
 export type MarkdownString = string;
@@ -8,50 +9,6 @@ export type DatabaseIndexed = {
   deleted?: boolean;
   lastUpdate?: number;
 };
-
-// keyword indexed
-
-// /**
-//  * @deprecated use `SearchIndexed`.
-//  */
-// export type KeywordIndexed = {
-//   tags?: string[];
-//   categories?: string[];
-  
-//   keywords?: string[];
-//   keywordsFrequency?: Record<string, number>;
-//   tagsFrequency?: Record<string, number>;
-//   keywordsUpdatedTime?: number;
-//   keywordsCacheInvalidated?: boolean;
-// };
-
-// /**
-//  * @deprecated use `SearchIndexed`.
-//  */
-// export const needsReindexing = (currentObject: KeywordIndexed & { lastUpdate?: number }) => {
-//   return currentObject.keywordsCacheInvalidated
-//   || currentObject.keywords == null
-//   || currentObject.keywordsUpdatedTime == null
-//   || (currentObject.lastUpdate != null && currentObject.keywordsUpdatedTime < currentObject.lastUpdate)
-//   || currentObject.keywordsFrequency == null
-//   || currentObject.tagsFrequency == null;
-// };
-
-// /**
-//  * @deprecated use `SearchIndexed`.
-//  */
-// export const clearKeywordIndices = <T extends KeywordIndexed>(
-//   object: T,
-//   inPlace: boolean = false,
-// ) => {
-//   const ret = inPlace ? object : { ...object };
-//   delete ret.keywords;
-//   delete ret.keywordsFrequency;
-//   delete ret.tagsFrequency;
-//   delete ret.keywordsUpdatedTime;
-//   delete ret.keywordsCacheInvalidated;
-//   return ret;
-// };
 
 // search indexed
 
@@ -72,23 +29,58 @@ export const clearSearchIndices = <T extends SearchIndexed>(
   return ret;
 };
 
+// version indexed
+
+export const MAX_HISTORY_VERSION = 64;
+export const reservedVersionWords = [
+  'default', 'initial'
+] as const;
+
+export type ReservedVersionWords = (typeof reservedVersionWords)[number];
+
+export type VersionIndexed = {
+  currentVersion?: string;
+  // first -> last: older -> younger
+  // does not include the current one
+  historyVersions?: string[]; 
+  lastVersionUpdate?: number;
+};
+
+export type VersionConflictRecord = {
+  id: string;
+  storeId: string;
+  itemId: string;
+  importTime: number;
+  localVersion: string;
+  remoteVersion: string;
+  preserved: 'local' | 'remote';
+  patch: Patch<any>;
+};
+
+export const clearVersionIndices = <T extends VersionIndexed>(
+  object: T,
+  inPlace: boolean = false,
+) => {
+  const ret: any = inPlace ? object : { ...object };
+  delete ret.currentVersion;
+  delete ret.historyVersions;
+  delete ret.lastVersionUpdate;
+  return ret;
+}
+
 // tool functions
 
 export const sanitizeIndices = <T extends DatabaseIndexed & SearchIndexed>(
   object: T,
   inPlace: boolean = false,
-  // retainTags: boolean = true,
 ) => {
   const ret = inPlace ? object : { ...object };
   if (!ret.deleted) {
     delete ret.deleted;
   }
   // delete ret.lastUpdate;
-  // clearKeywordIndices(ret, true);
-  // if (!retainTags) {
-  //   delete ret.tags;
-  // }
   clearSearchIndices(ret as any, true);
+  clearVersionIndices(ret as any, true);
   return ret;
 };
 

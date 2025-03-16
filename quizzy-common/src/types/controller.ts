@@ -6,7 +6,7 @@ import { QuizRecord, QuizRecordEvent, QuizRecordOperation, QuizRecordTactics } f
 import { QuizResult } from "./quiz-result";
 import { Stat, StatBase } from "./stats";
 import { Tag, TagBase } from "./tag";
-import { ID, SearchResult } from "./technical";
+import { ID, SearchResult, VersionConflictRecord } from "./technical";
 
 export type StartQuizOptions = {
   currentTime?: number;
@@ -143,6 +143,11 @@ export interface QuizzyController {
   listStats(): Promise<Stat[]>;
   getStat(id: ID): Promise<Stat | undefined>;
   deleteStat(id: ID): Promise<boolean>;
+
+  // version control
+  
+  listVersionConflictRecords(storeId: string, itemId?: string): Promise<VersionConflictRecord[]>;
+  resolveVersionConflictRecord(id: ID, apply: boolean): Promise<void>;
 };
 
 // import { reflect, ReflectedClass } from 'typescript-rtti';

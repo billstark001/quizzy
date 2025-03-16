@@ -14,7 +14,7 @@ import { separatePaperAndQuestions, toCompleted } from "./paper-id";
 import { uuidV4B64WithRetry } from "../utils/string";
 import { QuizResult } from "../types/quiz-result";
 import { createQuizResult } from "./quiz-result";
-import { ID, sanitizeIndices, SearchResult } from "../types/technical";
+import { DatabaseIndexed, ID, sanitizeIndices, SearchResult, VersionConflictRecord, VersionIndexed } from "../types/technical";
 import { Patch } from "../utils/patch";
 import { 
   DatabaseUpdateDefinition, 
@@ -30,8 +30,7 @@ import { Bookmark, BookmarkBase, BookmarkReservedColors, BookmarkReservedWords, 
 import { createMergableTagsFinder, diffTags, mergeTags } from "./tag";
 
 
-export const DB_KEY = 'Quizzy';
-export const VERSION = 4;
+export const DB_VERSION = 5;
 
 const STORE_KEY_PAPERS = 'papers';
 const STORE_KEY_RECORDS = 'records';
@@ -43,11 +42,64 @@ const STORE_KEY_BOOKMARK_TYPES = 'bookmark_types';
 const STORE_KEY_BOOKMARKS = 'bookmarks';
 
 const STORE_KEY_GENERAL = 'general';
+const STORE_KEY_VERSION = 'version';
 
 
 const ticIndices: readonly ((keyof BookmarkBase) & TICIndex)[] = ['typeId', 'itemId', 'category'];
 const icIndices: readonly ((keyof BookmarkBase) & TICIndex)[] = ['itemId', 'category'];
 const tcIndices: readonly ((keyof BookmarkBase) & TICIndex)[] = ['typeId', 'category'];
+
+const fieldsByStore = Object.freeze({
+  [STORE_KEY_PAPERS]: [
+    'name', 'desc', 'tags', 'categories'
+  ], // satisfies readonly (keyof QuizPaper)[],
+  [STORE_KEY_QUESTIONS]: [
+    'name', 'tags', 'categories', 
+    'title', 'content', 'solution', 
+    'options', 'blanks', 'answer'
+  ], // satisfies (keyof Question)[],
+});
+
+const fieldsByStore2 = Object.freeze({
+  [STORE_KEY_PAPERS]: [
+    'deleted',
+    ...fieldsByStore[STORE_KEY_PAPERS] as any[],
+    'img', 'weights', 'duration', 'questions',
+  ] satisfies readonly (keyof QuizPaper)[],
+  [STORE_KEY_QUESTIONS]: [
+    'deleted',
+    ...fieldsByStore[STORE_KEY_QUESTIONS],
+    'type', 'multiple',
+  ] as readonly (keyof Question)[],
+  [STORE_KEY_RECORDS]: [
+    'deleted',
+    'startTime', 'timeUsed', 'answers', 'lastQuestion',
+    'paused', 'lastEnter', 'updateTime',
+    'paperId', 'randomState', 'nameOverride', 'questionOrder',
+  ] satisfies readonly (keyof QuizRecord)[],
+  [STORE_KEY_TAGS]: [
+    'deleted',
+    'mainName', 'mainNames', 'alternatives',
+  ] satisfies readonly (keyof Tag)[],
+  [STORE_KEY_BOOKMARKS]: [
+    'deleted',
+    'typeId', 'itemId', 'category', 'note',
+  ] satisfies readonly (keyof Bookmark)[],
+  [STORE_KEY_BOOKMARK_TYPES]: [
+    'deleted',
+    'dispCssColor', 'dispCssColorDark',
+    'name', 'names', 'desc', 'descs',
+  ] satisfies readonly (keyof BookmarkType)[],
+});
+
+const dataByStore = Object.freeze({    
+  [STORE_KEY_PAPERS]: 'papers',
+  [STORE_KEY_QUESTIONS]: 'questions',
+  [STORE_KEY_RECORDS]: 'records',
+  [STORE_KEY_BOOKMARKS]: 'bookmarks',
+  [STORE_KEY_BOOKMARK_TYPES]: 'bookmarkTypes',
+  [STORE_KEY_TAGS]: 'tags',
+});
 
 // TODO replace with strict typing
 type DatabaseType = {
@@ -82,8 +134,6 @@ const updaters: Record<number, DatabaseUpdateDefinition> = {
       store.createIndex('name', 'name');
       store.createIndex('tags', 'tags', { multiEntry: true });
       store.createIndex('categories', 'categories', { multiEntry: true });
-      // store.createIndex('keywords', 'keywords', { multiEntry: true });
-      // store.createIndex('keywordsUpdatedTime', 'keywordsUpdatedTime', {});
     }
 
     for (const key of [
@@ -132,6 +182,7 @@ const updaters: Record<number, DatabaseUpdateDefinition> = {
     bookmarkTypeStore.createIndex('name', 'name', { unique: true });
     for (const w of BookmarkReservedWords) {
       bookmarkTypeStore.put(defaultBookmarkType({
+        currentVersion: 'default',
         dispCssColor: BookmarkReservedColors[w],
         name: w,
         id: w,
@@ -146,67 +197,146 @@ const updaters: Record<number, DatabaseUpdateDefinition> = {
     const generalStore = tx.objectStore(STORE_KEY_GENERAL);
     generalStore.createIndex('type', 'type');
     generalStore.createIndex('key', 'key');
+  },
+  [4]: (db) => {
+    const versionStore = db.createObjectStore(STORE_KEY_VERSION, {
+      keyPath: 'id',
+    });
+    for (const key of ['storeId', 'itemId', 'importTime'] as (keyof VersionConflictRecord)[]) {
+      versionStore.createIndex(key, key);
+    };
+    versionStore.createIndex('SI', ['storeId', 'itemId']);
   }
 } as const;
 
 export class IDBController extends IDBCore implements QuizzyController {
 
   private constructor(db: IDBPDatabase) {
-    super(db, STORE_KEY_GENERAL);
+    super(db, STORE_KEY_GENERAL, STORE_KEY_VERSION);
   }
 
-  static async connect() {
-    const db = await openDatabase(DB_KEY, VERSION, updaters);
-
-    // const tx = db.transaction([STORE_KEY_PAPERS, STORE_KEY_QUESTIONS], 'readwrite');
-    
-    // let cursor = await tx.objectStore(STORE_KEY_PAPERS).openCursor();
-    // while (cursor != null) {
-    //   const obj = cursor.value;
-    //   clearKeywordIndices(obj, true);
-    //   cursor.update(obj);
-    //   cursor = await cursor.continue();
-    // }
-    // let cursor2 = await tx.objectStore(STORE_KEY_QUESTIONS).openCursor();
-    // while (cursor2 != null) {
-    //   const obj = cursor2.value;
-    //   clearKeywordIndices(obj, true);
-    //   cursor2.update(obj);
-    //   cursor2 = await cursor2.continue();
-    // }
-
-    // await tx.done;
-
+  static async connect(key: string) {
+    const db = await openDatabase(key, DB_VERSION, updaters);
     return new IDBController(db);
   }
 
+  // #region version control
+
+  async evolveVersion(): Promise<void> {
+    for (const storeId of Object.keys(dataByStore)) {
+      const hashFields: (keyof DatabaseIndexed & VersionIndexed)[] 
+      = (fieldsByStore2 as any)[storeId];
+      await this._evolve(storeId, { hashFields });
+    }
+  }
+
   async importData(data: QuizzyData): Promise<void> {
-    await this._import(STORE_KEY_PAPERS, data.papers ?? []);
-    await this._import(STORE_KEY_QUESTIONS, data.questions ?? []);
-    await this._import(STORE_KEY_RECORDS, data.records ?? []);
+    // import version-indexed
+    for (const [storeId, dataKey] of Object.entries(dataByStore)) {
+      const obj = data[dataKey];
+      if (!obj?.length) {
+        continue;
+      }
+      const hashFields: (keyof DatabaseIndexed & VersionIndexed)[] 
+      = (fieldsByStore2 as any)[storeId];
+      await this._evolve(storeId, { hashFields });
+      const { conflict } = await this._import<DatabaseIndexed & VersionIndexed>(storeId, obj, { 
+        now: Date.now(),
+        isStoreVersionIndexed: true,
+        hashFields,
+      });
+      for (const c of conflict) {
+        await this.createVersionConflictRecord(c);
+      }
+    }
+
+    // import non-version-indexed
     await this._import(STORE_KEY_RESULTS, data.results ?? []);
     await this._import(STORE_KEY_STATS, data.stats ?? []);
-    await this._import(STORE_KEY_BOOKMARKS, data.bookmarks ?? []);
-    await this._import(STORE_KEY_BOOKMARK_TYPES, data.bookmarkTypes ?? []);
-    await this._import(STORE_KEY_TAGS, data.tags ?? []);
-    await this._import(STORE_KEY_GENERAL, data.general ?? []);
   }
 
   async exportData(): Promise<QuizzyData> {
-    return {
-      papers: await this._export(STORE_KEY_PAPERS),
-      questions: await this._export(STORE_KEY_QUESTIONS),
-      records: await this._export(STORE_KEY_RECORDS),
+    const result: QuizzyData = {
+      questions: [],
+      papers: [],
+      records: [],
+      bookmarks: [],
+      bookmarkTypes: [],
+      tags: [],
+
       results: await this._export(STORE_KEY_RESULTS),
       stats: await this._export(STORE_KEY_STATS),
-      bookmarks: await this._export(STORE_KEY_BOOKMARKS),
-      bookmarkTypes: await this._export(STORE_KEY_BOOKMARK_TYPES),
-      tags: await this._export(STORE_KEY_TAGS),
-      general: await this._export(STORE_KEY_GENERAL),
     };
+
+    for (const [storeId, dataKey] of Object.entries(dataByStore)) {
+      const hashFields: (keyof DatabaseIndexed & VersionIndexed)[] 
+      = (fieldsByStore2 as any)[storeId];
+      await this._evolve(storeId, { hashFields });
+      result[dataKey] = (await this._export(storeId)) as any;
+    }
+
+    return result;
   }
 
-  // bookmark types
+  // #endregion
+  
+  // #region indexing
+
+  async deleteUnlinked(logical = true) {
+    let count = 0;
+    const tx = this.db.transaction([STORE_KEY_PAPERS, STORE_KEY_QUESTIONS, STORE_KEY_RECORDS, STORE_KEY_RESULTS], 'readwrite');
+    const allQuestions = await tx.objectStore(STORE_KEY_QUESTIONS).getAll() as Question[];
+    // delete all questions
+    const linkedQuestions = new Set<ID>();
+    for (const { questions } of await tx.objectStore(STORE_KEY_PAPERS).getAll() as QuizPaper[]) {
+      questions?.forEach(q => linkedQuestions.add(q));
+    }
+    for (const result of await tx.objectStore(STORE_KEY_RESULTS).getAll() as QuizResult[]) {
+      Object.keys(result.answers ?? []).forEach(q => linkedQuestions.add(q));
+    }
+    const deleteNeededQuestions = new Set<ID>();
+    for (const { id } of allQuestions) {
+      if (!linkedQuestions.has(id)) {
+        deleteNeededQuestions.add(id);
+      }
+    }
+    for (const id of deleteNeededQuestions) {
+      count += 1;
+      this._delete(STORE_KEY_QUESTIONS, id, logical, tx);
+    }
+    await tx.done;
+    return count;
+  }
+
+  async deleteLogicallyDeleted() {
+    let count = 0;
+    const stores: readonly string[] = [
+      STORE_KEY_PAPERS, STORE_KEY_QUESTIONS, STORE_KEY_RECORDS,
+      STORE_KEY_RESULTS, STORE_KEY_STATS, STORE_KEY_TAGS,
+      STORE_KEY_BOOKMARKS, STORE_KEY_BOOKMARK_TYPES,
+    ];
+    const tx = this.db.transaction(stores, 'readwrite');
+    const promises: Promise<void>[] = [];
+    for (const storeId of stores) {
+      const store = tx.objectStore(storeId);
+      let cursor = await store.openCursor();
+      while (cursor != null) {
+        const { id, deleted } = cursor.value;
+        if (deleted) {
+          promises.push(store.delete(id));
+          ++count;
+        }
+        cursor = await cursor.continue();
+      }
+    }
+    await Promise.all(promises);
+    await tx.done;
+    return count;
+  }
+
+  // #endregion
+  
+  // #region bookmark types
   // just standard CRUD
 
   async createBookmarkType(t?: Partial<BookmarkType>) {
@@ -234,7 +364,9 @@ export class IDBController extends IDBCore implements QuizzyController {
     return this._delete(STORE_KEY_BOOKMARK_TYPES, id, true);
   }
 
-  // bookmarks
+  // #endregion
+  
+  // #region bookmarks
 
   getBookmark(id: ID) {
     return this._get<Bookmark>(STORE_KEY_BOOKMARKS, id);
@@ -340,7 +472,9 @@ export class IDBController extends IDBCore implements QuizzyController {
     return promises.length;
   }
 
-  // tags
+  // #endregion
+  
+  // #region tags
 
   protected async _matchTag(name: string, tx?: IDBPTransaction<unknown, ["tags"], "readonly">) {
     // 
@@ -517,17 +651,39 @@ export class IDBController extends IDBCore implements QuizzyController {
   }
 
 
-  // questions & papers
+  // #endregion
+  
+  // #region questions & papers
 
   async importQuestions(...questions: Question[]): Promise<ID[]> {
     questions.forEach(q => normalizeQuestion(q));
-    // TODO
-    return this._import(STORE_KEY_QUESTIONS, questions).then(x => x.newlyImported);
+    await this._evolve(STORE_KEY_QUESTIONS, { 
+      hashFields: fieldsByStore2[STORE_KEY_QUESTIONS], 
+    });
+    const { newlyImported, conflict } = await this._import(STORE_KEY_QUESTIONS, questions, { 
+      now: Date.now(),
+      isStoreVersionIndexed: true,
+      hashFields: fieldsByStore2[STORE_KEY_QUESTIONS],
+    });
+    for (const c of conflict) {
+      await this.createVersionConflictRecord(c);
+    }
+    return newlyImported;
   }
 
   async importQuizPapers(...papers: QuizPaper[]): Promise<ID[]> {
-    // TODO
-    return this._import(STORE_KEY_PAPERS, papers).then(x => x.newlyImported);
+    await this._evolve(STORE_KEY_PAPERS, { 
+      hashFields: fieldsByStore2[STORE_KEY_PAPERS], 
+    });
+    const { newlyImported, conflict } = await this._import(STORE_KEY_PAPERS, papers, { 
+      now: Date.now(),
+      isStoreVersionIndexed: true,
+      hashFields: fieldsByStore2[STORE_KEY_PAPERS],
+    });
+    for (const c of conflict) {
+      await this.createVersionConflictRecord(c);
+    }
+    return newlyImported;
   }
 
   // TODO replace with repetitive tasks
@@ -582,6 +738,20 @@ export class IDBController extends IDBCore implements QuizzyController {
     return items;
   }
 
+  async normalizeQuestions() {
+    const questions = await this.listQuestions();
+    const questionsToCommit: Question[] = [];
+    for (const question of questions) {
+      const changed = normalizeQuestion(question);
+      if (changed) {
+        questionsToCommit.push(question);
+      }
+    }
+    const tx = this.db.transaction(STORE_KEY_QUESTIONS, 'readwrite');
+    await Promise.all(questionsToCommit.map(x => tx.store.put(x)));
+    await tx.done;
+    return questionsToCommit.length;
+  }
 
   // TODO manual replacement if conflict detected
   async importCompleteQuizPapers(...papers: CompleteQuizPaperDraft[]): Promise<string[]> {
@@ -660,7 +830,9 @@ export class IDBController extends IDBCore implements QuizzyController {
     return await this._delete(STORE_KEY_PAPERS, id, true);
   }
 
-  // search
+  // #endregion
+  
+  // #region search
 
   async refreshSearchIndices(
     forceReindexing = false, 
@@ -668,16 +840,7 @@ export class IDBController extends IDBCore implements QuizzyController {
     ignoreDeleted = true
   ) {
     const ret = await this._prepareForSearch({
-      fieldsByStore: {
-        [STORE_KEY_PAPERS]: [
-          'name', 'desc', 'tags', 'categories'
-        ], // satisfies (keyof QuizPaper),
-        [STORE_KEY_QUESTIONS]: [
-          'name', 'tags', 'categories', 
-          'title', 'content', 'solution', 
-          'options', 'blanks', 'answer'
-        ], // satisfies (keyof Question)[],
-      },
+      fieldsByStore,
       forceReindexing,
       forceReindexingForPreparation,
       ignoreDeleted,
@@ -707,78 +870,23 @@ export class IDBController extends IDBCore implements QuizzyController {
     return ret;
   }
 
-  async deleteUnlinked(logical = true) {
-    let count = 0;
-    const tx = this.db.transaction([STORE_KEY_PAPERS, STORE_KEY_QUESTIONS, STORE_KEY_RECORDS, STORE_KEY_RESULTS], 'readwrite');
-    const allQuestions = await tx.objectStore(STORE_KEY_QUESTIONS).getAll() as Question[];
-    // delete all questions
-    const linkedQuestions = new Set<ID>();
-    for (const { questions } of await tx.objectStore(STORE_KEY_PAPERS).getAll() as QuizPaper[]) {
-      questions?.forEach(q => linkedQuestions.add(q));
-    }
-    for (const result of await tx.objectStore(STORE_KEY_RESULTS).getAll() as QuizResult[]) {
-      Object.keys(result.answers ?? []).forEach(q => linkedQuestions.add(q));
-    }
-    const deleteNeededQuestions = new Set<ID>();
-    for (const { id } of allQuestions) {
-      if (!linkedQuestions.has(id)) {
-        deleteNeededQuestions.add(id);
-      }
-    }
-    for (const id of deleteNeededQuestions) {
-      count += 1;
-      this._delete(STORE_KEY_QUESTIONS, id, logical, tx);
-    }
-    await tx.done;
-    return count;
-  }
+  // #endregion
+  
+  // #region quiz control
 
-  async deleteLogicallyDeleted() {
-    let count = 0;
-    const stores: readonly string[] = [
-      STORE_KEY_PAPERS, STORE_KEY_QUESTIONS, STORE_KEY_RECORDS,
-      STORE_KEY_RESULTS, STORE_KEY_STATS, STORE_KEY_TAGS,
-      STORE_KEY_BOOKMARKS, STORE_KEY_BOOKMARK_TYPES,
-    ];
-    const tx = this.db.transaction(stores, 'readwrite');
-    const promises: Promise<void>[] = [];
-    for (const storeId of stores) {
-      const store = tx.objectStore(storeId);
-      let cursor = await store.openCursor();
-      while (cursor != null) {
-        const { id, deleted } = cursor.value;
-        if (deleted) {
-          promises.push(store.delete(id));
-          ++count;
-        }
-        cursor = await cursor.continue();
-      }
+  async importQuizRecords(...records: QuizRecord[]): Promise<ID[]> {
+    await this._evolve(STORE_KEY_RECORDS, { 
+      hashFields: (fieldsByStore2[STORE_KEY_RECORDS]) as any, 
+    });
+    const { newlyImported, conflict } = await this._import(STORE_KEY_RECORDS, records, { 
+      now: Date.now(),
+      isStoreVersionIndexed: true,
+      hashFields: fieldsByStore2[STORE_KEY_RECORDS],
+    });
+    for (const c of conflict) {
+      await this.createVersionConflictRecord(c);
     }
-    await Promise.all(promises);
-    await tx.done;
-    return count;
-  }
-
-  async normalizeQuestions() {
-    const questions = await this.listQuestions();
-    const questionsToCommit: Question[] = [];
-    for (const question of questions) {
-      const changed = normalizeQuestion(question);
-      if (changed) {
-        questionsToCommit.push(question);
-      }
-    }
-    const tx = this.db.transaction(STORE_KEY_QUESTIONS, 'readwrite');
-    await Promise.all(questionsToCommit.map(x => tx.store.put(x)));
-    await tx.done;
-    return questionsToCommit.length;
-  }
-
-  // records
-
-  importQuizRecords(...records: QuizRecord[]): Promise<ID[]> {
-    // TODO
-    return this._import(STORE_KEY_RECORDS, records).then(x => x.newlyImported);
+    return newlyImported;
   }
 
   getQuizRecord(id: ID): Promise<QuizRecord | undefined> {
@@ -938,9 +1046,9 @@ export class IDBController extends IDBCore implements QuizzyController {
     return this._delete(STORE_KEY_RESULTS, id, true);
   }
 
-  importQuizResults(...results: QuizResult[]): Promise<ID[]> {
-    // TODO
-    return this._import(STORE_KEY_RESULTS, results).then(x => x.newlyImported);
+  async importQuizResults(...results: QuizResult[]): Promise<ID[]> {
+    const x = await this._import(STORE_KEY_RESULTS, results);
+    return x.newlyImported;
   }
 
   getQuizResult(id: ID): Promise<QuizResult | undefined> {
@@ -951,7 +1059,9 @@ export class IDBController extends IDBCore implements QuizzyController {
     return this._list(STORE_KEY_RESULTS, quizPaperId ? 'paperId' : undefined, quizPaperId);
   }
 
-  // stats
+  // #endregion
+
+  // #region stats
 
 
   async generateStats(...resultIds: ID[]): Promise<Stat | StatBase | undefined> {
@@ -1005,4 +1115,6 @@ export class IDBController extends IDBCore implements QuizzyController {
   deleteStat(id: ID): Promise<boolean> {
     return this._delete(STORE_KEY_STATS, id, true);
   }
+
+  // #endregion
 }

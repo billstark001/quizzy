@@ -1,7 +1,7 @@
 import { RandomState } from "../utils/random-seq";
 import { Answers } from "./answer";
 import { Question } from "./question";
-import { DatabaseIndexed, ID } from "./technical";
+import { DatabaseIndexed, ID, VersionIndexed } from "./technical";
 
 export type QuizRecordTactics = {
   type: 'paper';
@@ -29,7 +29,7 @@ export type QuizRecordInitiation = ({
 };
 
 
-export type QuizRecord = & DatabaseIndexed & QuizRecordInitiation & {
+export type QuizRecord = VersionIndexed & DatabaseIndexed & QuizRecordInitiation & {
   startTime: number;
   timeUsed: number;
   answers: Record<ID, Answers>;
@@ -69,5 +69,3 @@ export type QuizRecordEvent = ({
   id: ID,
   isForward?: boolean,
 });
-
-

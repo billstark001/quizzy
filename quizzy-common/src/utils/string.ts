@@ -1,6 +1,21 @@
 import { fromByteArray } from "base64-js";
 import * as uuid from 'uuid';
 
+
+// 64 digits
+const PAD_STR = '0000000000000000000000000000000000000000000000000000000000000000';
+export const padHexString = (str: string, l: number, preserveFromLeft = false): string => {
+  while (str.length < l) {
+    str = PAD_STR.substring(0, l - str.length) + str;
+  }
+  if (str.length > l) {
+    str = preserveFromLeft
+      ? str.substring(0, l) // [left][discard]
+      : str.substring(str.length - l); // [discard][right]
+  }
+  return str;
+};
+
 export const uuidV4B64 = (length = 16) => {
   const uuid1 = uuid.v4();
   const bytes = new Uint8Array(uuid1.match(/[\da-f]{2}/gi)!.map(h => parseInt(h, 16)));
@@ -52,43 +67,5 @@ export const lettersToNumber = (str: string) => {
     result *= 26;
     result += str.charCodeAt(i) - 64;
   }
-  return result;
-};
-
-export const parseCommaSeparatedArray = (
-  input: string, 
-  separators = ',;、；，',
-  spaces = ' 　'
-): string[] => {
-  const result: string[] = [];
-  let current: string = '';
-  let escaped: boolean = false;
-
-  for (let i = 0; i < input.length; i++) {
-    const char = input[i];
-
-    if (escaped) {
-      if (char === '\\') {
-        current += '\\';
-      } else if (separators.includes(char) || spaces.includes(char)) {
-        current += char;
-      } else {
-        current += '\\' + char;
-      }
-      escaped = false;
-    } else if (char === '\\') {
-      escaped = true;
-    } else if (separators.includes(char)) {
-      result.push(current.trim());
-      current = '';
-    } else {
-      current += char;
-    }
-  }
-
-  if (current.length > 0 || input.endsWith(separators[separators.length - 1])) {
-    result.push(current.trim());
-  }
-
   return result;
 };

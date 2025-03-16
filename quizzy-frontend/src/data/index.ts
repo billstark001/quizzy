@@ -5,7 +5,7 @@ import { withHandler } from "@/components/handler";
 import { WrappedQuizzyEditCache } from "./wrapped-cache";
 
 
-export const QuizzyRaw = await IDBController.connect();
+export const QuizzyRaw = await IDBController.connect('Quizzy');
 export const Quizzy = toWrapped(QuizzyRaw, withHandler);
 
 export const QuizzyCacheRaw = await QuizzyEditCache.connect();

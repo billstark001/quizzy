@@ -1,4 +1,5 @@
-import { DatabaseIndexed, ID, SearchIndexed, MarkdownString } from "./technical";
+import { objectHash } from "@/utils";
+import { DatabaseIndexed, ID, SearchIndexed, MarkdownString, VersionIndexed } from "./technical";
 
 
 export type ChoiceQuestionOption = {
@@ -30,7 +31,7 @@ type _BaseQuestion = {
   type: QuestionType;
 };
 
-export type BaseQuestion = _BaseQuestion & DatabaseIndexed & SearchIndexed;
+export type BaseQuestion = _BaseQuestion & DatabaseIndexed & SearchIndexed & VersionIndexed;
 
 type _ChoiceQuestion = {
   type: 'choice';
@@ -61,4 +62,11 @@ export type Question = BaseQuestion & _Question;
 export type QuestionWithOptionalId = _BaseQuestion & _Question & { id?: ID } & SearchIndexed;
 
 
-export const defaultQuestion = (p?: Partial<Question>): Question => ({ id: '', type: 'choice', content: '', options: [], ...p } as Question);
+export const defaultQuestion = (p?: Partial<Question>): Question => ({ 
+  id: '', 
+  currentVersion: p ? ('0000-' + objectHash(p)) : 'default',
+  type: 'choice', 
+  content: '', 
+  options: [], 
+  ...p,
+} as Question);

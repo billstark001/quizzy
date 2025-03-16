@@ -1,4 +1,5 @@
-import { DatabaseIndexed, ID } from "./technical";
+import { objectHash } from "@/utils";
+import { DatabaseIndexed, ID, VersionIndexed } from "./technical";
 
 export type BookmarkType = {
   dispCssColor?: string;
@@ -7,10 +8,11 @@ export type BookmarkType = {
   names: Record<string, string | undefined>;
   desc: string;
   descs: Record<string, string | undefined>; // TODO do we need this?
-} & DatabaseIndexed;
+} & DatabaseIndexed & VersionIndexed;
 
 export const defaultBookmarkType = (t?: Partial<BookmarkType>): BookmarkType => ({
   id: '',
+  currentVersion: t ? ('0000-' + objectHash(t)) : 'default',
   name: '',
   names: {},
   desc: '',
@@ -42,12 +44,13 @@ export type BookmarkBase = {
   note?: string;
 };
 
-export type Bookmark = BookmarkBase & DatabaseIndexed & {
+export type Bookmark = BookmarkBase & DatabaseIndexed & VersionIndexed & {
   createTime: number;
 };
 
 export const defaultBookmark = (b?: Partial<Bookmark>): Bookmark => ({
   id: '',
+  currentVersion: b ? ('0000-' + objectHash(b)) : 'default',
   typeId: '',
   itemId: '',
   category: 'question',

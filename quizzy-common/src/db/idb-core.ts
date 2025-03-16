@@ -1,25 +1,27 @@
-import { IDBPCursorWithValue, IDBPDatabase, IDBPTransaction } from "idb";
+import { IDBPDatabase, IDBPTransaction } from "idb";
 import {
   DatabaseIndexed, ID,
-  sanitizeIndices, SearchIndexed, SearchResult
+  sanitizeIndices, SearchIndexed, SearchResult,
+  VersionConflictRecord,
+  VersionIndexed
 } from "../types/technical";
-import { applyPatch, Patch } from "../utils/patch";
+import { applyPatch, getPatch, Patch } from "../utils/patch";
 import { generateKeywords, SearchKeywordCache } from "../search/keywords";
 import QuickLRU from "quick-lru";
 import { Bm25GlobalCache, buildBm25Cache, BuildBm25CacheOptions, buildBm25QueryScore, BuildBm25QueryScoreParameters, defaultBm25GlobalCache } from "@/search/bm25";
-import { Nullable } from "@/utils";
-import { buildTrieTree, buildTrieTreeIterative, CachedTrieTree, expandQuery, LoadedTrieTree, loadTrieTree } from "@/search/trie";
+import { extractFields, Nullable, uuidV4B64, uuidV4B64WithRetry } from "@/utils";
+import { buildTrieTreeIterative, expandQuery, LoadedTrieTree, loadTrieTree } from "@/search/trie";
+import { checkImport, evolveVersionBeforeSync, ImportStatus } from "@/version";
 
 
 type _TX = IDBPTransaction<unknown, ArrayLike<string>, 'readwrite'>;
 
 export type LogicalDeleteStrategy = 'new' | 'override' | 'error';
 
-export type ImportConflictStrategy = 'existent' | 'imported' | 'both' | 'error';
 
 export type ImportResult = {
   newlyImported: ID[];
-  conflict: ID[];
+  conflict: VersionConflictRecord[];
 };
 
 export type BuildBm25CacheDbOptions = {
@@ -42,7 +44,17 @@ type DefaultDatabaseType = {
     value: any;
     indexes: Record<string, any>;
   }
-}
+};
+
+export type ImportOptions<T> = {
+  now?: number;
+  isStoreVersionIndexed?: boolean;
+  hashFields?: readonly (keyof T)[];
+};
+
+export type EvolveOptions<T> = {
+  hashFields?: readonly (keyof T)[];
+};
 
 export class IDBCore {
 
@@ -50,16 +62,19 @@ export class IDBCore {
   private readonly queryCache: QuickLRU<string, any>;
   private readonly hotCache: QuickLRU<string, any>;
   private readonly cacheStoreKey: string;
+  private readonly versionStoreKey: string;
   private readyForSearch: boolean;
 
   constructor(
     db: IDBPDatabase,
     cacheStoreKey: string,
+    versionStoreKey: string,
     queryCacheSize = 128,
     hotCacheSize = 64,
   ) {
     this.db = db;
     this.cacheStoreKey = cacheStoreKey;
+    this.versionStoreKey = versionStoreKey;
     this.queryCache = new QuickLRU({
       maxSize: Math.max(queryCacheSize, 4),
     });
@@ -69,40 +84,167 @@ export class IDBCore {
     this.readyForSearch = false;
   }
 
-  // data import & export
+  // #region version control
 
-  protected async _import<T extends DatabaseIndexed>(store: string, items: T[]) {
-    const tx = this.db.transaction(store, 'readwrite');
-    const ids: ImportResult = {
+  async createVersionConflictRecord(vrc: VersionConflictRecord) {
+    vrc.id = await uuidV4B64WithRetry(
+      (id) => this.db.get(this.versionStoreKey, id).then(x => !!x),
+      12
+    );
+    return await this.db.add(this.versionStoreKey, vrc) as ID;
+  }
+
+  async getVersionConflictRecord(id: ID) {
+    return await this.db.get(this.versionStoreKey, id) as VersionConflictRecord;
+  }
+
+  async listVersionConflictRecords(storeId: string, itemId?: string) {
+    if (itemId) {
+      return await this.db.getAllFromIndex(
+        this.versionStoreKey, 'SI', [storeId, itemId],
+      ) as VersionConflictRecord[];
+    }
+    return await this.db.getAllFromIndex(
+      this.versionStoreKey, 'storeId', storeId
+    ) as VersionConflictRecord[];
+  }
+
+  async resolveVersionConflictRecord(id: ID, apply: boolean) {
+    const vrc = await this.db.get(this.versionStoreKey, id) as VersionConflictRecord;
+    if (!vrc) {
+      return;
+    }
+    const tx = this.db.transaction([this.versionStoreKey, vrc.storeId], 'readwrite');
+    if (apply) {
+      // apply patch to original record
+      const origItem = await tx.objectStore(vrc.storeId).get(vrc.itemId);
+      const newItem = origItem
+        ? applyPatch(origItem, vrc.patch)
+        : vrc.patch;
+      await tx.objectStore(vrc.storeId).put(newItem);
+    }
+    // delete record
+    await tx.objectStore(this.versionStoreKey).delete(id);
+    await tx.done;
+  }
+
+  // #endregion
+
+  // #region data sync
+
+  protected async _evolve<T extends DatabaseIndexed & VersionIndexed>(
+    storeId: string,
+    options?: EvolveOptions<T>,
+  ) {
+    const {
+      hashFields,
+    } = options ?? {};
+    const tx = this.db.transaction(storeId, 'readwrite');
+
+    const updated: ID[] = [];
+
+    let cursor = await tx.store.openCursor();
+    while (cursor != null) {
+      const object = cursor.value as T;
+      const newObject = evolveVersionBeforeSync(
+        object,
+        hashFields,
+      );
+      if (newObject != null) {
+        // version evolution required
+        const id = await cursor.update(newObject);
+        updated.push(id as ID);
+      }
+      cursor = await cursor.continue();
+    }
+
+    await tx.done;
+
+    return updated;
+  }
+
+  protected async _import<T extends DatabaseIndexed>(
+    storeId: string,
+    items: T[],
+    options?: ImportOptions<T>,
+  ) {
+
+    const {
+      now = Date.now(),
+      isStoreVersionIndexed = false,
+      hashFields,
+    } = options ?? {};
+    const tx = this.db.transaction(storeId, 'readwrite');
+
+    const res: ImportResult = {
       newlyImported: [],
       conflict: [],
     };
     // logic of single import
-    // TODO more advanced key conflict detection
-    const _i = async (item: T) => {
-      const _item = await tx.store.get(item.id);
-      if (_item) {
-        if (_item.deleted) {
-          await tx.store.put(item);
-          ids.newlyImported.push(item.id);
+    const _i = async (remote: T) => {
+      const local = await tx.store.get(remote.id);
+      if (local) {
+        if (local.deleted) {
+          await tx.store.put(remote);
+          res.newlyImported.push(remote.id);
           return;
         }
-        // TODO apply strategy, but override for now
-        await tx.store.put(item);
-        ids.conflict.push(item.id);
+        // apply strategy
+        const importStatus: ImportStatus = isStoreVersionIndexed
+          ? checkImport(local, remote)
+          : 'conflict-remote';
+        if (importStatus === 'same' || importStatus === 'local') {
+          // do nothing
+          return;
+        } else if (importStatus === 'remote') {
+          // remote override
+          await tx.store.put(remote);
+          return;
+        }
+        // default to true
+        const preserveLocal = importStatus !== 'conflict-remote';
+
+        // create patch
+        const _local = hashFields
+          ? extractFields(local, hashFields)
+          : local;
+        const _remote = hashFields
+          ? extractFields(remote, hashFields)
+          : remote;
+        const patch = preserveLocal
+          ? getPatch(_local, _remote)
+          : getPatch(_remote, _local);
+
+        if (!preserveLocal) {
+          await tx.store.put(remote);
+        }
+        const record = {
+          id: '',
+          storeId,
+          itemId: local.id,
+          importTime: now,
+          localVersion: (local as VersionIndexed).currentVersion ?? 'initial',
+          remoteVersion: (remote as VersionIndexed).currentVersion ?? 'initial',
+          preserved: preserveLocal ? 'local' : 'remote',
+          patch,
+        } satisfies VersionConflictRecord;
+        res.conflict.push(record);
         return;
       }
-      await tx.store.add(item);
-      ids.newlyImported.push(item.id);
+      // new record
+      await tx.store.add(remote);
+      res.newlyImported.push(remote.id);
     };
+
     // execute import on all objects
     const promises: Promise<any>[] = [];
     for (const q of items) {
       promises.push(_i(q));
     }
     await Promise.all(promises);
+
     await tx.done;
-    return ids;
+    return res;
   }
 
   protected async _export<T extends DatabaseIndexed>(
@@ -114,7 +256,9 @@ export class IDBCore {
     return ret;
   }
 
-  // record operations
+  // #endregion
+
+  // #region CRUD
 
   /**
    * will create transaction, sequential
@@ -242,7 +386,9 @@ export class IDBCore {
     return id;
   }
 
-  // cache
+  // #endregion
+
+  // #region cache
 
   protected async _invalidateCacheByItem(...id: ID[]) {
     this.queryCache.clear();
@@ -305,7 +451,9 @@ export class IDBCore {
     }
   }
 
-  // search related
+  // #endregion
+
+  // #region search
 
   protected async _prepareForSearch(
     options: PrepareForSearchOptions,
@@ -457,7 +605,9 @@ export class IDBCore {
     };
   }
 
-  // tag search related
+  // #endregion
+
+  // #region tag search
 
   protected async _buildTrieCache<T extends DatabaseIndexed>(
     cacheKey: string,
@@ -627,6 +777,8 @@ export class IDBCore {
       totalPages: pageCount,
     }
   }
+
+  // #endregion
 }
 
 export default IDBCore;
