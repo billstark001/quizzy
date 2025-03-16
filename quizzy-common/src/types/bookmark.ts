@@ -7,7 +7,7 @@ export type BookmarkType = {
   name: string;
   names: Record<string, string | undefined>;
   desc: string;
-  descs: Record<string, string | undefined>; // TODO do we need this?
+  descs: Record<string, string | undefined>;
 } & DatabaseIndexed & VersionIndexed;
 
 export const defaultBookmarkType = (t?: Partial<BookmarkType>): BookmarkType => ({
