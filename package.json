@@ -1,14 +1,17 @@
 {
   "name": "quizzy",
   "version": "0.0.0",
+  "private": true,
   "scripts": {
-    "test": "test"
+    "build": "pnpm -r build",
+    "build:common": "pnpm --filter @quizzy/base build",
+    "build:frontend": "pnpm --filter @quizzy/frontend build",
+    "dev": "pnpm --filter @quizzy/frontend dev",
+    "test": "pnpm -r test",
+    "lint": "pnpm --filter @quizzy/frontend lint",
+    "preview": "pnpm --filter @quizzy/frontend preview"
   },
-  "workspaces": [
-    "quizzy-common",
-    "quizzy-frontend"
-  ],
-  "dependencies": {
-    "quizzy": "file:"
+  "devDependencies": {
+    "typescript": "^5.9.3"
   }
 }
