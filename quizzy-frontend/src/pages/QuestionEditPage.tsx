@@ -3,7 +3,7 @@ import { defaultQuestion, Question } from "@quizzy/base/types";
 import { openDialog, withHandler } from "@/components/handler";
 import { applyPatch, Patch } from "@quizzy/base/utils";
 import { EditorContextProvider, useEditor, usePatch } from "@/utils/react-patch";
-import { Quizzy, QuizzyCache, QuizzyCacheRaw, QuizzyRaw } from "@/data";
+import { QuizzyWrapped, QuizzyCacheWrapped, QuizzyCacheRaw, Quizzy } from "@/data";
 import QuestionPreviewDialog from "@/dialogs/QuestionPreviewDialog";
 import { Button, Separator, HStack, useCallbackRef, VStack, Box } from "@chakra-ui/react";
 import { useCallback, useEffect, useState } from "react";
@@ -33,7 +33,7 @@ export const QuestionEditPage = (props: { question?: string }) => {
   const fetchQuestion = withHandler(async (): Promise<Readonly<Question> | undefined> => {
     // try to get question by id
     const question = questionIdProp
-      ? await (QuizzyRaw.getQuestion(questionIdProp).catch(() => void 0)) ?? undefined
+      ? await (Quizzy.getQuestion(questionIdProp).catch(() => void 0)) ?? undefined
       : undefined;
     return question ?? undefined;
   }, { def: undefined, deps: [questionIdProp], notifySuccess: undefined, });
@@ -79,7 +79,7 @@ export const QuestionEditPage = (props: { question?: string }) => {
 
   // save record
   const saveRecordToCache = useCallbackRef(
-    () => QuizzyCache.dumpRecord(RECORD_KEY, editingState, sessionId)
+    () => QuizzyCacheWrapped.dumpRecord(RECORD_KEY, editingState, sessionId)
   );
   // auto save
   useEffect(() => {
@@ -108,9 +108,9 @@ export const QuestionEditPage = (props: { question?: string }) => {
     }
     // the save request is accepted
     if (questionId) {
-      await Quizzy.updateQuestion(questionId, editingState);
+      await QuizzyWrapped.updateQuestion(questionId, editingState);
     }
-    await QuizzyCache.clearRecord(RECORD_KEY, sessionId);
+    await QuizzyCacheWrapped.clearRecord(RECORD_KEY, sessionId);
   }, [questionId, editingState]);
 
   const deleteCurrent = useCallback(async () => {
@@ -120,7 +120,7 @@ export const QuestionEditPage = (props: { question?: string }) => {
       // the delete request is rejected
       return;
     }
-    await Quizzy.deleteQuestion(questionId ?? '');
+    await QuizzyWrapped.deleteQuestion(questionId ?? '');
     navigate('/questions');
   }, [questionId]);
 

@@ -1,6 +1,6 @@
 import { PaperCard } from "@/components/item-brief/PaperCard";
 import { useSelection } from "@/utils/react";
-import { Quizzy } from "@/data";
+import { QuizzyWrapped } from "@/data";
 import { usePapers } from "@/data/papers";
 import {
   Button,
@@ -36,7 +36,7 @@ export const StartQuizPage = () => {
 
   const startRandom2 = async (ids: string[], isTag?: boolean) => {
     const ids2 = Object.fromEntries(ids.map(x => [x, 1]));
-    const record = await Quizzy.startQuiz(isTag
+    const record = await QuizzyWrapped.startQuiz(isTag
       ? { type: 'random-tag', tags: ids2 }
       : { type: 'random-category', categories: ids2 }
     );

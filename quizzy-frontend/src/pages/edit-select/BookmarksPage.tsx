@@ -1,7 +1,7 @@
 import PageToolbar from "@/components/PageToolbar";
 import { PaperCard } from "@/components/item-brief/PaperCard";
 import QuestionCard, { QuestionCardProps } from "@/components/item-brief/QuestionCard";
-import { Quizzy, QuizzyRaw } from "@/data";
+import { QuizzyWrapped, Quizzy } from "@/data";
 import { useBookmarks } from "@/data/bookmarks";
 import { BookmarkEditDialog } from "@/dialogs/BookmarkEditDialog";
 import { useDialog } from "@/utils/chakra";
@@ -22,8 +22,8 @@ const BookmarkItemInner = (props: { bm: BookmarkType, preview?: QuestionCardProp
   const query = useQuery({
     queryKey,
     queryFn: async () => {
-      const papers = await QuizzyRaw.listQuizPaperByBookmark(bm.id);
-      const questions = await QuizzyRaw.listQuestionByBookmark(bm.id);
+      const papers = await Quizzy.listQuizPaperByBookmark(bm.id);
+      const questions = await Quizzy.listQuestionByBookmark(bm.id);
       return {
         papers,
         questions,
@@ -131,10 +131,10 @@ export const BookmarksPage = ({ preview }: { preview?: (q: Question | undefined)
     if (!data) {
       // this is a newly created one
       delete (res as any).id;
-      await Quizzy.createBookmarkType(res);
+      await QuizzyWrapped.createBookmarkType(res);
     } else {
       // this is an existent one
-      await Quizzy.updateBookmarkType(res.id, res);
+      await QuizzyWrapped.updateBookmarkType(res.id, res);
     }
     c.invalidateQueries({ queryKey: ['bookmarks'] });
     c.invalidateQueries({ queryKey: ['bookmark-p'] });

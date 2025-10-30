@@ -1,14 +1,14 @@
 import { ExportFormat } from "@quizzy/base/types";
 import { withHandler } from "@/components/handler";
 import { uploadFile, downloadFile } from "@/utils/html";
-import { QuizzyRaw } from ".";
+import { Quizzy } from ".";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 export const useQuestions = () => {
   
   const { data: value } = useQuery({
     queryKey: ['questions'],
-    queryFn: () => QuizzyRaw.listQuestions(),
+    queryFn: () => Quizzy.listQuestions(),
     initialData: [],
   });
 
@@ -19,7 +19,7 @@ export const useQuestions = () => {
     const f = await uploadFile();
     const text = await f.text();
     const json = JSON.parse(text);
-    await QuizzyRaw.importQuestions(json);
+    await Quizzy.importQuestions(json);
     await c.invalidateQueries({ queryKey: ['questions'] });
   });
 
@@ -29,7 +29,7 @@ export const useQuestions = () => {
     format: ExportFormat,
     options: any
   ) => {
-    const result = await QuizzyRaw.exportQuestion(questionId, {
+    const result = await Quizzy.exportQuestion(questionId, {
       format,
       ...options
     });

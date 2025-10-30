@@ -2,7 +2,7 @@ import { QuestionDisplay } from "@/components/question-display/QuestionDisplay";
 import Sheet, { Column, withSheetRow } from "@/components/common/Sheet";
 import { QuizResultRecordRow } from "@quizzy/base/types";
 import { ID } from "@quizzy/base/types";
-import { Quizzy } from "@/data";
+import { QuizzyWrapped } from "@/data";
 import { Box, Button, Separator, VStack } from "@chakra-ui/react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -43,7 +43,7 @@ export const ResultPage = () => {
   const { rid } = useParams();
   const { data: result } = useQuery({
     queryKey: ['result', rid],
-    queryFn: () => Quizzy.getQuizResult(rid ?? ''),
+    queryFn: () => QuizzyWrapped.getQuizResult(rid ?? ''),
   });
 
   const { t } = useTranslation();
@@ -61,7 +61,7 @@ export const ResultPage = () => {
 
   const { data: question } = useQuery({
     queryKey: ['question', qid ?? ''],
-    queryFn: () => Quizzy.getQuestion(qid ?? ''),
+    queryFn: () => QuizzyWrapped.getQuestion(qid ?? ''),
   });
 
 
@@ -70,7 +70,7 @@ export const ResultPage = () => {
   const previewQuestionId = result?.records?.[pIndex - 1]?.id ?? '';
   const { data: preview } = useQuery({
     queryKey: ['question', previewQuestionId],
-    queryFn: () => Quizzy.getQuestion(previewQuestionId),
+    queryFn: () => QuizzyWrapped.getQuestion(previewQuestionId),
   });
 
   const totalQuestions = result?.records.length ?? 0;

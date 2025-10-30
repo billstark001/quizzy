@@ -4,7 +4,7 @@ import {
   Button
 } from "@chakra-ui/react";
 import { useCallback, useState } from "react";
-import { QuizzyRaw } from "@/data";
+import { Quizzy } from "@/data";
 import { Question } from "@quizzy/base/types";
 import { SearchResult } from "@quizzy/base/types";
 import Pagination from "@/components/Pagination";
@@ -20,7 +20,7 @@ const fetchSearchResult = async (searchTerm?: string, page?: number): Promise<Se
     return undefined;
   }
   try {
-    return await QuizzyRaw.findQuestion(searchTerm, 10, page ?? 0);
+    return await Quizzy.findQuestion(searchTerm, 10, page ?? 0);
   } catch {
     return undefined;
   }

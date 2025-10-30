@@ -3,7 +3,7 @@ import { withHandler } from "@/components/handler";
 import { uploadFile, downloadFile } from "@/utils/html";
 import { uuidV4B64 } from "@quizzy/base/utils";
 import { useNavigate } from "react-router-dom";
-import { Quizzy, QuizzyRaw } from ".";
+import { QuizzyWrapped, Quizzy } from ".";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 
@@ -12,7 +12,7 @@ export const usePapers = () => {
   
   const { data: value } = useQuery({
     queryKey: ['papers'],
-    queryFn: () => Quizzy.listQuizPapers(),
+    queryFn: () => QuizzyWrapped.listQuizPapers(),
     initialData: [],
   });
 
@@ -25,7 +25,7 @@ export const usePapers = () => {
 
   // start a new quiz
   const start = async (paperId: string) => {
-    const record = await Quizzy.startQuiz({
+    const record = await QuizzyWrapped.startQuiz({
       type: 'paper',
       paperId,
     });
@@ -37,7 +37,7 @@ export const usePapers = () => {
   };
 
   const startRandom = async (ids: string[]) => {
-    const record = await Quizzy.startQuiz({
+    const record = await QuizzyWrapped.startQuiz({
       type: 'random-paper',
       papers: Object.fromEntries(ids.map(id => [id, 1])),
     });
@@ -61,7 +61,7 @@ export const usePapers = () => {
     const text = await f.text();
     const json = JSON.parse(text);
     
-    await QuizzyRaw.importCompleteQuizPapers([json], {
+    await Quizzy.importCompleteQuizPapers([json], {
       onConflict: async (conflicts) => {
         return new Promise<ConflictResolutionDecision[]>((resolve) => {
           setPendingConflicts(conflicts);
@@ -102,7 +102,7 @@ export const usePapers = () => {
     const f = await uploadFile();
     const text = await f.text();
     const json = JSON.parse(text);
-    await QuizzyRaw.importQuizPapers(json);
+    await Quizzy.importQuizPapers(json);
     await c.invalidateQueries({ queryKey: ['papers'] });
   });
 
@@ -112,7 +112,7 @@ export const usePapers = () => {
     format: ExportFormat,
     options: any
   ) => {
-    const result = await QuizzyRaw.exportQuizPaper(paperId, {
+    const result = await Quizzy.exportQuizPaper(paperId, {
       format,
       ...options
     });
@@ -133,7 +133,7 @@ export const usePapers = () => {
   
   const create = withHandler(async () => {
     const p = defaultQuizPaper({ id: uuidV4B64() });
-    const [id] = await Quizzy.importQuizPapers(p) ?? [];
+    const [id] = await QuizzyWrapped.importQuizPapers(p) ?? [];
     if (!id) {
       throw new Error("No ID");
     }

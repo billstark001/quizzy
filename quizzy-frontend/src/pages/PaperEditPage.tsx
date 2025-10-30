@@ -7,7 +7,7 @@ import { openDialog, withHandler } from "@/components/handler";
 import { applyPatch, Patch } from "@quizzy/base/utils";
 import { EditorContextProvider, useEditor, usePatch } from "@/utils/react-patch";
 import { uuidV4B64 } from "@quizzy/base/utils";
-import { Quizzy, QuizzyCache, QuizzyCacheRaw, QuizzyRaw } from "@/data";
+import { QuizzyWrapped, QuizzyCacheWrapped, QuizzyCacheRaw, Quizzy } from "@/data";
 import QuestionPreviewDialog from "@/dialogs/QuestionPreviewDialog";
 import { RxDragHandleDots2 } from "react-icons/rx";
 import { Box, Button, Separator, HStack, IconButton, useCallbackRef, VStack } from "@chakra-ui/react";
@@ -77,7 +77,7 @@ export const PaperEditPage = (props: { paper?: string }) => {
   const fetchPaper = withHandler(async (): Promise<Readonly<QuizPaper> | undefined> => {
     // try to get paper and question by index
     const paper = paperIdProp
-      ? await (QuizzyRaw.getQuizPaper(paperIdProp).catch(() => void 0)) ?? undefined
+      ? await (Quizzy.getQuizPaper(paperIdProp).catch(() => void 0)) ?? undefined
       : undefined;
     return paper ?? undefined;
   }, { def: undefined, deps: [paperIdProp], notifySuccess: undefined, });
@@ -95,7 +95,7 @@ export const PaperEditPage = (props: { paper?: string }) => {
     if (paperLogical) {
       const questionId = paperLogical.questions[(questionIndexOverride ?? questionIndex) - 1] || undefined;
       const question = questionId
-        ? (await (QuizzyRaw.getQuestion(questionId)).catch(() => void 0)) ?? undefined
+        ? (await (Quizzy.getQuestion(questionId)).catch(() => void 0)) ?? undefined
         : undefined;
       return question ?? undefined;
     }
@@ -164,7 +164,7 @@ export const PaperEditPage = (props: { paper?: string }) => {
 
   // save record
   const saveRecordToCache = useCallbackRef(
-    () => QuizzyCache.dumpRecord(RECORD_KEY, editingState, sessionId)
+    () => QuizzyCacheWrapped.dumpRecord(RECORD_KEY, editingState, sessionId)
   );
   // auto save
   useEffect(() => {
@@ -193,7 +193,7 @@ export const PaperEditPage = (props: { paper?: string }) => {
   const selectQuestionPreview = useCallback((index: number) => {
     const q = editingState.paper.questions?.[index - 1];
     setQuestionPreviewIndex(index);
-    Quizzy.getQuestion(q).then((question) => setQuestionPreview(question));
+    QuizzyWrapped.getQuestion(q).then((question) => setQuestionPreview(question));
   }, [setQuestionPreviewIndex, setQuestionPreview, editingState.paper.questions]);
 
   // select different questions
@@ -237,16 +237,16 @@ export const PaperEditPage = (props: { paper?: string }) => {
     }
     // the save request is accepted
     if (paperId) {
-      await Quizzy.updateQuizPaper(paperId, editingState.paper);
+      await QuizzyWrapped.updateQuizPaper(paperId, editingState.paper);
     }
     if (editingState.question) {
-      await Quizzy.updateQuestion(editingState.question.id, editingState.question);
+      await QuizzyWrapped.updateQuestion(editingState.question.id, editingState.question);
     }
     for (const q of Object.values(editingState.questions ?? {})) {
       if (!q?.id) continue;
-      await Quizzy.updateQuestion(q.id, q);
+      await QuizzyWrapped.updateQuestion(q.id, q);
     }
-    await QuizzyCache.clearRecord(RECORD_KEY, sessionId);
+    await QuizzyCacheWrapped.clearRecord(RECORD_KEY, sessionId);
   }, [paperId, editingState]);
 
   const deleteCurrent = useCallback(async () => {
@@ -256,7 +256,7 @@ export const PaperEditPage = (props: { paper?: string }) => {
       // the delete request is rejected
       return;
     }
-    await Quizzy.deleteQuizPaper(paperId ?? '');
+    await QuizzyWrapped.deleteQuizPaper(paperId ?? '');
     navigate('/edit-select');
   }, [paperId]);
 
@@ -272,7 +272,7 @@ export const PaperEditPage = (props: { paper?: string }) => {
   const questionMap = useRef<Record<number, ID>>({});
 
   const onAddQuestion = withHandler(async (newIndex: number) => {
-    const [newQuestionId] = await QuizzyRaw.importQuestions(
+    const [newQuestionId] = await Quizzy.importQuestions(
       defaultQuestion({ id: uuidV4B64() }),
     );
     questionMap.current[newIndex] = newQuestionId;

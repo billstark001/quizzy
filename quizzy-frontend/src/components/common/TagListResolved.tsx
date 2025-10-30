@@ -1,6 +1,6 @@
 import { ID } from "@quizzy/base/types";
 import { useQuery } from "@tanstack/react-query";
-import { Quizzy } from "@/data";
+import { QuizzyWrapped } from "@/data";
 import TagList, { TagListProps } from "./TagList";
 import { useMemo } from "react";
 
@@ -21,7 +21,7 @@ export const TagListResolved = (props: TagListResolvedProps) => {
       if (!tagIds || tagIds.length === 0) {
         return [];
       }
-      return await Quizzy.getTagsByIds(tagIds);
+      return await QuizzyWrapped.getTagsByIds(tagIds);
     },
     enabled: !!tagIds && tagIds.length > 0,
     staleTime: 60000, // Cache for 1 minute

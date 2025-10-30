@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Quizzy } from "@/data";
+import { QuizzyWrapped } from "@/data";
 import { ID, Tag } from "@quizzy/base/types";
 import { useMemo } from "react";
 
@@ -20,7 +20,7 @@ export const useTagResolver = (
       if (!tagIds || tagIds.length === 0) {
         return [];
       }
-      return Quizzy.getTagsByIds(tagIds);
+      return QuizzyWrapped.getTagsByIds(tagIds);
     },
     enabled: !!tagIds && tagIds.length > 0,
     staleTime: 60000, // Cache for 1 minute
@@ -32,7 +32,7 @@ export const useTagResolver = (
       if (!categoryIds || categoryIds.length === 0) {
         return [];
       }
-      return Quizzy.getTagsByIds(categoryIds);
+      return QuizzyWrapped.getTagsByIds(categoryIds);
     },
     enabled: !!categoryIds && categoryIds.length > 0,
     staleTime: 60000, // Cache for 1 minute

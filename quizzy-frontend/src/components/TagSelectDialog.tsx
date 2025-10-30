@@ -5,7 +5,7 @@ import {
 } from "@chakra-ui/react";
 import { useState, useCallback, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
-import { Quizzy } from "@/data";
+import { QuizzyWrapped } from "@/data";
 import { debounce, DebounceReturn } from "@/utils/debounce";
 import { getChangedArray } from "@/utils/array";
 import TagList from "./common/TagList";
@@ -60,7 +60,7 @@ export const TagSelectDialog = (
     // If editing an existing tag, resolve the ID to name
     const origId = (tagIndex == null ? undefined : origArr?.[tagIndex]) ?? '';
     if (origId) {
-      Quizzy.getTagById(origId).then(tag => {
+      QuizzyWrapped.getTagById(origId).then(tag => {
         if (tag) {
           setCurrentTag(tag.mainName);
         } else {
@@ -79,7 +79,7 @@ export const TagSelectDialog = (
     }
     
     // Check if tag already exists
-    const existingTag = await Quizzy.getTag(currentTag).catch(() => null);
+    const existingTag = await QuizzyWrapped.getTag(currentTag).catch(() => null);
     
     let finalTag: Tag | null = existingTag;
     
@@ -96,7 +96,7 @@ export const TagSelectDialog = (
       
       if (result.action === 'add') {
         // Create the new tag with user's input
-        finalTag = await Quizzy.getTag({
+        finalTag = await QuizzyWrapped.getTag({
           mainName: result.mainName,
           alternatives: result.alternatives,
         });
@@ -123,7 +123,7 @@ export const TagSelectDialog = (
   const [tagSearch, setTagSearch] = useState(_d);
 
   const performSearch = useCallback(async (currentTag: string) => {
-    const result = currentTag ? await Quizzy.generateTagHint(currentTag) : undefined;
+    const result = currentTag ? await QuizzyWrapped.generateTagHint(currentTag) : undefined;
     const l = result
       ? result.paper.length + result.paperTags.length + result.question.length + result.questionTags.length
       : 0;

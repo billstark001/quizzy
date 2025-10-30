@@ -1,6 +1,6 @@
 import { withHandler } from "@/components/handler";
 import { downloadFile, uploadFile } from "@/utils/html";
-import { QuizzyRaw } from "@/data";
+import { Quizzy } from "@/data";
 import { Box, Button, Separator, HStack, Switch, VStack, Wrap, NativeSelect, Input } from "@chakra-ui/react";
 import { DialogRoot, DialogContent, DialogHeader, DialogTitle, DialogBody, DialogFooter, DialogActionTrigger } from "@/components/ui/dialog";
 import { useEffect, useRef, useState } from "react";
@@ -26,27 +26,27 @@ const _d = {
 };
 
 const refreshIndices = withHandler(
-  QuizzyRaw.refreshSearchIndices.bind(QuizzyRaw),
+  Quizzy.refreshSearchIndices.bind(Quizzy),
   _u,
 );
 
 const deleteUnlinked = withHandler(
-  QuizzyRaw.deleteUnlinked.bind(QuizzyRaw),
+  Quizzy.deleteUnlinked.bind(Quizzy),
   _d,
 );
 
 const deleteLogicallyDeleted = withHandler(
-  QuizzyRaw.deleteLogicallyDeleted.bind(QuizzyRaw),
+  Quizzy.deleteLogicallyDeleted.bind(Quizzy),
   _d,
 );
 
 const normalizeQuestions = withHandler(
-  QuizzyRaw.normalizeQuestions.bind(QuizzyRaw),
+  Quizzy.normalizeQuestions.bind(Quizzy),
   _u,
 );
 
 const migrateTagsToIds = withHandler(
-  QuizzyRaw.migrateTagsToIds.bind(QuizzyRaw),
+  Quizzy.migrateTagsToIds.bind(Quizzy),
   {
     async: true,
     cache: false,
@@ -61,7 +61,7 @@ const migrateTagsToIds = withHandler(
 );
 
 const removeLegacyTagFields = withHandler(
-  QuizzyRaw.removeLegacyTagFields.bind(QuizzyRaw),
+  Quizzy.removeLegacyTagFields.bind(Quizzy),
   {
     async: true,
     cache: false,
@@ -76,7 +76,7 @@ const removeLegacyTagFields = withHandler(
 
 const exportData = withHandler(
   async () => {
-    const data = await QuizzyRaw.exportData();
+    const data = await Quizzy.exportData();
     const dataStr = JSON.stringify(data);
     const blob = new Blob([dataStr], { type: 'application/json' });
     await downloadFile(blob, 'export.json');
@@ -89,13 +89,13 @@ const importData = withHandler(
     const file = await uploadFile();
     const text = await file.text();
     const json = JSON.parse(text);
-    await QuizzyRaw.importData(json);
+    await Quizzy.importData(json);
   },
   { async: true, cache: false }
 );
 
 const resetDatabase = withHandler(
-  QuizzyRaw.resetDatabase.bind(QuizzyRaw),
+  Quizzy.resetDatabase.bind(Quizzy),
   {
     async: true,
     cache: false,
@@ -130,7 +130,7 @@ export const SettingsPage = () => {
 
   // Load migration status on mount
   useEffect(() => {
-    QuizzyRaw.getMigrationStatus().then(setMigrationStatus);
+    Quizzy.getMigrationStatus().then(setMigrationStatus);
   }, []);
 
   return <VStack alignItems='stretch' width='100%'>
@@ -167,7 +167,7 @@ export const SettingsPage = () => {
       <Button 
         onClick={async () => {
           await migrateTagsToIds();
-          const status = await QuizzyRaw.getMigrationStatus();
+          const status = await Quizzy.getMigrationStatus();
           setMigrationStatus(status);
         }}
         disabled={migrationStatus.completed}

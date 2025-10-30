@@ -2,7 +2,7 @@
 import Sheet, { withSheetRow, Column } from "@/components/common/Sheet";
 import { QuizResult, Stat } from "@quizzy/base/types";
 import { dispDuration } from "@/utils/time";
-import { Quizzy } from "@/data";
+import { QuizzyWrapped } from "@/data";
 import { Button, Separator, HStack, VStack, Checkbox } from "@chakra-ui/react";
 import { DateTime } from "luxon";
 import { useTranslation } from "react-i18next";
@@ -31,7 +31,7 @@ const GotoButton = withSheetRow<QuizResult, _K>((props) => {
       {t('common.btn.view')}
     </Button>
     <Button onClick={async () => {
-      await Quizzy.deleteQuizResult(item.id);
+      await QuizzyWrapped.deleteQuizResult(item.id);
       await refresh();
     }} colorPalette='red'>
       {t('common.btn.delete')}
@@ -65,7 +65,7 @@ export const ResultsPage = () => {
 
   const { data: results } = useQuery({
     queryKey: ['results'],
-    queryFn: () => Quizzy.listQuizResults(),
+    queryFn: () => QuizzyWrapped.listQuizResults(),
     initialData: [],
     refetchOnWindowFocus: false,
   });
@@ -79,13 +79,13 @@ export const ResultsPage = () => {
   const navigate = useNavigate();
 
   const refreshStats = useCallback(async (ids: string[]) => {
-    const promises = ids.map((id) => Quizzy.generateStats(id))
+    const promises = ids.map((id) => QuizzyWrapped.generateStats(id))
     const ret = await Promise.all(promises);
     return ret;
   }, []);
 
   const generateStats = useCallback(async (ids: string[]) => {
-    const ret = await Quizzy.generateStats(...ids);
+    const ret = await QuizzyWrapped.generateStats(...ids);
     if (!ret) {
       return;
     }

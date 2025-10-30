@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Quizzy } from ".";
+import { QuizzyWrapped } from ".";
 import { BOOKMARK_DEFAULT_CSS_COLOR, BookmarkBase, BookmarkType, defaultBookmarkType, ID } from "@quizzy/base/types";
 import { useCallback } from "react";
 
@@ -8,7 +8,7 @@ const getBookmarksNoMap = async (
   id: ID,
   isQuestion = true
 ) => {
-  const bookmarks = await Quizzy.listBookmarks(
+  const bookmarks = await QuizzyWrapped.listBookmarks(
     id, isQuestion
   );
   const typedBookmarks = bookmarks
@@ -35,7 +35,7 @@ export const useBookmarks = () => {
   const qBookmarkTypes = useQuery({
     queryKey: ['bookmarks'],
     queryFn: async () => {
-      const ret = await Quizzy.listBookmarkTypes();
+      const ret = await QuizzyWrapped.listBookmarkTypes();
       const map: Map<string, Readonly<BookmarkType>> = new Map();
       const timestamp = Date.now();
       for (const bm of ret ?? []) {
@@ -61,7 +61,7 @@ export const useBookmarks = () => {
       category: isQuestion ? 'question' : 'paper',
       note,
     };
-    return await Quizzy.putBookmarkTIC(tic);
+    return await QuizzyWrapped.putBookmarkTIC(tic);
   }, []);
 
   const clearBookmark = useCallback(async (
@@ -74,14 +74,14 @@ export const useBookmarks = () => {
       itemId: id,
       category: isQuestion ? 'question' : 'paper',
     };
-    return await Quizzy.deleteBookmarkTIC(tic);
+    return await QuizzyWrapped.deleteBookmarkTIC(tic);
   }, []);
 
   const clearAllBookmarks = useCallback(async (
     id: ID,
     isQuestion = true
   ) => {
-    return await Quizzy.clearAllBookmarks(id, isQuestion);
+    return await QuizzyWrapped.clearAllBookmarks(id, isQuestion);
   }, []);
 
   const getBookmarks = useCallback(async (
@@ -96,19 +96,19 @@ export const useBookmarks = () => {
   }
 
   const mCreateBookmarkType = useMutation({
-    mutationFn: Quizzy.createBookmarkType.bind(Quizzy),
+    mutationFn: QuizzyWrapped.createBookmarkType.bind(QuizzyWrapped),
     onSuccess,
   });
 
   const mUpdateBookmarkType = useMutation({
     mutationFn: ({ id, ...rest }: Partial<BookmarkType> & { id: ID }) => {
-      return Quizzy.updateBookmarkType(id, rest);
+      return QuizzyWrapped.updateBookmarkType(id, rest);
     },
     onSuccess,
   });
 
   const mDeleteBookmarkType = useMutation({
-    mutationFn: Quizzy.deleteBookmarkType.bind(Quizzy),
+    mutationFn: QuizzyWrapped.deleteBookmarkType.bind(QuizzyWrapped),
     onSuccess,
   });
 

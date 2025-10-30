@@ -105,18 +105,6 @@ const dataByStore = Object.freeze({
   [STORE_KEY_TAGS]: 'tags',
 });
 
-// TODO replace with strict typing
-type DatabaseType = {
-  [STORE_KEY_GENERAL]: {
-    key: string;
-    value: any;
-  },
-  [STORE_KEY_QUESTIONS]: {
-    key: string;
-    value: Question;
-  },
-};
-
 const updaters: Record<number, DatabaseUpdateDefinition> = {
   [0]: (db) => {
     const _id: IDBObjectStoreParameters = { keyPath: 'id', };

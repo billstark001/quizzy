@@ -231,16 +231,14 @@ const HeaderNavBar = ({ logo, onOpen, ...rest }: MobileProps) => {
               >
                 <HStack>
                   <Avatar.Root size='sm'>
-                    <Avatar.Image src={
-                      'https://images.unsplash.com/photo-1619946794135-5bc917a27793?ixlib=rb-0.3.5&q=80&fm=jpg&crop=faces&fit=crop&h=200&w=200&s=b616b2c5b373a80ffc9636ba24f7a4a9'
-                    } />
+                    <Avatar.Image/>
                   </Avatar.Root>
                   <VStack
                     display={{ base: 'none', md: 'flex' }}
                     alignItems="flex-start"
                     gap="1px"
                     ml="2">
-                    <Text fontSize="sm">Justina Clark</Text>
+                    <Text fontSize="sm">Quizzy User</Text>
                     <Text fontSize="xs" color="gray.600">
                       Admin
                     </Text>
@@ -257,7 +255,7 @@ const HeaderNavBar = ({ logo, onOpen, ...rest }: MobileProps) => {
             >
               <MenuItem value="profile">Profile</MenuItem>
               <MenuItem value="settings">Settings</MenuItem>
-              <MenuItem value="billing">Billing</MenuItem>
+              <MenuItem value="about">About</MenuItem>
               <MenuSeparator />
               <MenuItem value="signout">Sign out</MenuItem>
             </MenuContent>

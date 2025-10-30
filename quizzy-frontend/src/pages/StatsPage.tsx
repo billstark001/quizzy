@@ -1,7 +1,7 @@
 
 import Sheet, { withSheetRow, Column } from "@/components/common/Sheet";
 import { Stat, StatUnit, stringifyUnit } from "@quizzy/base/types";
-import { Quizzy } from "@/data";
+import { QuizzyWrapped } from "@/data";
 import { Button, HStack } from "@chakra-ui/react";
 import { DateTime } from "luxon";
 import { useTranslation } from "react-i18next";
@@ -27,7 +27,7 @@ const GotoButton = withSheetRow<Stat, _K>((props) => {
       {t('common.btn.view')}
     </Button>
     <Button onClick={async () => {
-      await Quizzy.deleteStat(item.id);
+      await QuizzyWrapped.deleteStat(item.id);
       await refresh();
     }} colorPalette='red'>
       {t('common.btn.delete')}
@@ -39,7 +39,7 @@ export const StatsPage = () => {
 
   const { data: stats } = useQuery({
     queryKey: ['stats'],
-    queryFn: () => Quizzy.listStats(),
+    queryFn: () => QuizzyWrapped.listStats(),
     initialData: [],
     refetchOnWindowFocus: false,
   });

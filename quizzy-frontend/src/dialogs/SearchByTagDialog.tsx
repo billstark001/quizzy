@@ -1,6 +1,6 @@
 import QuestionCard, { QuestionCardProps } from "@/components/item-brief/QuestionCard";
 import { DialogBody, DialogCloseTrigger, DialogContent, DialogFooter, DialogHeader, DialogRoot } from "@/components/ui/dialog";
-import { Quizzy } from "@/data";
+import { QuizzyWrapped } from "@/data";
 import { DialogRootNoChildrenProps, UseDialogYieldedRootProps } from "@/utils/chakra";
 import { Button, VStack } from "@chakra-ui/react";
 import { Tag } from "@quizzy/base/types";
@@ -43,7 +43,7 @@ export const SearchByTagDialog = (
       if (!searchCondition) {
         return null;
       }
-      return Quizzy.findQuestionByTags(searchCondition, 50, currentPage);
+      return QuizzyWrapped.findQuestionByTags(searchCondition, 50, currentPage);
     },
     refetchOnWindowFocus: false,
   });

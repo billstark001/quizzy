@@ -12,7 +12,7 @@ import { TagButton } from "./common/TagList";
 import TagListResolved from "./common/TagListResolved";
 import TagSelectDialog, { TagSelectState } from "./TagSelectDialog";
 import { useDialog } from "@/utils/chakra";
-import { Quizzy } from "@/data";
+import { QuizzyWrapped } from "@/data";
 import TagInContextDialog, { TagInContextDialogData, TagInContextDialogResult } from "@/dialogs/TagInContextDialog";
 
 
@@ -38,7 +38,7 @@ export const PaperEdit = () => {
 
   // Handle click on existing tag - show dialog with remove option
   const handleTagClick = async (tagId: string, index: number, isCategory = false) => {
-    const tag = await Quizzy.getTagById(tagId);
+    const tag = await QuizzyWrapped.getTagById(tagId);
     if (!tag) return;
 
     const result = await tagInContextDialog.open({

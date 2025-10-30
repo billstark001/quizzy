@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Quizzy, QuizzyRaw } from ".";
+import { QuizzyWrapped, Quizzy } from ".";
 import { Tag, TempTagListResult } from "@quizzy/base/types";
 import { useCallback, useMemo } from "react";
 import { useCallbackRef } from "@chakra-ui/react";
@@ -98,7 +98,7 @@ export const useTags = () => {
 
   const qTagList = useQuery({
     queryKey: ['tag-list'],
-    queryFn: () => Quizzy.listTags().then(x => {
+    queryFn: () => QuizzyWrapped.listTags().then(x => {
       x.sort((a, b) => a.mainName.localeCompare(b.mainName));
       return x;
     }),
@@ -107,7 +107,7 @@ export const useTags = () => {
 
   const qTempTagList = useQuery({
     queryKey: ['temp-tag-list'],
-    queryFn: () => Quizzy.listTagsInPapersAndQuestions(),
+    queryFn: () => QuizzyWrapped.listTagsInPapersAndQuestions(),
     initialData: _r,
   });
 
@@ -145,10 +145,10 @@ export const useTags = () => {
     try {
       const d = findBadTags();
       for (const tag of d.tagsCanBuildRecord) {
-        await QuizzyRaw.getTag(tag);
+        await Quizzy.getTag(tag);
       }
       for (const tag of d.categoriesCanBuildRecord) {
-        await QuizzyRaw.getTag(tag);
+        await Quizzy.getTag(tag);
       }
     } catch (e) {
       console.error(e);

@@ -2,7 +2,7 @@ import Sheet, { Column, withSheetRow } from "@/components/common/Sheet";
 import { QuizRecord } from "@quizzy/base/types";
 import { ID } from "@quizzy/base/types";
 import { dispDuration } from "@/utils/time";
-import { Quizzy } from "@/data";
+import { QuizzyWrapped } from "@/data";
 import { Button, HStack } from "@chakra-ui/react";
 import { atom, useAtom } from "jotai";
 import { DateTime } from "luxon";
@@ -32,7 +32,7 @@ const ResumeButton = withSheetRow<QuizRecord, _K>((props) => {
         record: item.id,
         q: String(item.lastQuestion || 1),
       })
-      await Quizzy.updateQuiz({
+      await QuizzyWrapped.updateQuiz({
         type: 'resume',
         currentTime: Date.now(),
         id: item.id,
@@ -42,7 +42,7 @@ const ResumeButton = withSheetRow<QuizRecord, _K>((props) => {
       {t('common.btn.continue')}
     </Button>
     <Button onClick={async () => {
-      await Quizzy.deleteQuizRecord(item.id);
+      await QuizzyWrapped.deleteQuizRecord(item.id);
       await refresh();
     }} colorPalette='red'>
       {t('common.btn.delete')}
@@ -54,7 +54,7 @@ const getPaperNames = async (records?: QuizRecord[], current?: Record<ID, string
   if (!records) {
     return;
   }
-  const papers = await Quizzy.getQuizPaperNames(...records.map(r => r.paperId ?? ''));
+  const papers = await QuizzyWrapped.getQuizPaperNames(...records.map(r => r.paperId ?? ''));
   const updated: Record<ID, string> = {
     ...current,
   };
@@ -68,7 +68,7 @@ export const RecordsPage = () => {
 
   const { data: records } = useQuery({
     queryKey: ['records'],
-    queryFn: () => Quizzy.listQuizRecords(),
+    queryFn: () => QuizzyWrapped.listQuizRecords(),
     refetchOnWindowFocus: false,
     initialData: [],
   });

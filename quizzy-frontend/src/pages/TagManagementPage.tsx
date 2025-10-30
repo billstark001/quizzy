@@ -3,7 +3,7 @@ import { Tag } from "@quizzy/base/types";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { Quizzy } from "@/data";
+import { QuizzyWrapped } from "@/data";
 import { withHandler } from "@/components/handler";
 import PageToolbar from "@/components/PageToolbar";
 import { useSelection } from "@/utils/react";
@@ -16,7 +16,7 @@ const mergeSelectedTags = withHandler(
     if (ids.length < 2) {
       throw new Error('Need at least 2 tags to merge');
     }
-    return await Quizzy.mergeTags(ids);
+    return await QuizzyWrapped.mergeTags(ids);
   },
   {
     async: true,
@@ -27,7 +27,7 @@ const mergeSelectedTags = withHandler(
 
 const deleteTag = withHandler(
   async (id: string) => {
-    return await Quizzy.deleteTag(id);
+    return await QuizzyWrapped.deleteTag(id);
   },
   {
     async: true,
@@ -38,7 +38,7 @@ const deleteTag = withHandler(
 
 const updateTag = withHandler(
   async (id: string, updates: { mainName: string; mainNames: Record<string, string | undefined>; alternatives: string[] }) => {
-    return await Quizzy.updateTag(id, updates);
+    return await QuizzyWrapped.updateTag(id, updates);
   },
   {
     async: true,
@@ -61,7 +61,7 @@ export const TagManagementPage = () => {
   // Fetch all tags
   const { data: tags = [], refetch } = useQuery({
     queryKey: ['tag-list'],
-    queryFn: () => Quizzy.listTags(),
+    queryFn: () => QuizzyWrapped.listTags(),
   });
 
   // Filter tags by search query

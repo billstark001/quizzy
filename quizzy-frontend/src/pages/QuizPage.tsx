@@ -1,7 +1,7 @@
 import { QuestionDisplay } from "@/components/question-display/QuestionDisplay";
 import { Answers, Question, QuizRecord, QuizRecordEvent } from "@quizzy/base/types";
 import { openDialog } from "@/components/handler";
-import { Quizzy } from "@/data";
+import { QuizzyWrapped } from "@/data";
 import { ParamsDefinition, useParsedSearchParams } from "@/utils/react-router";
 import { Box, Button, VStack } from "@chakra-ui/react";
 import { SetStateAction, useCallback, useEffect, useMemo, useState } from "react";
@@ -20,7 +20,7 @@ const _parser: ParamsDefinition<QuizPageParams> = {
 };
 
 const _getQuestion = async (record: Readonly<QuizRecord> | undefined, qIndex: number) => 
-  await Quizzy.getQuestion(record?.questionOrder?.[qIndex - 1] ?? '');
+  await QuizzyWrapped.getQuestion(record?.questionOrder?.[qIndex - 1] ?? '');
 
 export const QuizPage = () => {
   const [searchParams, setSearchParams] = useParsedSearchParams(_parser);
@@ -33,13 +33,13 @@ export const QuizPage = () => {
 
   const { data: record } = useQuery({
     queryKey: ['record', recordId ?? ''],
-    queryFn: () => Quizzy.getQuizRecord(recordId ?? ''),
+    queryFn: () => QuizzyWrapped.getQuizRecord(recordId ?? ''),
   });
 
   const questionId = record?.questionOrder?.[qIndex - 1] ?? '';
   const { data: question } = useQuery({
     queryKey: ['question', questionId],
-    queryFn: () => Quizzy.getQuestion(questionId),
+    queryFn: () => QuizzyWrapped.getQuestion(questionId),
   });
 
   const [previewQuestion, setPreviewQuestion] = useState<Question>();
@@ -50,7 +50,7 @@ export const QuizPage = () => {
   // event
 
   const onSubmit = useCallback(async () => {
-    const [_, event] = await Quizzy.updateQuiz({
+    const [_, event] = await QuizzyWrapped.updateQuiz({
       type: 'submit',
       id: recordId ?? '',
       currentTime: Date.now(),
@@ -90,7 +90,7 @@ export const QuizPage = () => {
     if (typeof a === 'function') {
       a = a(currentAnswers);
     }
-    const [, event] = await Quizzy.updateQuiz({
+    const [, event] = await QuizzyWrapped.updateQuiz({
       currentTime: Date.now(),
       id: recordId ?? '',
       type: 'answer',
@@ -104,7 +104,7 @@ export const QuizPage = () => {
 
   // question shifting
   const onQuestionChanged = useCallback(async (q: number) => {
-    const [, event] = await Quizzy.updateQuiz({
+    const [, event] = await QuizzyWrapped.updateQuiz({
       id: recordId ?? '',
       type: 'goto',
       currentTime: Date.now(),
@@ -115,7 +115,7 @@ export const QuizPage = () => {
   }, [record]);
 
   const onNext = useCallback(async () => {
-    const [, event] = await Quizzy.updateQuiz({
+    const [, event] = await QuizzyWrapped.updateQuiz({
       id: recordId ?? '',
       type: 'forward',
       currentTime: Date.now(),
@@ -129,12 +129,12 @@ export const QuizPage = () => {
   }, [navigate]);
   
   useEffect(() => {
-    Quizzy.updateQuiz({
+    QuizzyWrapped.updateQuiz({
       id: recordId ?? '',
       type: 'resume',
       currentTime: Date.now(),
     }).catch(console.error)
-    return () => void Quizzy.updateQuiz({
+    return () => void QuizzyWrapped.updateQuiz({
       id: recordId ?? '',
       type: 'hard-pause',
       currentTime: Date.now(),
