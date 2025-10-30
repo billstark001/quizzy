@@ -12,6 +12,7 @@ import {
   Text,
   BoxProps,
   FlexProps,
+  Link,
 } from '@chakra-ui/react'
 import {
   MenuContent,
@@ -25,6 +26,7 @@ import {
   FiMenu,
   FiSun,
   FiChevronDown,
+  FiGithub,
 } from 'react-icons/fi';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { LayoutContext, LogoEnvironmentContext } from './layout-context';
@@ -33,6 +35,8 @@ import {
   DrawerBackdrop,
   DrawerContent, DrawerRoot
 } from '@/components/ui/drawer';
+import { useTranslation } from 'react-i18next';
+import { Tooltip } from '@/components/ui/tooltip';
 export interface LinkItemProps {
   name: ReactNode;
   icon?: ReactNode;
@@ -182,6 +186,8 @@ const HeaderNavBar = ({ logo, onOpen, ...rest }: MobileProps) => {
   const screenSize = useScreenSize();
   const { toggleColorMode } = useColorMode();
   const { toggleCollapsed } = useContext(LayoutContext);
+  const { t } = useTranslation();
+  const navigate = useNavigate();
 
   return (
     <Flex
@@ -220,6 +226,16 @@ const HeaderNavBar = ({ logo, onOpen, ...rest }: MobileProps) => {
           size="lg" variant="ghost" aria-label="open menu"
           onClick={toggleColorMode} children={<FiSun />}
         />
+        <Tooltip content={t('layout.sidebar.githubTooltip')}>
+          <Link href="https://github.com/billstark001/quizzy" target="_blank">
+            <IconButton
+              size="lg" 
+              variant="ghost" 
+              aria-label="github"
+              children={<FiGithub />}
+            />
+          </Link>
+        </Tooltip>
         <Flex alignItems={'center'}>
           <MenuRoot>
             <MenuTrigger asChild>
@@ -238,9 +254,9 @@ const HeaderNavBar = ({ logo, onOpen, ...rest }: MobileProps) => {
                     alignItems="flex-start"
                     gap="1px"
                     ml="2">
-                    <Text fontSize="sm">Quizzy User</Text>
+                    <Text fontSize="sm">{t('layout.sidebar.user')}</Text>
                     <Text fontSize="xs" color="gray.600">
-                      Admin
+                      {t('layout.sidebar.role')}
                     </Text>
                   </VStack>
                   <Box display={{ base: 'none', md: 'flex' }}>
@@ -253,11 +269,25 @@ const HeaderNavBar = ({ logo, onOpen, ...rest }: MobileProps) => {
               bg={useColorModeValue('white', 'gray.900')}
               borderColor={useColorModeValue('gray.200', 'gray.700')}
             >
-              <MenuItem value="profile">Profile</MenuItem>
-              <MenuItem value="settings">Settings</MenuItem>
-              <MenuItem value="about">About</MenuItem>
+              <MenuItem value="profile" onClick={() => {
+                // User system not yet implemented
+                console.warn('User profile not yet implemented');
+              }}>
+                {t('layout.sidebar.menu.profile')}
+              </MenuItem>
+              <MenuItem value="settings" onClick={() => navigate('/settings')}>
+                {t('layout.sidebar.menu.settings')}
+              </MenuItem>
+              <MenuItem value="about" onClick={() => navigate('/about')}>
+                {t('layout.sidebar.menu.about')}
+              </MenuItem>
               <MenuSeparator />
-              <MenuItem value="signout">Sign out</MenuItem>
+              <MenuItem value="signout" onClick={() => {
+                // User system not yet implemented
+                console.warn('User sign out not yet implemented');
+              }}>
+                {t('layout.sidebar.menu.signout')}
+              </MenuItem>
             </MenuContent>
           </MenuRoot>
         </Flex>

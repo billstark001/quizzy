@@ -13,6 +13,7 @@ import StatPage from './pages/StatPage';
 import AppLayout from './layout/AppLayout';
 import StartQuizPage from './pages/StartQuizPage';
 import TagManagementPage from './pages/TagManagementPage';
+import AboutPage from './pages/AboutPage';
 
 import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from './data/query';
@@ -41,6 +42,7 @@ export const App = () => {
         <Routes>
           <Route path='/' element={<EntryPage />} />
           <Route path='/settings' element={<SettingsPage />} />
+          <Route path='/about' element={<AboutPage />} />
 
           <Route path='/start-quiz' element={<StartQuizPage />} />
           <Route path='/edit-select' element={<EditSelectPage />} />
