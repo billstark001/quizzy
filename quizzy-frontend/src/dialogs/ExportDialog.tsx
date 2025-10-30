@@ -1,8 +1,9 @@
 import { ExportFormat } from "@quizzy/base/types";
 import { useState } from "react";
-import { DialogRoot, DialogBackdrop, DialogContent, DialogHeader, DialogTitle, DialogBody, DialogFooter, Button, VStack, Switch, Text } from "@chakra-ui/react";
+import { Button, VStack, Switch, Text } from "@chakra-ui/react";
 import { Radio, RadioGroup } from "@/components/ui/radio";
 import { useTranslation } from "react-i18next";
+import { DialogContent, DialogRoot, DialogHeader, DialogTitle, DialogBody, DialogFooter, } from "@/components/ui/dialog";
 
 interface ExportDialogProps {
   open: boolean;
@@ -37,7 +38,6 @@ export const ExportDialog = ({
 
   return (
     <DialogRoot open={open} onOpenChange={(e) => !e.open && onCancel()} size="lg">
-      <DialogBackdrop />
       <DialogContent>
         <DialogHeader>
           <DialogTitle>
@@ -47,7 +47,7 @@ export const ExportDialog = ({
         <DialogBody>
           <VStack alignItems="stretch" gap={4}>
             <Text>{t('dialog.export.selectFormat')}</Text>
-            
+
             <RadioGroup value={format} onValueChange={(details) => setFormat(details.value as ExportFormat)}>
               <VStack alignItems="stretch" gap={3}>
                 <Radio value="separate">
@@ -58,7 +58,7 @@ export const ExportDialog = ({
                     </Text>
                   </VStack>
                 </Radio>
-                
+
                 {format === 'separate' && (
                   <VStack alignItems="stretch" gap={2} ml={6}>
                     <Switch.Root checked={keepIds} onCheckedChange={(e) => setKeepIds(e.checked)}>
@@ -86,7 +86,7 @@ export const ExportDialog = ({
                     </Text>
                   </VStack>
                 </Radio>
-                
+
                 {format === 'complete' && (
                   <VStack alignItems="stretch" gap={2} ml={6}>
                     <Switch.Root checked={keepIdsInComplete} onCheckedChange={(e) => setKeepIdsInComplete(e.checked)}>

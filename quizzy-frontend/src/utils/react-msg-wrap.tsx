@@ -52,7 +52,7 @@ const LoadingScreen = ({ isLoading }: { isLoading?: boolean }) => {
       width='100vw'
       bg="rgba(124, 124, 124, 0.5)"
       backdropBlur='10px'
-      zIndex={10000}
+      zIndex={1300}
     >
       <Center h="100vh">
         <Spinner

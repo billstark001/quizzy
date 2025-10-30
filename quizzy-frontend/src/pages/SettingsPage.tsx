@@ -1,7 +1,8 @@
 import { withHandler } from "@/components/handler";
 import { downloadFile, uploadFile } from "@/utils/html";
 import { QuizzyRaw } from "@/data";
-import { Box, Button, Separator, HStack, Switch, VStack, Wrap, NativeSelect, Input, DialogRoot, DialogBackdrop, DialogContent, DialogHeader, DialogTitle, DialogBody, DialogFooter, DialogActionTrigger } from "@chakra-ui/react";
+import { Box, Button, Separator, HStack, Switch, VStack, Wrap, NativeSelect, Input } from "@chakra-ui/react";
+import { DialogRoot, DialogContent, DialogHeader, DialogTitle, DialogBody, DialogFooter, DialogActionTrigger } from "@/components/ui/dialog";
 import { useEffect, useRef, useState } from "react";
 
 import { useTranslation } from "react-i18next";
@@ -237,7 +238,6 @@ export const SettingsPage = () => {
       onOpenChange={(e) => setShowResetConfirm(e.open)}
       size="lg"
     >
-      <DialogBackdrop />
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{t('page.settings.dialog.resetDatabase.title')}</DialogTitle>

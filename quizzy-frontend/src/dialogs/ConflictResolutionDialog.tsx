@@ -1,8 +1,9 @@
 import { QuestionConflict, ConflictResolutionDecision, ConflictResolutionAction } from "@quizzy/base/types";
 import { useState } from "react";
-import { DialogRoot, DialogBackdrop, DialogContent, DialogHeader, DialogTitle, DialogBody, DialogFooter, Button, VStack, HStack, Box, Text } from "@chakra-ui/react";
+import { Button, VStack, HStack, Box, Text } from "@chakra-ui/react";
 import { Radio, RadioGroup } from "@/components/ui/radio";
 import { useTranslation } from "react-i18next";
+import { DialogHeader, DialogBody, DialogContent, DialogFooter, DialogRoot, DialogTitle } from "@/components/ui/dialog";
 
 interface ConflictResolutionDialogProps {
   open: boolean;
@@ -41,7 +42,6 @@ export const ConflictResolutionDialog = ({
 
   return (
     <DialogRoot open={open} onOpenChange={(e) => !e.open && onCancel()} size="xl">
-      <DialogBackdrop />
       <DialogContent maxHeight="80vh" overflowY="auto">
         <DialogHeader>
           <DialogTitle>{t('dialog.conflictResolution.title')}</DialogTitle>
