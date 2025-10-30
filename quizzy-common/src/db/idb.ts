@@ -30,7 +30,7 @@ import { Bookmark, BookmarkBase, BookmarkReservedColors, BookmarkReservedWords, 
 import { createMergableTagsFinder, diffTags, mergeTags } from "./tag";
 
 
-export const DB_VERSION = 5;
+export const DB_VERSION = 6;
 
 const STORE_KEY_PAPERS = 'papers';
 const STORE_KEY_RECORDS = 'records';
@@ -51,13 +51,13 @@ const tcIndices: readonly ((keyof BookmarkBase) & TICIndex)[] = ['typeId', 'cate
 
 const fieldsByStore = Object.freeze({
   [STORE_KEY_PAPERS]: [
-    'name', 'desc', 'tags', 'categories'
-  ], // satisfies readonly (keyof QuizPaper)[],
+    'name', 'desc', 'tags', 'categories', 'tagIds', 'categoryIds'
+  ] as any, // 'tags' and 'categories' kept for migration, not in type
   [STORE_KEY_QUESTIONS]: [
-    'name', 'tags', 'categories', 
+    'name', 'tags', 'categories', 'tagIds', 'categoryIds',
     'title', 'content', 'solution', 
     'options', 'blanks', 'answer'
-  ], // satisfies (keyof Question)[],
+  ] as any, // 'tags' and 'categories' kept for migration, not in type
 });
 
 const fieldsByStore2 = Object.freeze({
@@ -65,12 +65,12 @@ const fieldsByStore2 = Object.freeze({
     'deleted',
     ...fieldsByStore[STORE_KEY_PAPERS] as any[],
     'img', 'weights', 'duration', 'questions',
-  ] satisfies readonly (keyof QuizPaper)[],
+  ] as any, // Contains legacy fields for migration
   [STORE_KEY_QUESTIONS]: [
     'deleted',
     ...fieldsByStore[STORE_KEY_QUESTIONS],
     'type', 'multiple',
-  ] as readonly (keyof Question)[],
+  ] as any, // Contains legacy fields for migration
   [STORE_KEY_RECORDS]: [
     'deleted',
     'startTime', 'timeUsed', 'answers', 'lastQuestion',
@@ -206,6 +206,16 @@ const updaters: Record<number, DatabaseUpdateDefinition> = {
       versionStore.createIndex(key, key);
     };
     versionStore.createIndex('SI', ['storeId', 'itemId']);
+  },
+  [5]: (_, tx) => {
+    // Add tagIds and categoryIds indexes for new ID-based tag system
+    const paperStore = tx.objectStore(STORE_KEY_PAPERS);
+    const questionStore = tx.objectStore(STORE_KEY_QUESTIONS);
+    
+    paperStore.createIndex('tagIds', 'tagIds', { multiEntry: true });
+    paperStore.createIndex('categoryIds', 'categoryIds', { multiEntry: true });
+    questionStore.createIndex('tagIds', 'tagIds', { multiEntry: true });
+    questionStore.createIndex('categoryIds', 'categoryIds', { multiEntry: true });
   }
 } as const;
 
@@ -217,7 +227,41 @@ export class IDBController extends IDBCore implements QuizzyController {
 
   static async connect(key: string) {
     const db = await openDatabase(key, DB_VERSION, updaters);
-    return new IDBController(db);
+    const controller = new IDBController(db);
+    
+    // Check and perform automatic migration if needed
+    await controller.checkAndPerformAutoMigration();
+    
+    return controller;
+  }
+
+  /**
+   * Check if automatic tag migration is needed and perform it
+   */
+  private async checkAndPerformAutoMigration(): Promise<void> {
+    const migrationKey = 'tag-migration-to-ids-completed';
+    
+    try {
+      const migrationStatus = await this.db.get(STORE_KEY_GENERAL, migrationKey);
+      
+      if (!migrationStatus?.value) {
+        // Migration not done yet, perform it
+        console.log('Performing automatic tag migration to ID-based system...');
+        const result = await this.migrateTagsToIds();
+        console.log('Tag migration completed:', result);
+        
+        // Mark migration as completed
+        await this.db.put(STORE_KEY_GENERAL, {
+          id: migrationKey,
+          value: true,
+          timestamp: Date.now(),
+          result,
+        });
+      }
+    } catch (error) {
+      console.error('Error during automatic tag migration:', error);
+      // Don't throw - allow the app to continue even if migration fails
+    }
   }
 
   // #region version control
@@ -488,6 +532,10 @@ export class IDBController extends IDBCore implements QuizzyController {
     if (!hasTx) {
       await tx.done;
     }
+    // Filter out soft-deleted tags to avoid uniqueness constraint conflicts
+    if (ret && ret.deleted) {
+      return undefined;
+    }
     return ret;
   }
 
@@ -528,14 +576,84 @@ export class IDBController extends IDBCore implements QuizzyController {
     return this._list<Tag>(STORE_KEY_TAGS);
   }
 
+  async getTagById(id: ID): Promise<Tag | undefined> {
+    return await this._get<Tag>(STORE_KEY_TAGS, id);
+  }
+
+  async getTagsByIds(ids: ID[]): Promise<(Tag | undefined)[]> {
+    return await Promise.all(ids.map(id => this.getTagById(id)));
+  }
+
   async updateTag(id: ID, tag: Patch<Tag>) {
     await this._invalidateCache('trie');
     return await this._update(STORE_KEY_TAGS, id, tag);
   }
 
   async deleteTag(id: ID) {
+    // Soft delete the tag
+    await this._delete(STORE_KEY_TAGS, id, true);
+    
+    // Remove the tag ID from all questions
+    const txQuestions = this.db.transaction(STORE_KEY_QUESTIONS, 'readwrite');
+    const questions = await txQuestions.store.getAll();
+    let questionsUpdated = 0;
+    
+    for (const q of questions) {
+      let updated = false;
+      
+      // Remove from tagIds
+      if (q.tagIds && q.tagIds.includes(id)) {
+        q.tagIds = q.tagIds.filter((tagId: ID) => tagId !== id);
+        updated = true;
+      }
+      
+      // Remove from categoryIds
+      if (q.categoryIds && q.categoryIds.includes(id)) {
+        q.categoryIds = q.categoryIds.filter((catId: ID) => catId !== id);
+        updated = true;
+      }
+      
+      if (updated) {
+        q.lastUpdate = Date.now();
+        await txQuestions.store.put(q);
+        questionsUpdated++;
+      }
+    }
+    await txQuestions.done;
+    
+    // Remove the tag ID from all papers
+    const txPapers = this.db.transaction(STORE_KEY_PAPERS, 'readwrite');
+    const papers = await txPapers.store.getAll();
+    let papersUpdated = 0;
+    
+    for (const p of papers) {
+      let updated = false;
+      
+      // Remove from tagIds
+      if (p.tagIds && p.tagIds.includes(id)) {
+        p.tagIds = p.tagIds.filter((tagId: ID) => tagId !== id);
+        updated = true;
+      }
+      
+      // Remove from categoryIds
+      if (p.categoryIds && p.categoryIds.includes(id)) {
+        p.categoryIds = p.categoryIds.filter((catId: ID) => catId !== id);
+        updated = true;
+      }
+      
+      if (updated) {
+        p.lastUpdate = Date.now();
+        await txPapers.store.put(p);
+        papersUpdated++;
+      }
+    }
+    await txPapers.done;
+    
+    // Invalidate search caches to rebuild without deleted tag
     await this._invalidateCache('trie');
-    return await this._delete(STORE_KEY_TAGS, id, true);
+    await this._invalidateCacheByItem();
+    
+    return true;
   }
 
   async mergeTags(ids: ID[]) {
@@ -549,6 +667,83 @@ export class IDBController extends IDBCore implements QuizzyController {
     await tx.store.put(mainTag);
     await Promise.all(otherTags.map(t => tx.store.put(t)));
     await tx.done;
+    
+    // Get IDs of tags being merged (excluding the main tag)
+    const mergedTagIds = otherTags.map(t => t.id);
+    const mainTagId = mainTag.id;
+    
+    // Update all questions that reference the merged tags
+    const txQuestions = this.db.transaction(STORE_KEY_QUESTIONS, 'readwrite');
+    const questions = await txQuestions.store.getAll();
+    let questionsUpdated = 0;
+    
+    for (const q of questions) {
+      let updated = false;
+      
+      // Update tagIds
+      if (q.tagIds && q.tagIds.some((id: ID) => mergedTagIds.includes(id))) {
+        const newTagIds = new Set(q.tagIds.map((id: ID) =>
+          mergedTagIds.includes(id) ? mainTagId : id
+        ));
+        q.tagIds = Array.from(newTagIds);
+        updated = true;
+      }
+      
+      // Update categoryIds
+      if (q.categoryIds && q.categoryIds.some((id: ID) => mergedTagIds.includes(id))) {
+        const newCategoryIds = new Set(q.categoryIds.map((id: ID) =>
+          mergedTagIds.includes(id) ? mainTagId : id
+        ));
+        q.categoryIds = Array.from(newCategoryIds);
+        updated = true;
+      }
+      
+      if (updated) {
+        q.lastUpdate = Date.now();
+        await txQuestions.store.put(q);
+        questionsUpdated++;
+      }
+    }
+    await txQuestions.done;
+    
+    // Update all papers that reference the merged tags
+    const txPapers = this.db.transaction(STORE_KEY_PAPERS, 'readwrite');
+    const papers = await txPapers.store.getAll();
+    let papersUpdated = 0;
+    
+    for (const p of papers) {
+      let updated = false;
+      
+      // Update tagIds
+      if (p.tagIds && p.tagIds.some((id: ID) => mergedTagIds.includes(id))) {
+        const newTagIds = new Set(p.tagIds.map((id: ID) =>
+          mergedTagIds.includes(id) ? mainTagId : id
+        ));
+        p.tagIds = Array.from(newTagIds);
+        updated = true;
+      }
+      
+      // Update categoryIds
+      if (p.categoryIds && p.categoryIds.some((id: ID) => mergedTagIds.includes(id))) {
+        const newCategoryIds = new Set(p.categoryIds.map((id: ID) =>
+          mergedTagIds.includes(id) ? mainTagId : id
+        ));
+        p.categoryIds = Array.from(newCategoryIds);
+        updated = true;
+      }
+      
+      if (updated) {
+        p.lastUpdate = Date.now();
+        await txPapers.store.put(p);
+        papersUpdated++;
+      }
+    }
+    await txPapers.done;
+    
+    // Invalidate search caches to rebuild with merged tags
+    await this._invalidateCache('trie');
+    await this._invalidateCacheByItem();
+    
     return mainTag.id;
   }
 
@@ -622,6 +817,197 @@ export class IDBController extends IDBCore implements QuizzyController {
     return [allMainIds, allDeletedIds] as [ID[], ID[]];
   }
 
+  /**
+   * Check if tag migration has been completed
+   */
+  async isTagMigrationCompleted(): Promise<boolean> {
+    const migrationKey = 'tag-migration-to-ids-completed';
+    try {
+      const migrationStatus = await this.db.get(STORE_KEY_GENERAL, migrationKey);
+      return !!migrationStatus?.value;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  /**
+   * Get migration status information
+   */
+  async getMigrationStatus(): Promise<{
+    completed: boolean;
+    timestamp?: number;
+    result?: any;
+  }> {
+    const migrationKey = 'tag-migration-to-ids-completed';
+    try {
+      const migrationStatus = await this.db.get(STORE_KEY_GENERAL, migrationKey);
+      if (migrationStatus?.value) {
+        return {
+          completed: true,
+          timestamp: migrationStatus.timestamp,
+          result: migrationStatus.result,
+        };
+      }
+    } catch (error) {
+      // ignore
+    }
+    return { completed: false };
+  }
+
+  /**
+   * Migrate all tags from string-based to ID-based system
+   * @returns object with counts of migrated items
+   */
+  async migrateTagsToIds(): Promise<{
+    questionsUpdated: number;
+    papersUpdated: number;
+    tagsCreated: number;
+  }> {
+    // Step 1: Collect all unique tag strings from questions and papers
+    const allTagStrings = new Set<string>();
+    
+    const questions = await this._list<Question>(STORE_KEY_QUESTIONS);
+    const papers = await this._list<QuizPaper>(STORE_KEY_PAPERS);
+    
+    for (const q of questions) {
+      (q as any).tags?.forEach((t: string) => allTagStrings.add(t));
+      (q as any).categories?.forEach((c: string) => allTagStrings.add(c));
+    }
+    
+    for (const p of papers) {
+      (p as any).tags?.forEach((t: string) => allTagStrings.add(t));
+      (p as any).categories?.forEach((c: string) => allTagStrings.add(c));
+    }
+    
+    // Step 2: Create or get tag entities for each unique string
+    const tagMap = new Map<string, ID>();
+    let tagsCreated = 0;
+    
+    for (const tagStr of allTagStrings) {
+      if (!tagStr || !tagStr.trim()) {
+        continue;
+      }
+      try {
+        const tag = await this.getTag(tagStr);
+        tagMap.set(tagStr, tag.id);
+        // Check if this is a newly created tag (no lastUpdate means new)
+        if (!tag.lastUpdate) {
+          tagsCreated++;
+        }
+      } catch (e) {
+        console.error(`Failed to create tag for "${tagStr}":`, e);
+      }
+    }
+    
+    // Step 3: Update all questions
+    let questionsUpdated = 0;
+    const txQuestions = this.db.transaction(STORE_KEY_QUESTIONS, 'readwrite');
+    for (const q of questions) {
+      // Skip if already migrated (has tagIds)
+      if (q.tagIds && q.tagIds.length > 0) {
+        continue;
+      }
+      
+      const tagIds = ((q as any).tags ?? [])
+        .map((t: string) => tagMap.get(t))
+        .filter((id: any): id is ID => !!id);
+      const categoryIds = ((q as any).categories ?? [])
+        .map((c: string) => tagMap.get(c))
+        .filter((id: any): id is ID => !!id);
+      
+      if (tagIds.length > 0 || categoryIds.length > 0) {
+        q.tagIds = tagIds;
+        q.categoryIds = categoryIds;
+        q.lastUpdate = Date.now();
+        await txQuestions.store.put(q);
+        questionsUpdated++;
+      }
+    }
+    await txQuestions.done;
+    
+    // Step 4: Update all papers
+    let papersUpdated = 0;
+    const txPapers = this.db.transaction(STORE_KEY_PAPERS, 'readwrite');
+    for (const p of papers) {
+      // Skip if already migrated (has tagIds)
+      if (p.tagIds && p.tagIds.length > 0) {
+        continue;
+      }
+      
+      const tagIds = ((p as any).tags ?? [])
+        .map((t: string) => tagMap.get(t))
+        .filter((id: any): id is ID => !!id);
+      const categoryIds = ((p as any).categories ?? [])
+        .map((c: string) => tagMap.get(c))
+        .filter((id: any): id is ID => !!id);
+      
+      if (tagIds.length > 0 || categoryIds.length > 0) {
+        p.tagIds = tagIds;
+        p.categoryIds = categoryIds;
+        p.lastUpdate = Date.now();
+        await txPapers.store.put(p);
+        papersUpdated++;
+      }
+    }
+    await txPapers.done;
+    
+    // Step 5: Invalidate caches to rebuild with new IDs
+    await this._invalidateCacheByItem();
+    
+    return {
+      questionsUpdated,
+      papersUpdated,
+      tagsCreated,
+    };
+  }
+
+  /**
+   * Remove legacy tags and categories fields from all questions and papers
+   * This should only be called after migration is complete
+   * @returns object with counts of items updated
+   */
+  async removeLegacyTagFields(): Promise<{
+    questionsUpdated: number;
+    papersUpdated: number;
+  }> {
+    let questionsUpdated = 0;
+    let papersUpdated = 0;
+    
+    // Update all questions
+    const txQuestions = this.db.transaction(STORE_KEY_QUESTIONS, 'readwrite');
+    const questions = await txQuestions.store.getAll();
+    for (const q of questions) {
+      if ((q as any).tags || (q as any).categories) {
+        delete (q as any).tags;
+        delete (q as any).categories;
+        await txQuestions.store.put(q);
+        questionsUpdated++;
+      }
+    }
+    await txQuestions.done;
+    
+    // Update all papers
+    const txPapers = this.db.transaction(STORE_KEY_PAPERS, 'readwrite');
+    const papers = await txPapers.store.getAll();
+    for (const p of papers) {
+      if ((p as any).tags || (p as any).categories) {
+        delete (p as any).tags;
+        delete (p as any).categories;
+        await txPapers.store.put(p);
+        papersUpdated++;
+      }
+    }
+    await txPapers.done;
+    
+    // Invalidate caches to rebuild without legacy fields
+    await this._invalidateCacheByItem();
+    
+    return {
+      questionsUpdated,
+      papersUpdated,
+    };
+  }
+
   async generateTagHint(query: string, limit?: number, __?: number): Promise<TagSearchResult> {
     const trieRaw = await this._loadTrieCache('tags-categories');
     const trieObj = await this._loadTrieCache('tag-objects');
@@ -634,19 +1020,33 @@ export class IDBController extends IDBCore implements QuizzyController {
   }
 
   async listTagsInPapersAndQuestions(): Promise<TempTagListResult> {
+    // Get both old string-based tags and new ID-based tags
+    const [
+      questionCategories,
+      questionTags,
+      paperCategories,
+      paperTags,
+      questionCategoryIds,
+      questionTagIds,
+      paperCategoryIds,
+      paperTagIds,
+    ] = await Promise.all([
+      getAllMultiEntryValues(this.db, STORE_KEY_QUESTIONS, 'categories'),
+      getAllMultiEntryValues(this.db, STORE_KEY_QUESTIONS, 'tags'),
+      getAllMultiEntryValues(this.db, STORE_KEY_PAPERS, 'categories'),
+      getAllMultiEntryValues(this.db, STORE_KEY_PAPERS, 'tags'),
+      getAllMultiEntryValues(this.db, STORE_KEY_QUESTIONS, 'categoryIds'),
+      getAllMultiEntryValues(this.db, STORE_KEY_QUESTIONS, 'tagIds'),
+      getAllMultiEntryValues(this.db, STORE_KEY_PAPERS, 'categoryIds'),
+      getAllMultiEntryValues(this.db, STORE_KEY_PAPERS, 'tagIds'),
+    ]);
+
+    // Combine string tags and ID tags (convert IDs to strings for backward compatibility)
     return {
-      questionCategories: await getAllMultiEntryValues(
-        this.db, STORE_KEY_QUESTIONS, 'categories',
-      ) as string[],
-      questionTags: await getAllMultiEntryValues(
-        this.db, STORE_KEY_QUESTIONS, 'tags',
-      ) as string[],
-      paperCategories: await getAllMultiEntryValues(
-        this.db, STORE_KEY_PAPERS, 'categories',
-      ) as string[],
-      paperTags: await getAllMultiEntryValues(
-        this.db, STORE_KEY_PAPERS, 'tags',
-      ) as string[],
+      questionCategories: [...new Set([...questionCategories as string[], ...questionCategoryIds as string[]])],
+      questionTags: [...new Set([...questionTags as string[], ...questionTagIds as string[]])],
+      paperCategories: [...new Set([...paperCategories as string[], ...paperCategoryIds as string[]])],
+      paperTags: [...new Set([...paperTags as string[], ...paperTagIds as string[]])],
     };
   }
 
@@ -850,9 +1250,12 @@ export class IDBController extends IDBCore implements QuizzyController {
       'tags-categories',
       [STORE_KEY_PAPERS, STORE_KEY_QUESTIONS],
       (x: QuizPaper & BaseQuestion) => {
+        // Include both old string-based tags and new ID-based tags
         return [
-          ...x.categories ?? [],
-          ...x.tags ?? [],
+          ...(x as any).categories ?? [],
+          ...(x as any).tags ?? [],
+          ...x.categoryIds ?? [],
+          ...x.tagIds ?? [],
         ];
       },
       forceReindexing,

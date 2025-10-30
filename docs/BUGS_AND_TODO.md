@@ -23,15 +23,36 @@ No critical issues have been reported. If you encounter a critical bug that caus
 
 ## High Priority Issues 🟡
 
-### 1. Tag System Architectural Issue
+### 1. Tag System Architectural Issue ✅ COMPLETED
 
-**Status:** 🟡 High Priority  
+**Status:** ✅ Completed (Database v6)  
 **Category:** Architecture / Data Model  
-**Affects:** Questions, Papers, Search, Statistics
+**Affects:** Questions, Papers, Search, Statistics  
+**Completed:** 2025  
+**Migration Guide:** See TAG_MIGRATION_GUIDE.md
 
-#### Current Implementation
+#### Implementation Summary
 
-The tag system currently stores tags as plain strings in questions and papers:
+The tag system has been successfully migrated from string-based to ID-based references. This implementation:
+
+- ✅ **Added ID-based tag fields**: `tagIds` and `categoryIds` arrays now store tag IDs instead of strings
+- ✅ **Automatic migration**: Database automatically upgrades from v5 to v6 and migrates existing tags
+- ✅ **Manual migration option**: Settings page includes button to trigger migration manually
+- ✅ **Backward compatible search**: Search functions work with both old string tags and new ID tags
+- ✅ **Migration tracking**: System tracks migration status and displays statistics
+- ✅ **Multilingual support**: Migration UI supports English, Japanese, and Chinese
+
+**Benefits Achieved:**
+- Tags can now be renamed without updating every question/paper
+- Duplicate tags can be merged easily
+- Consistent tag naming across all content
+- Better search results through tag entity management
+- Accurate statistics using normalized tag IDs
+- Improved performance with ID-based indexing
+
+#### Previous Implementation (Before Migration)
+
+The tag system previously stored tags as plain strings in questions and papers:
 
 ```typescript
 type Question = {

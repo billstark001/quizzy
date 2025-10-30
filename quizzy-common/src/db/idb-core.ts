@@ -674,6 +674,7 @@ export class IDBCore {
 
   protected async _buildTagSearchScore<T extends DatabaseIndexed & {
     tags?: string[], categories?: string[],
+    tagIds?: string[], categoryIds?: string[],
   }>(
     storeId: string,
     trieRaw: LoadedTrieTree,
@@ -691,7 +692,7 @@ export class IDBCore {
     const objectArrays: T[][] = [];
 
     for (const tagCandidate of expandedQuery) {
-      // gather objects
+      // gather objects by string-based tags (for backward compatibility)
       objectArrays.push(await this.db.getAllFromIndex(
         storeId,
         useCategory ? 'categories' : 'tags',
@@ -705,6 +706,21 @@ export class IDBCore {
           tagCandidate
         ));
       }
+      
+      // Also gather objects by ID-based tags
+      objectArrays.push(await this.db.getAllFromIndex(
+        storeId,
+        useCategory ? 'categoryIds' : 'tagIds',
+        tagCandidate
+      ))
+      if (useCategory == null) {
+        // both tagIds and categoryIds are applicable
+        objectArrays.push(await this.db.getAllFromIndex(
+          storeId,
+          'categoryIds',
+          tagCandidate
+        ));
+      }
     }
     // calculate object search scores
     for (const _arr of objectArrays) {
@@ -714,6 +730,7 @@ export class IDBCore {
           continue;
         }
         let score = 0;
+        // Score string-based categories
         for (const c of obj.categories ?? []) {
           if (initialQuery.has(c)) {
             score += 6;
@@ -721,10 +738,27 @@ export class IDBCore {
             score += 4;
           }
         }
+        // Score string-based tags
         for (const t of obj.tags ?? []) {
           if (initialQuery.has(t)) {
             score += 3;
           } else if (expandedQuery.has(t)) {
+            score += 1;
+          }
+        }
+        // Score ID-based categoryIds
+        for (const cid of obj.categoryIds ?? []) {
+          if (initialQuery.has(cid)) {
+            score += 6;
+          } else if (expandedQuery.has(cid)) {
+            score += 4;
+          }
+        }
+        // Score ID-based tagIds
+        for (const tid of obj.tagIds ?? []) {
+          if (initialQuery.has(tid)) {
+            score += 3;
+          } else if (expandedQuery.has(tid)) {
             score += 1;
           }
         }
@@ -747,6 +781,7 @@ export class IDBCore {
 
   protected async _searchByTag<T extends DatabaseIndexed & {
     tags?: string[], categories?: string[],
+    tagIds?: string[], categoryIds?: string[],
   }>(
     storeId: string,
     trieRaw: LoadedTrieTree,

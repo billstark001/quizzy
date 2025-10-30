@@ -32,7 +32,8 @@ export const SearchByTagDialog = (
     if (!open) {
       return;
     }
-    const cond = tags?.map(t => t.mainName);
+    // Use tag IDs for search (backend supports both IDs and names)
+    const cond = tags?.map(t => t.id);
     setSearchCondition(cond?.join(' ') ?? '');
   }, [open]);
 

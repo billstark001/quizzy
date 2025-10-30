@@ -11,10 +11,13 @@ import { MdAdd } from "react-icons/md";
 import { ChoiceQuestionOptionsEdit } from "./ChoiceQuestionOptionsEdit";
 import { normalizeOptionOrBlankArray } from "@quizzy/base/db/question-id";
 import { BlankQuestionBlanksEdit } from "./BlankQuestionBlankEdit";
-import TagList, { TagButton } from "../common/TagList";
+import { TagButton } from "../common/TagList";
+import TagListResolved from "../common/TagListResolved";
 import { IoAddOutline } from "react-icons/io5";
 import TagSelectDialog, { TagSelectState } from "../TagSelectDialog";
 import { useDialog } from "@/utils/chakra";
+import { Quizzy } from "@/data";
+import TagInContextDialog, { TagInContextDialogData, TagInContextDialogResult } from "@/dialogs/TagInContextDialog";
 
 
 const _adjustHeight = (t: HTMLTextAreaElement) => {
@@ -48,14 +51,36 @@ export const QuestionEdit = () => {
 
   // tags
   const dTag = useDialog<TagSelectState, Partial<Question>>(TagSelectDialog);
+  const tagInContextDialog = useDialog<TagInContextDialogData, TagInContextDialogResult>(TagInContextDialog);
 
   const open = async (tagIndex?: number, isCategory = false) => {
     const result = await dTag.open({
       object: question,
-      tagIndex, isCategory,
+      tagIndex, 
+      isCategory,
+      contextType: 'question',
     });
     onChangeImmediate(result);
   }
+
+  // Handle click on existing tag - show dialog with remove option
+  const handleTagClick = async (tagId: string, index: number, isCategory = false) => {
+    const tag = await Quizzy.getTagById(tagId);
+    if (!tag) return;
+
+    const result = await tagInContextDialog.open({
+      tag,
+      contextType: 'question',
+    });
+
+    if (result && result.action === 'remove') {
+      // Remove tag from question
+      const fieldName = isCategory ? 'categoryIds' : 'tagIds';
+      const currentIds = question[fieldName] ?? [];
+      const newIds = currentIds.filter((_, i) => i !== index);
+      onChangeImmediate({ [fieldName]: newIds });
+    }
+  };
 
   const o = useBreakpointValue({
     base: 'vertical',
@@ -83,22 +108,21 @@ export const QuestionEdit = () => {
 
     <DataList.Item >
       <DataList.ItemLabel>{t('page.edit.tags')}</DataList.ItemLabel>
-      <TagList tags={question.tags}
-        onDoubleClick={(_, __, i) => open(i)}
+      <TagListResolved tagIds={question.tagIds}
+        onClick={(_e, tagId, i) => handleTagClick(tagId, i, false)}
       >
         <TagButton onClick={() => open()}><IoAddOutline /></TagButton>
-      </TagList>
+      </TagListResolved>
     </DataList.Item>
 
     <DataList.Item >
       <DataList.ItemLabel>{t('page.edit.categories')}</DataList.ItemLabel>
-      <TagList tags={question.categories}
-        onDoubleClick={(_, __, i) =>
-          open(i, true)}
+      <TagListResolved tagIds={question.categoryIds}
+        onClick={(_e, tagId, i) => handleTagClick(tagId, i, true)}
       >
         <TagButton onClick={() =>
           open(undefined, true)}><IoAddOutline /></TagButton>
-      </TagList>
+      </TagListResolved>
     </DataList.Item>
 
     <DataList.Item >
@@ -156,6 +180,7 @@ export const QuestionEdit = () => {
     </DataList.Item>
 
     <dTag.Root />
+    <tagInContextDialog.Root />
 
   </DataList.Root>;
 

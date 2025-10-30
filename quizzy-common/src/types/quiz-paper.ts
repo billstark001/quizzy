@@ -6,8 +6,8 @@ type QuizPaperBase = {
   name: string; // display
   img?: string;
   desc?: MarkdownString;
-  tags?: string[]; // knowledge points covered in this question
-  categories?: string[]; // category of this question in the syllabus
+  tagIds?: ID[]; // IDs of tags
+  categoryIds?: ID[]; // IDs of categories
   weights?: Record<ID, number>;
   duration?: number; // in milliseconds
 };

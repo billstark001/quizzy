@@ -95,6 +95,10 @@ export const mergeTags = (tags: Tag[], updateTime: number): [Tag, Tag[]] => {
     // merge main names and alternatives
     Object.assign(mainTag.mainNames, tag.mainNames);
     mainTag.alternatives.push(...tag.alternatives);
+    // Add the merged tag's mainName as an alternative to the main tag
+    if (tag.mainName && !mainTag.alternatives.includes(tag.mainName)) {
+      mainTag.alternatives.push(tag.mainName);
+    }
 
     // update db records
     tag.deleted = true;

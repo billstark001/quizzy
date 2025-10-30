@@ -110,6 +110,29 @@ export const langRes: LanguageResource = {
     tagSelect: {
       header: ['Select Tag', 'タグを選択', '选择标签'],
     },
+    tagEdit: {
+      header: ['Edit Tag', 'タグを編集', '编辑标签'],
+      mainName: ['Main Name', 'メイン名', '主名称'],
+      mainNamePlaceholder: ['Enter tag name', 'タグ名を入力', '输入标签名称'],
+      multilingualNames: ['Multilingual Names', '多言語名', '多语言名称'],
+      alternatives: ['Alternatives', '別名', '别名'],
+      alternativesPlaceholder: ['e.g., js, JS, javascript', '例：js, JS, javascript', '例如：js, JS, javascript'],
+      addAlternativePlaceholder: ['Add alternative name', '別名を追加', '添加别名'],
+      alternativesHint: ['Press Enter or click + to add', 'Enterまたは+をクリックして追加', '按回车或点击+添加'],
+    },
+    tagInContext: {
+      headerNew: ['Create New Tag', '新しいタグを作成', '创建新标签'],
+      headerExisting: ['Tag Details', 'タグ詳細', '标签详情'],
+      newTagDescription: [
+        'This tag does not exist yet. Confirm to create it.',
+        'このタグはまだ存在しません。作成するには確認してください。',
+        '此标签尚不存在。确认以创建它。'
+      ],
+      noAlternatives: ['None', 'なし', '无'],
+      question: ['question', '問題', '问题'],
+      paper: ['paper', '問題冊子', '试卷'],
+      removeFrom: ['Remove from {{context}}', '{{context}}から削除', '从{{context}}中删除'],
+    },
     bookmarkEdit: {
       header: [
         'Bookmark Edit: {{bmName}}',
@@ -143,6 +166,7 @@ export const langRes: LanguageResource = {
     results: ['Results', '結果', '结果'],
     stats: ['Stats', '統計データ', '统计数据'],
     edit: ['Explore', 'クイズ一覧', '浏览试卷与试题'],
+    tags: ['Tags', 'タグ', '标签'],
     settings: ['Settings', '設定', '设置'],
   },
 
@@ -268,11 +292,20 @@ export const langRes: LanguageResource = {
         deleteUnlinked: ['Delete Unlinked Questions', 'リンクされていない問題を削除', '删除未链接的问题'],
         deleteLogicallyDeleted: ['Delete Logically Deleted Records', '論理削除のデータを徹底的に削除', '删除仅逻辑删除的数据'],
         normalizeQuestions: ['Normalize Questions', '問題を標準化', '问题归一化'],
+        recordAllRecordableTags: ['Record All Tags', 'すべてのタグを記録', '记录所有标签'],
+        migrateTagsToIds: ['Migrate Tags to ID System', 'タグをIDシステムに移行', '将标签迁移到ID系统'],
+        removeLegacyTagFields: ['Remove Legacy Tag Fields', '旧タグフィールドを削除', '删除旧标签字段'],
         importData: ['Import Exported Data', 'エクスポートしたデータをインポート', '导入已导出的数据'],
         exportData: ['Export Data to JSON File', 'JSONファイルにエクスポート', '导出数据到JSON文件'],
       },
       switch: {
         forceRefresh: ['Force Refresh', '全てを更新', '强制更新所有索引'],
+      },
+      text: {
+        tagMigrationCompleted: ['Tag migration completed', 'タグの移行が完了しました', '标签迁移已完成'],
+        questionsUpdated: ['Questions updated', '問題を更新', '问题已更新'],
+        papersUpdated: ['Papers updated', '問題冊子を更新', '试卷已更新'],
+        tagsCreated: ['Tags created', 'タグを作成', '标签已创建'],
       },
       toast: {
         recordsUpdated: [
@@ -285,9 +318,38 @@ export const langRes: LanguageResource = {
           '{{count}} 件の削除をしました。', 
           '已删除 {{count}} 个记录。'
         ],
+        tagMigrationCompleted: [
+          'Tag migration completed: {{questionsUpdated}} questions, {{papersUpdated}} papers updated, {{tagsCreated}} tags created.',
+          'タグの移行が完了しました：{{questionsUpdated}}個の問題、{{papersUpdated}}個の問題冊子を更新し、{{tagsCreated}}個のタグを作成しました。',
+          '标签迁移完成：已更新{{questionsUpdated}}个问题、{{papersUpdated}}个试卷，创建了{{tagsCreated}}个标签。'
+        ],
+        legacyFieldsRemoved: [
+          'Legacy tag fields removed: {{questionsUpdated}} questions, {{papersUpdated}} papers updated.',
+          '旧タグフィールドを削除しました：{{questionsUpdated}}個の問題、{{papersUpdated}}個の問題冊子を更新しました。',
+          '已删除旧标签字段：已更新{{questionsUpdated}}个问题、{{papersUpdated}}个试卷。'
+        ],
       },
       selectLanguage: ['Display Language: ', '表示言語：', '显示语言：'],
       autoDetect: ['Auto Detect', '自動検出', '自动检测']
+    },
+    tagManagement: {
+      title: ['Tag Management', 'タグ管理', '标签管理'],
+      searchPlaceholder: ['Search tags...', 'タグを検索...', '搜索标签...'],
+      confirmDelete: ['Are you sure you want to delete this tag?', 'このタグを削除してもよろしいですか？', '确定要删除此标签吗？'],
+      noResults: ['No tags found matching your search.', '検索条件に一致するタグが見つかりません。', '未找到匹配的标签。'],
+      noTags: ['No tags available. Create tags by adding them to questions or papers.', 'タグがありません。問題または試卷にタグを追加して作成してください。', '没有可用的标签。通过向问题或试卷添加标签来创建它们。'],
+      totalTags: ['Total: {{count}} tags', '合計：{{count}}個のタグ', '总计：{{count}}个标签'],
+      showing: ['Showing {{start}}-{{end}} of {{total}}', '{{start}}-{{end}} / {{total}}を表示中', '显示{{start}}-{{end}} / {{total}}'],
+      btn: {
+        merge: ['Merge Tags', 'タグをマージ', '合并标签'],
+      },
+      table: {
+        select: ['Select', '選択', '选择'],
+        name: ['Name', '名前', '名称'],
+        alternatives: ['Alternatives', '別名', '别名'],
+        id: ['ID', 'ID', 'ID'],
+        actions: ['Actions', '操作', '操作'],
+      }
     },
     result: {
       dialog: {

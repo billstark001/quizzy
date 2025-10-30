@@ -54,11 +54,11 @@ export const createStatFromQuizResults = async (
       const { id, status, totalScore: weight } = row;
       const question = await getQuestion(id);
       patchStat(stat, 'question', id, status, weight, true);
-      for (const tag of question?.tags ?? []) {
+      for (const tag of question?.tagIds ?? []) {
         allTags.add(tag);
         patchStat(stat, 'tag', tag, status, weight, false);
       }
-      for (const category of question?.categories ?? []) {
+      for (const category of question?.categoryIds ?? []) {
         allCategories.add(category);
         patchStat(stat, 'category', category, status, weight, false);
       }

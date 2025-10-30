@@ -106,6 +106,8 @@ export interface QuizzyController {
   // tags
 
   getTag(payload: string | Partial<TagBase>): Promise<Tag>;
+  getTagById(id: ID): Promise<Tag | undefined>;
+  getTagsByIds(ids: ID[]): Promise<(Tag | undefined)[]>;
   listTags(): Promise<Tag[]>;
   updateTag(id: ID, tag: Patch<Tag>): Promise<ID>;
   deleteTag(id: ID): Promise<boolean>;
@@ -115,6 +117,23 @@ export interface QuizzyController {
   
   generateTagHint(query: string, count?: number, page?: number): Promise<TagSearchResult>;
   listTagsInPapersAndQuestions(): Promise<TempTagListResult>;
+  
+  // tag migration
+  isTagMigrationCompleted(): Promise<boolean>;
+  getMigrationStatus(): Promise<{
+    completed: boolean;
+    timestamp?: number;
+    result?: any;
+  }>;
+  migrateTagsToIds(): Promise<{
+    questionsUpdated: number;
+    papersUpdated: number;
+    tagsCreated: number;
+  }>;
+  removeLegacyTagFields(): Promise<{
+    questionsUpdated: number;
+    papersUpdated: number;
+  }>;
 
   // records
 

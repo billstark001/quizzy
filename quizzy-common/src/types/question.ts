@@ -22,8 +22,8 @@ export type QuestionType = 'choice' | 'blank' | 'text';
 type _BaseQuestion = {
   name?: string; // serial
   
-  tags?: string[]; // knowledge points covered in this question
-  categories?: string[]; // category of this question in the syllabus
+  tagIds?: ID[]; // IDs of tags
+  categoryIds?: ID[]; // IDs of categories
   
   title?: MarkdownString;
   content: MarkdownString;

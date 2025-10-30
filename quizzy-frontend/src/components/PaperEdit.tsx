@@ -8,9 +8,12 @@ import {
 import { useTranslation } from "react-i18next";
 import { useEditorContext } from "@/utils/react-patch";
 import { Textarea2 } from "./question-edit/QuestionEdit";
-import TagList, { TagButton } from "./common/TagList";
+import { TagButton } from "./common/TagList";
+import TagListResolved from "./common/TagListResolved";
 import TagSelectDialog, { TagSelectState } from "./TagSelectDialog";
 import { useDialog } from "@/utils/chakra";
+import { Quizzy } from "@/data";
+import TagInContextDialog, { TagInContextDialogData, TagInContextDialogResult } from "@/dialogs/TagInContextDialog";
 
 
 export const PaperEdit = () => {
@@ -21,13 +24,35 @@ export const PaperEdit = () => {
 
   // tags
   const dTag = useDialog<TagSelectState, Partial<QuizPaper>>(TagSelectDialog);
+  const tagInContextDialog = useDialog<TagInContextDialogData, TagInContextDialogResult>(TagInContextDialog);
 
   const open = async (tagIndex?: number, isCategory = false) => {
     const result = await dTag.open({
       object: paper,
-      tagIndex, isCategory,
+      tagIndex, 
+      isCategory,
+      contextType: 'paper',
     });
     onChangeImmediate(result);
+  };
+
+  // Handle click on existing tag - show dialog with remove option
+  const handleTagClick = async (tagId: string, index: number, isCategory = false) => {
+    const tag = await Quizzy.getTagById(tagId);
+    if (!tag) return;
+
+    const result = await tagInContextDialog.open({
+      tag,
+      contextType: 'paper',
+    });
+
+    if (result && result.action === 'remove') {
+      // Remove tag from paper
+      const fieldName = isCategory ? 'categoryIds' : 'tagIds';
+      const currentIds = paper[fieldName] ?? [];
+      const newIds = currentIds.filter((_, i) => i !== index);
+      onChangeImmediate({ [fieldName]: newIds });
+    }
   };
 
   const o = useBreakpointValue({
@@ -44,22 +69,21 @@ export const PaperEdit = () => {
 
     <DataList.Item >
       <DataList.ItemLabel>{t('page.edit.tags')}</DataList.ItemLabel>
-      <TagList tags={paper.tags}
-        onDoubleClick={(_, __, i) => open(i)}
+      <TagListResolved tagIds={paper.tagIds}
+        onClick={(_e, tagId, i) => handleTagClick(tagId, i, false)}
       >
         <TagButton onClick={() => open()} children={<IoAddOutline />} />
-      </TagList>
+      </TagListResolved>
     </DataList.Item>
 
     <DataList.Item >
       <DataList.ItemLabel>{t('page.edit.categories')}</DataList.ItemLabel>
-      <TagList tags={paper.categories}
-        onDoubleClick={(_, __, i) =>
-          open(i, true)}
+      <TagListResolved tagIds={paper.categoryIds}
+        onClick={(_e, tagId, i) => handleTagClick(tagId, i, true)}
       >
         <TagButton onClick={() =>
           open(undefined, true)} children={<IoAddOutline />} />
-      </TagList>
+      </TagListResolved>
     </DataList.Item>
 
     <DataList.Item >
@@ -86,6 +110,7 @@ export const PaperEdit = () => {
 
 
     <dTag.Root />
+    <tagInContextDialog.Root />
   </DataList.Root>;
 
 };

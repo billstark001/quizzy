@@ -56,6 +56,8 @@ const keys: Readonly<{[key in keyof QuizzyController]: undefined}> = Object.free
   // tags
 
   'getTag': undefined,
+  'getTagById': undefined,
+  'getTagsByIds': undefined,
   'listTags': undefined,
   'updateTag': undefined,
   'deleteTag': undefined,
@@ -64,6 +66,12 @@ const keys: Readonly<{[key in keyof QuizzyController]: undefined}> = Object.free
   
   'generateTagHint': undefined,
   'listTagsInPapersAndQuestions': undefined,
+
+  // tag migration
+  'isTagMigrationCompleted': undefined,
+  'getMigrationStatus': undefined,
+  'migrateTagsToIds': undefined,
+  'removeLegacyTagFields': undefined,
 
   // records
 

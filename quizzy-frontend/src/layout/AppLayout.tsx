@@ -2,7 +2,7 @@ import React, { useContext } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import SidebarWithHeader from './Sidebar';
-import { IoHome, IoNewspaper, IoSettings, IoStatsChart } from "react-icons/io5";
+import { IoHome, IoNewspaper, IoSettings, IoStatsChart, IoPricetags } from "react-icons/io5";
 import { RiFileHistoryFill } from "react-icons/ri";
 import { GrScorecard } from "react-icons/gr";
 import { MdEditSquare } from 'react-icons/md';
@@ -44,6 +44,7 @@ export const AppLayout = ({ children }: React.PropsWithChildren<object>) => {
       { name: t('nav.results'), to: '/results', icon: <GrScorecard /> },
       { name: t('nav.stats'), to: '/stats', icon: <IoStatsChart /> },
       { name: t('nav.edit'), to: '/edit-select', icon: <MdEditSquare /> },
+      { name: t('nav.tags'), to: '/tags', icon: <IoPricetags /> },
       { name: t('nav.settings'), to: '/settings', icon: <IoSettings /> },
     ]}>
       {children}

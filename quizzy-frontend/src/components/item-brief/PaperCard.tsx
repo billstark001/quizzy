@@ -9,6 +9,7 @@ import { useTranslation } from "react-i18next";
 import { useColorMode } from "../ui/color-mode";
 import BookmarkIcon from "../bookmark/BookmarkIcon";
 import TagDisplay from "./TagDisplay";
+import { useTagResolver } from "@/hooks/useTagResolver";
 
 export type PaperCardProps = Omit<Card.RootProps, 'children' | 'onSelect'> & {
   paper: QuizPaper,
@@ -34,6 +35,14 @@ export const PaperCard = (props: PaperCardProps) => {
 
   const { t } = useTranslation();
   const { colorMode } = useColorMode();
+  
+  // Resolve tag IDs to Tag objects
+  const { displayTags, displayCategories } = useTagResolver(
+    undefined, // no legacy tags field
+    paper.tagIds,
+    undefined, // no legacy categories field
+    paper.categoryIds
+  );
 
   const useSelect = selected != null || onSelect != null;
 
@@ -54,8 +63,8 @@ export const PaperCard = (props: PaperCardProps) => {
           {paper.desc}
         </Text>
         <Wrap mt='3'>
-          <TagDisplay tags={paper.categories} isCategory />
-          <TagDisplay tags={paper.tags} />
+          <TagDisplay tags={displayCategories} isCategory />
+          <TagDisplay tags={displayTags} />
         </Wrap>
       </Card.Body>
       <Card.Footer justifyContent="space-between">
