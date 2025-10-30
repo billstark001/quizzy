@@ -7,10 +7,12 @@ import {
   TICIndex, Tag, TagBase,
   UpdateQuizOptions, 
   defaultTag,
-  BaseQuestion
+  BaseQuestion,
+  ExportOptions, PaperExportResult, QuestionExportResult,
+  CompleteQuizPaper, CompleteQuestion, CompleteQuestionDraft
 } from "../types";
 import { IDBPDatabase, IDBPTransaction } from "idb";
-import { separatePaperAndQuestions, toCompleted } from "./paper-id";
+import { separatePaperAndQuestions, toCompleted, completeQuestionToQuestion, questionToCompleteQuestion } from "./paper-id";
 import { uuidV4B64WithRetry } from "../utils/string";
 import { QuizResult } from "../types/quiz-result";
 import { createQuizResult } from "./quiz-result";
@@ -375,6 +377,49 @@ export class IDBController extends IDBCore implements QuizzyController {
     }
     await Promise.all(promises);
     await tx.done;
+    return count;
+  }
+
+  /**
+   * Reset database - delete all data and edit history
+   * WARNING: This is a destructive operation that cannot be undone!
+   * @returns The number of records deleted
+   */
+  async resetDatabase(): Promise<number> {
+    let count = 0;
+    const stores: readonly string[] = [
+      STORE_KEY_PAPERS, STORE_KEY_QUESTIONS, STORE_KEY_RECORDS,
+      STORE_KEY_RESULTS, STORE_KEY_STATS, STORE_KEY_TAGS,
+      STORE_KEY_BOOKMARKS, STORE_KEY_BOOKMARK_TYPES,
+      STORE_KEY_GENERAL, STORE_KEY_VERSION,
+    ];
+    
+    // Clear all object stores
+    const tx = this.db.transaction(stores, 'readwrite');
+    for (const storeId of stores) {
+      const store = tx.objectStore(storeId);
+      const allKeys = await store.getAllKeys();
+      count += allKeys.length;
+      await store.clear();
+    }
+    await tx.done;
+    
+    // Clear all caches
+    await this._invalidateCache('bm25');
+    await this._invalidateCache('trie');
+    
+    // Re-initialize reserved bookmark types
+    const bookmarkTypeTx = this.db.transaction(STORE_KEY_BOOKMARK_TYPES, 'readwrite');
+    for (const w of BookmarkReservedWords) {
+      await bookmarkTypeTx.store.put(defaultBookmarkType({
+        currentVersion: 'default',
+        dispCssColor: BookmarkReservedColors[w],
+        name: w,
+        id: w,
+      }));
+    }
+    await bookmarkTypeTx.done;
+    
     return count;
   }
 
@@ -1153,14 +1198,70 @@ export class IDBController extends IDBCore implements QuizzyController {
     return questionsToCommit.length;
   }
 
-  // TODO manual replacement if conflict detected
+  // Legacy function for backward compatibility
+  // TODO: Deprecate this in favor of importCompleteQuizPapersNew
   async importCompleteQuizPapers(...papers: CompleteQuizPaperDraft[]): Promise<string[]> {
     const purePapers: QuizPaper[] = [];
     const hasPaperId = (id: ID) => this.db.get(STORE_KEY_PAPERS, id).then(x => x != null && !x.deleted);
-    const hasQuestionId = (id: ID) => this.db.get(STORE_KEY_PAPERS, id).then(x => x != null && !x.deleted);
+    
     for (const _paper of papers) {
-      const paper = await toCompleted(_paper, hasPaperId, hasQuestionId);
-      const [purePaper, questions] = separatePaperAndQuestions(paper);
+      const paper = await toCompleted(_paper, hasPaperId);
+      
+      // For new format, we need to convert CompleteQuestions to Questions
+      // This requires tag reconciliation
+      const questions: Question[] = [];
+      const paperTagIds: ID[] = [];
+      const paperCategoryIds: ID[] = [];
+      
+      // Process all tags and categories from the paper
+      if (paper.tags) {
+        for (const tagName of paper.tags) {
+          const tag = await this.getTag(tagName);
+          paperTagIds.push(tag.id);
+        }
+      }
+      if (paper.categories) {
+        for (const catName of paper.categories) {
+          const tag = await this.getTag(catName);
+          paperCategoryIds.push(tag.id);
+        }
+      }
+      
+      // Process each question
+      for (const cq of paper.questions) {
+        const qTagIds: ID[] = [];
+        const qCategoryIds: ID[] = [];
+        
+        if (cq.tags) {
+          for (const tagName of cq.tags) {
+            const tag = await this.getTag(tagName);
+            qTagIds.push(tag.id);
+          }
+        }
+        if (cq.categories) {
+          for (const catName of cq.categories) {
+            const tag = await this.getTag(catName);
+            qCategoryIds.push(tag.id);
+          }
+        }
+        
+        const question = completeQuestionToQuestion(cq, qTagIds, qCategoryIds);
+        questions.push(question);
+      }
+      
+      // Create the pure paper with question IDs
+      const purePaper: QuizPaper = {
+        id: paper.id,
+        name: paper.name,
+        img: paper.img,
+        desc: paper.desc,
+        tagIds: paperTagIds,
+        categoryIds: paperCategoryIds,
+        weights: paper.weights,
+        duration: paper.duration,
+        questions: questions.map(q => q.id),
+      } as QuizPaper;
+      
       purePapers.push(purePaper);
       await this.importQuestions(...questions);
     }
@@ -1228,6 +1329,173 @@ export class IDBController extends IDBCore implements QuizzyController {
   async deleteQuizPaper(id: ID): Promise<boolean> {
     await this._invalidateCache('trie');
     return await this._delete(STORE_KEY_PAPERS, id, true);
+  }
+
+  // Export functions
+  async exportQuizPaper(id: ID, options: ExportOptions): Promise<PaperExportResult> {
+    const paper = await this.getQuizPaper(id);
+    if (!paper) {
+      throw new Error(`Quiz paper with ID ${id} not found`);
+    }
+
+    if (options.format === 'separate') {
+      // Export as separate arrays
+      const questions = await this.getQuestions(paper.questions);
+      const validQuestions = questions.filter(q => q !== undefined) as Question[];
+      
+      // Collect all unique tag IDs
+      const tagIdSet = new Set<ID>();
+      if (paper.tagIds) {
+        paper.tagIds.forEach(tid => tagIdSet.add(tid));
+      }
+      if (paper.categoryIds) {
+        paper.categoryIds.forEach(tid => tagIdSet.add(tid));
+      }
+      validQuestions.forEach(q => {
+        q.tagIds?.forEach(tid => tagIdSet.add(tid));
+        q.categoryIds?.forEach(tid => tagIdSet.add(tid));
+      });
+      
+      const tags = await this.getTagsByIds(Array.from(tagIdSet));
+      const validTags = tags.filter(t => t !== undefined) as Tag[];
+      
+      // Optionally remove indices
+      let resultPaper = paper;
+      let resultQuestions = validQuestions;
+      let resultTags = validTags;
+      
+      if (options.removeIndices) {
+        resultPaper = sanitizeIndices(JSON.parse(JSON.stringify(paper)), false);
+        resultQuestions = validQuestions.map(q => sanitizeIndices(JSON.parse(JSON.stringify(q)), false));
+        resultTags = validTags.map(t => sanitizeIndices(JSON.parse(JSON.stringify(t)), false));
+      }
+      
+      if (!options.keepIds) {
+        // Note: We keep IDs by default for referential integrity in separate format
+        // User can manually remove them if needed
+      }
+      
+      return {
+        format: 'separate',
+        data: {
+          paper: resultPaper,
+          questions: resultQuestions,
+          tags: resultTags,
+        }
+      };
+    } else if (options.format === 'complete') {
+      // Export as CompleteQuizPaper format
+      const questions = await this.getQuestions(paper.questions);
+      const validQuestions = questions.filter(q => q !== undefined) as Question[];
+      
+      const completeQuestions: CompleteQuestion[] = [];
+      
+      for (const q of validQuestions) {
+        const cq = await questionToCompleteQuestion(
+          q,
+          async (tagId) => {
+            const tag = await this.getTagById(tagId);
+            return tag?.mainName;
+          }
+        );
+        completeQuestions.push(cq);
+      }
+      
+      // Get tag names for paper
+      const paperTags: string[] = [];
+      const paperCategories: string[] = [];
+      
+      if (paper.tagIds) {
+        for (const tid of paper.tagIds) {
+          const tag = await this.getTagById(tid);
+          if (tag) {
+            paperTags.push(tag.mainName);
+          }
+        }
+      }
+      
+      if (paper.categoryIds) {
+        for (const tid of paper.categoryIds) {
+          const tag = await this.getTagById(tid);
+          if (tag) {
+            paperCategories.push(tag.mainName);
+          }
+        }
+      }
+      
+      const completePaper: CompleteQuizPaper | CompleteQuizPaperDraft = {
+        id: options.keepIdsInComplete ? paper.id : undefined,
+        name: paper.name,
+        img: paper.img,
+        desc: paper.desc,
+        tags: paperTags,
+        categories: paperCategories,
+        weights: paper.weights,
+        duration: paper.duration,
+        questions: completeQuestions.map(cq => 
+          options.keepIdsInComplete ? cq : { ...cq, id: undefined }
+        ) as any,
+      };
+      
+      return {
+        format: 'complete',
+        data: completePaper,
+      };
+    } else {
+      throw new Error(`Export format '${options.format}' not supported in backend. Use frontend for text export.`);
+    }
+  }
+
+  async exportQuestion(id: ID, options: ExportOptions): Promise<QuestionExportResult> {
+    const question = await this.getQuestion(id);
+    if (!question) {
+      throw new Error(`Question with ID ${id} not found`);
+    }
+
+    if (options.format === 'separate') {
+      // Export as separate question and tags
+      const tagIdSet = new Set<ID>();
+      question.tagIds?.forEach(tid => tagIdSet.add(tid));
+      question.categoryIds?.forEach(tid => tagIdSet.add(tid));
+      
+      const tags = await this.getTagsByIds(Array.from(tagIdSet));
+      const validTags = tags.filter(t => t !== undefined) as Tag[];
+      
+      let resultQuestion = question;
+      let resultTags = validTags;
+      
+      if (options.removeIndices) {
+        resultQuestion = sanitizeIndices(JSON.parse(JSON.stringify(question)), false);
+        resultTags = validTags.map(t => sanitizeIndices(JSON.parse(JSON.stringify(t)), false));
+      }
+      
+      return {
+        format: 'separate',
+        data: {
+          question: resultQuestion,
+          tags: resultTags,
+        }
+      };
+    } else if (options.format === 'complete') {
+      // Export as CompleteQuestion format
+      const cq = await questionToCompleteQuestion(
+        question,
+        async (tagId) => {
+          const tag = await this.getTagById(tagId);
+          return tag?.mainName;
+        }
+      );
+      
+      const completeQuestion: CompleteQuestion | CompleteQuestionDraft = 
+        options.keepIdsInComplete ? cq : { ...cq, id: undefined };
+      
+      return {
+        format: 'complete',
+        data: completeQuestion,
+      };
+    } else {
+      throw new Error(`Export format '${options.format}' not supported in backend. Use frontend for text export.`);
+    }
   }
 
   // #endregion

@@ -597,7 +597,7 @@ function TagManagementPage() {
 
 ---
 
-### 3. Search Index Rebuild Performance
+### 3. Search Index Rebuild Performance ✅ IN PROGRESS
 
 **Status:** 🟢 Medium  
 **Category:** Performance
@@ -612,13 +612,13 @@ function TagManagementPage() {
 - Appears frozen on large datasets
 - User may close browser thinking app crashed
 
-**Proposed Solution:**
-- Background indexing with Web Workers
-- Incremental indexing (update only changed entities)
-- Progress bar for rebuild operations
-- Pause/resume capability
+**Solution Being Implemented:**
+- ✅ Incremental indexing (update only changed entities) - Already implemented via `searchCacheInvalidated` flag
+- 🔄 Background indexing with Web Workers (planned)
+- 🔄 Progress bar for rebuild operations (planned)
+- 🔄 Pause/resume capability (planned)
 
-**Workaround:**
+**Current Workaround:**
 - Avoid force rebuild unless necessary
 - Import in smaller batches
 - Wait patiently during initial load
@@ -744,6 +744,93 @@ function TagManagementPage() {
 ---
 
 ## Planned Features 📋
+
+### 10.1. Enhanced Import/Export System for Complete Quiz Papers
+
+**Status:** 📋 Planned  
+**Category:** Data Management / Import/Export
+
+**Background:**
+Currently, `CompleteQuizPaper` and `CompleteQuizPaperDraft` exist but have limitations:
+- They still reference questions by ID (foreign keys)
+- Tags use ID references (`tagIds`, `categoryIds`)
+- Not truly self-contained for import/export
+
+**Proposed Enhancement:**
+
+**New Types to Introduce:**
+```typescript
+// Complete question types - fully embedded, no foreign keys
+type CompleteQuestion = BaseQuestion & QuestionTypeSpecific & {
+  tags: string[];        // Direct tag names, not IDs
+  categories: string[];  // Direct category names, not IDs
+  // No tagIds or categoryIds
+};
+
+type CompleteQuestionDraft = Similar to CompleteQuestion but with optional ID;
+
+// Updated complete paper types
+type CompleteQuizPaper = {
+  // ... paper metadata
+  tags: string[];        // Direct tag names
+  categories: string[];  // Direct category names
+  questions: CompleteQuestion[];  // Embedded questions, not IDs
+};
+
+type CompleteQuizPaperDraft = Similar but with optional IDs;
+```
+
+**Import Features:**
+1. **Tag Reconciliation:**
+   - On import, check if tags exist by name, multilingual name, or alias
+   - If exists and not deleted: merge/reuse existing tag
+   - If doesn't exist: create new tag entity
+   - Build mapping from string names to tag IDs
+
+2. **Question Conflict Resolution:**
+   - Match existing questions by: title, content, solution, and type
+   - If exact match found: present to user via async callback
+   - User can decide: keep existing, use imported, or keep both
+   - API signature: `async (conflicts) => decisions`
+
+3. **Complete Import Flow:**
+   - Parse complete paper/question
+   - Reconcile all tags first
+   - For each question: check for duplicates
+   - Resolve conflicts with user input
+   - Convert to standard format with IDs
+   - Import into database
+
+**Export Options:**
+
+**Option 1: Separate Export (with IDs)**
+- Export paper object (keeps ID)
+- Export questions array (keeps IDs)
+- Export tags array (keeps IDs)
+- Optional: remove search/version indices
+- Use case: Backup with referential integrity
+
+**Option 2: Complete Export (no foreign keys)**
+- Export single CompleteQuizPaperDraft object
+- All questions embedded (no IDs or optional IDs)
+- All tags as string names
+- Optional: keep entity IDs for tracking
+- Use case: Self-contained portable format
+
+**Option 3: Human-Readable Export (Frontend only)**
+- Generate markdown or formatted text
+- Include all content in readable form
+- Not meant for re-import
+- Use case: Printing, sharing, review
+
+**Benefits:**
+- True portability of quiz content
+- No broken references on import
+- Intelligent duplicate detection
+- User control over conflicts
+- Multiple export formats for different needs
+
+**Implementation Priority:** High - Part of current task
 
 ### 11. Advanced Analytics Dashboard
 
