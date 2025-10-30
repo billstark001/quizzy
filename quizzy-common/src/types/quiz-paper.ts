@@ -21,19 +21,7 @@ export type QuizPaperDraft = QuizPaperBase & {
   id?: ID;
 };
 
-// Legacy complete types (with foreign keys via IDs)
-// Kept for backward compatibility with existing code
-export type LegacyCompleteQuizPaper = QuizPaperBase & {
-  id: ID;
-  questions: Question[];
-}
-
-export type LegacyCompleteQuizPaperDraft = QuizPaperBase & {
-  id?: ID;
-  questions: QuestionWithOptionalId[];
-};
-
-// New complete types without any foreign keys
+// Complete types without any foreign keys
 // These are self-contained and suitable for import/export
 type CompleteQuizPaperBase = {
   name: string;
