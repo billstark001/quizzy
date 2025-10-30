@@ -12,7 +12,7 @@ export type TagListResolvedProps = Omit<TagListProps, 'tags' | 'keys'> & {
  * TagList component that resolves tag IDs to tag names
  */
 export const TagListResolved = (props: TagListResolvedProps) => {
-  const { tagIds, ...rest } = props;
+  const { tagIds, onClick, ...rest } = props;
 
   // Fetch tags by IDs
   const { data: resolvedTags } = useQuery({
@@ -33,7 +33,18 @@ export const TagListResolved = (props: TagListResolvedProps) => {
     return resolvedTags.map(tag => tag?.mainName || '<Unknown>');
   }, [resolvedTags]);
 
-  return <TagList tags={tagNames} keys={tagIds} {...rest} />;
+  // Wrap onClick to pass tagId instead of tag name
+  const handleClick = useMemo(() => {
+    if (!onClick) return undefined;
+    return (_e: any, tagName: string, index: number) => {
+      const tagId = tagIds?.[index];
+      if (tagId) {
+        onClick(tagId as any, tagName, index);
+      }
+    };
+  }, [onClick, tagIds]);
+
+  return <TagList tags={tagNames} keys={tagIds} onClick={handleClick} {...rest} />;
 };
 
 export default TagListResolved;

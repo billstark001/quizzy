@@ -117,6 +117,19 @@ export const langRes: LanguageResource = {
       alternatives: ['Alternatives (comma-separated)', '別名（カンマ区切り）', '别名（逗号分隔）'],
       alternativesPlaceholder: ['e.g., js, JS, javascript', '例：js, JS, javascript', '例如：js, JS, javascript'],
     },
+    tagInContext: {
+      headerNew: ['Create New Tag', '新しいタグを作成', '创建新标签'],
+      headerExisting: ['Tag Details', 'タグ詳細', '标签详情'],
+      newTagDescription: [
+        'This tag does not exist yet. Confirm to create it.',
+        'このタグはまだ存在しません。作成するには確認してください。',
+        '此标签尚不存在。确认以创建它。'
+      ],
+      noAlternatives: ['None', 'なし', '无'],
+      question: ['question', '問題', '问题'],
+      paper: ['paper', '問題冊子', '试卷'],
+      removeFrom: ['Remove from {{context}}', '{{context}}から削除', '从{{context}}中删除'],
+    },
     bookmarkEdit: {
       header: [
         'Bookmark Edit: {{bmName}}',

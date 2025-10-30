@@ -1,4 +1,4 @@
-import { Question, TagSearchResult } from "@quizzy/base/types";
+import { Question, TagSearchResult, Tag } from "@quizzy/base/types";
 import {
   Button, Input, useCallbackRef, VStack,
   Wrap
@@ -13,7 +13,8 @@ import {
   DialogRoot, DialogBody, DialogCloseTrigger,
   DialogContent, DialogFooter, DialogHeader
 } from "./ui/dialog";
-import { DialogRootNoChildrenProps, UseDialogYieldedRootProps } from "@/utils/chakra";
+import { DialogRootNoChildrenProps, UseDialogYieldedRootProps, useDialog } from "@/utils/chakra";
+import TagInContextDialog, { TagInContextDialogData, TagInContextDialogResult } from "@/dialogs/TagInContextDialog";
 
 export type TagSelectState = {
   object: Readonly<{
@@ -22,6 +23,7 @@ export type TagSelectState = {
   }>;
   tagIndex?: number,
   isCategory?: boolean,
+  contextType?: 'question' | 'paper',
 };
 
 const _d = (): TagSearchResult => ({
@@ -38,9 +40,10 @@ export const TagSelectDialog = (
     ...dialogProps
   } = props;
 
-  const { object, tagIndex, isCategory } = data ?? {};
+  const { object, tagIndex, isCategory, contextType = 'question' } = data ?? {};
 
   const { t } = useTranslation();
+  const tagInContextDialog = useDialog<TagInContextDialogData, TagInContextDialogResult>(TagInContextDialog);
 
   const [currentTag, setCurrentTag] = useState('');
   const [origArr, setOrigArr] = useState<readonly string[]>([]);
@@ -71,9 +74,40 @@ export const TagSelectDialog = (
   }, [open, object, tagIndex, isCategory]);
 
   const submitTag = useCallback(async () => {
-    // Create or get tag entity
-    const tag = await Quizzy.getTag(currentTag);
-    const tagId = tag.id;
+    if (!currentTag.trim()) {
+      return;
+    }
+    
+    // Check if tag already exists
+    const existingTag = await Quizzy.getTag(currentTag).catch(() => null);
+    
+    let finalTag: Tag | null = existingTag;
+    
+    // If tag doesn't exist, show dialog to confirm creation
+    if (!existingTag) {
+      const result = await tagInContextDialog.open({
+        initialName: currentTag,
+        contextType,
+      });
+      
+      if (result.action === 'cancel') {
+        return; // User cancelled
+      }
+      
+      if (result.action === 'add') {
+        // Create the new tag with user's input
+        finalTag = await Quizzy.getTag({
+          mainName: result.mainName,
+          alternatives: result.alternatives,
+        });
+      }
+    }
+    
+    if (!finalTag) {
+      return;
+    }
+    
+    const tagId = finalTag.id;
     
     // Update using tag IDs (new system)
     const resultObject = {
@@ -82,7 +116,7 @@ export const TagSelectDialog = (
         : getChangedArray(origArr, tagIndex, tagId)
     };
     submit(resultObject);
-  }, [submit, currentTag, isCategory, tagIndex, origArr]);
+  }, [submit, currentTag, isCategory, tagIndex, origArr, contextType, tagInContextDialog]);
 
   // display list
   const [listExpanded, setListExpanded] = useState(false);
@@ -117,29 +151,32 @@ export const TagSelectDialog = (
       }}
     />;
 
-  return <DialogRoot closeOnInteractOutside={false}
-    {...dialogProps}>
-    <DialogContent>
-      <DialogCloseTrigger />
-      <DialogHeader>{t('dialog.tagSelect.header')}</DialogHeader>
-      <DialogBody as={VStack} alignItems='stretch'>
-        <Input value={currentTag} onChange={(e) => {
-          setCurrentTag(e.target.value);
-          debouncedSearch.current?.(e.target.value);
-        }} />
-        {listExpanded && <Wrap>
-          {getRenderedTags(tagSearch.questionTags, true)}
-          {getRenderedTags(tagSearch.question)}
-          {getRenderedTags(tagSearch.paperTags, true, true)}
-          {getRenderedTags(tagSearch.paper, false, true)}
-        </Wrap>}
-      </DialogBody>
-      <DialogFooter justifyContent='space-between'>
-        <Button colorPalette='red' onClick={() => submit({})}>{t('common.btn.cancel')}</Button>
-        <Button colorPalette='purple' onClick={submitTag}>{t('common.btn.save')}</Button>
-      </DialogFooter>
-    </DialogContent>
-  </DialogRoot>;
+  return <>
+    <DialogRoot closeOnInteractOutside={false}
+      {...dialogProps}>
+      <DialogContent>
+        <DialogCloseTrigger />
+        <DialogHeader>{t('dialog.tagSelect.header')}</DialogHeader>
+        <DialogBody as={VStack} alignItems='stretch'>
+          <Input value={currentTag} onChange={(e) => {
+            setCurrentTag(e.target.value);
+            debouncedSearch.current?.(e.target.value);
+          }} />
+          {listExpanded && <Wrap>
+            {getRenderedTags(tagSearch.questionTags, true)}
+            {getRenderedTags(tagSearch.question)}
+            {getRenderedTags(tagSearch.paperTags, true, true)}
+            {getRenderedTags(tagSearch.paper, false, true)}
+          </Wrap>}
+        </DialogBody>
+        <DialogFooter justifyContent='space-between'>
+          <Button colorPalette='red' onClick={() => submit({})}>{t('common.btn.cancel')}</Button>
+          <Button colorPalette='purple' onClick={submitTag}>{t('common.btn.save')}</Button>
+        </DialogFooter>
+      </DialogContent>
+    </DialogRoot>
+    <tagInContextDialog.Root />
+  </>;
 };
 
 export default TagSelectDialog;
