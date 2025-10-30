@@ -96,8 +96,10 @@ type Question = BaseQuestion & (
 type BaseQuestion = {
   id: ID;                      // Unique identifier
   name?: string;               // Serial/reference name
-  tags?: string[];             // Knowledge point tags
-  categories?: string[];       // Syllabus categories
+  tags?: string[];             // Knowledge point tags (deprecated, use tagIds)
+  categories?: string[];       // Syllabus categories (deprecated, use categoryIds)
+  tagIds?: ID[];               // Tag IDs (v6+)
+  categoryIds?: ID[];          // Category IDs (v6+)
   title?: MarkdownString;      // Question title
   content: MarkdownString;     // Question content (supports Markdown)
   solution?: MarkdownString;   // Solution explanation
@@ -148,8 +150,10 @@ type QuizPaper = {
   name: string;                // Display name
   img?: string;                // Cover image URL
   desc?: MarkdownString;       // Description
-  tags?: string[];             // Knowledge point tags
-  categories?: string[];       // Syllabus categories
+  tags?: string[];             // Knowledge point tags (deprecated, use tagIds)
+  categories?: string[];       // Syllabus categories (deprecated, use categoryIds)
+  tagIds?: ID[];               // Tag IDs (v6+)
+  categoryIds?: ID[];          // Category IDs (v6+)
   questions: ID[];             // Question IDs in order
   weights?: Record<ID, number>;// Question weights for scoring
   duration?: number;           // Time limit in milliseconds
@@ -174,11 +178,13 @@ type Tag = {
 };
 ```
 
-**Current Implementation Issues:**
-- Tags in questions/papers are stored as raw strings
-- No referential integrity between tag strings and Tag entities
-- Difficult to rename or merge tags
-- Inconsistent tag usage across questions/papers
+**Tag System (Database v6+):**
+- ✅ Questions and papers now reference tags by ID (`tagIds`, `categoryIds`)
+- ✅ Referential integrity maintained through Tag entities
+- ✅ Easy to rename or merge tags (changes apply everywhere)
+- ✅ Consistent tag usage across all content
+- ✅ Automatic migration from string-based to ID-based system
+- See `TAG_MIGRATION_GUIDE.md` for migration details
 
 #### 4. QuizRecord
 Tracks an ongoing quiz session.
@@ -332,17 +338,24 @@ type SearchIndexed = {
 
 The system uses IndexedDB with the following object stores:
 
-**Database Version: 5**
+**Database Version: 6** (Current)
+
+#### Version History
+- **v6**: Added `tagIds` and `categoryIds` indexes for ID-based tag system
+- **v5**: Added version conflict tracking
+- **v4**: Added general cache store
+- **v1**: Added tags, bookmarks, and bookmark types
+- **v0**: Initial schema
 
 #### Object Stores
 
 1. **papers** - Quiz papers
    - Key: `id`
-   - Indexes: `deleted`, `lastUpdate`, `name`, `tags` (multi-entry), `categories` (multi-entry)
+   - Indexes: `deleted`, `lastUpdate`, `name`, `tags` (multi-entry, deprecated), `categories` (multi-entry, deprecated), `tagIds` (multi-entry, v6+), `categoryIds` (multi-entry, v6+)
 
 2. **questions** - Questions
    - Key: `id`
-   - Indexes: `deleted`, `lastUpdate`, `name`, `tags` (multi-entry), `categories` (multi-entry)
+   - Indexes: `deleted`, `lastUpdate`, `name`, `tags` (multi-entry, deprecated), `categories` (multi-entry, deprecated), `tagIds` (multi-entry, v6+), `categoryIds` (multi-entry, v6+)
 
 3. **records** - Quiz records
    - Key: `id`
