@@ -143,6 +143,7 @@ export const langRes: LanguageResource = {
     results: ['Results', '結果', '结果'],
     stats: ['Stats', '統計データ', '统计数据'],
     edit: ['Explore', 'クイズ一覧', '浏览试卷与试题'],
+    tags: ['Tags', 'タグ', '标签'],
     settings: ['Settings', '設定', '设置'],
   },
 

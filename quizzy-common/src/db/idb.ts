@@ -586,8 +586,70 @@ export class IDBController extends IDBCore implements QuizzyController {
   }
 
   async deleteTag(id: ID) {
+    // Soft delete the tag
+    await this._delete(STORE_KEY_TAGS, id, true);
+    
+    // Remove the tag ID from all questions
+    const txQuestions = this.db.transaction(STORE_KEY_QUESTIONS, 'readwrite');
+    const questions = await txQuestions.store.getAll();
+    let questionsUpdated = 0;
+    
+    for (const q of questions) {
+      let updated = false;
+      
+      // Remove from tagIds
+      if (q.tagIds && q.tagIds.includes(id)) {
+        q.tagIds = q.tagIds.filter((tagId: ID) => tagId !== id);
+        updated = true;
+      }
+      
+      // Remove from categoryIds
+      if (q.categoryIds && q.categoryIds.includes(id)) {
+        q.categoryIds = q.categoryIds.filter((catId: ID) => catId !== id);
+        updated = true;
+      }
+      
+      if (updated) {
+        q.lastUpdate = Date.now();
+        await txQuestions.store.put(q);
+        questionsUpdated++;
+      }
+    }
+    await txQuestions.done;
+    
+    // Remove the tag ID from all papers
+    const txPapers = this.db.transaction(STORE_KEY_PAPERS, 'readwrite');
+    const papers = await txPapers.store.getAll();
+    let papersUpdated = 0;
+    
+    for (const p of papers) {
+      let updated = false;
+      
+      // Remove from tagIds
+      if (p.tagIds && p.tagIds.includes(id)) {
+        p.tagIds = p.tagIds.filter((tagId: ID) => tagId !== id);
+        updated = true;
+      }
+      
+      // Remove from categoryIds
+      if (p.categoryIds && p.categoryIds.includes(id)) {
+        p.categoryIds = p.categoryIds.filter((catId: ID) => catId !== id);
+        updated = true;
+      }
+      
+      if (updated) {
+        p.lastUpdate = Date.now();
+        await txPapers.store.put(p);
+        papersUpdated++;
+      }
+    }
+    await txPapers.done;
+    
+    // Invalidate search caches to rebuild without deleted tag
     await this._invalidateCache('trie');
-    return await this._delete(STORE_KEY_TAGS, id, true);
+    await this._invalidateCacheByItem();
+    
+    return true;
   }
 
   async mergeTags(ids: ID[]) {
@@ -601,6 +663,83 @@ export class IDBController extends IDBCore implements QuizzyController {
     await tx.store.put(mainTag);
     await Promise.all(otherTags.map(t => tx.store.put(t)));
     await tx.done;
+    
+    // Get IDs of tags being merged (excluding the main tag)
+    const mergedTagIds = otherTags.map(t => t.id);
+    const mainTagId = mainTag.id;
+    
+    // Update all questions that reference the merged tags
+    const txQuestions = this.db.transaction(STORE_KEY_QUESTIONS, 'readwrite');
+    const questions = await txQuestions.store.getAll();
+    let questionsUpdated = 0;
+    
+    for (const q of questions) {
+      let updated = false;
+      
+      // Update tagIds
+      if (q.tagIds && q.tagIds.some((id: ID) => mergedTagIds.includes(id))) {
+        const newTagIds = new Set(q.tagIds.map((id: ID) =>
+          mergedTagIds.includes(id) ? mainTagId : id
+        ));
+        q.tagIds = Array.from(newTagIds);
+        updated = true;
+      }
+      
+      // Update categoryIds
+      if (q.categoryIds && q.categoryIds.some((id: ID) => mergedTagIds.includes(id))) {
+        const newCategoryIds = new Set(q.categoryIds.map((id: ID) =>
+          mergedTagIds.includes(id) ? mainTagId : id
+        ));
+        q.categoryIds = Array.from(newCategoryIds);
+        updated = true;
+      }
+      
+      if (updated) {
+        q.lastUpdate = Date.now();
+        await txQuestions.store.put(q);
+        questionsUpdated++;
+      }
+    }
+    await txQuestions.done;
+    
+    // Update all papers that reference the merged tags
+    const txPapers = this.db.transaction(STORE_KEY_PAPERS, 'readwrite');
+    const papers = await txPapers.store.getAll();
+    let papersUpdated = 0;
+    
+    for (const p of papers) {
+      let updated = false;
+      
+      // Update tagIds
+      if (p.tagIds && p.tagIds.some((id: ID) => mergedTagIds.includes(id))) {
+        const newTagIds = new Set(p.tagIds.map((id: ID) =>
+          mergedTagIds.includes(id) ? mainTagId : id
+        ));
+        p.tagIds = Array.from(newTagIds);
+        updated = true;
+      }
+      
+      // Update categoryIds
+      if (p.categoryIds && p.categoryIds.some((id: ID) => mergedTagIds.includes(id))) {
+        const newCategoryIds = new Set(p.categoryIds.map((id: ID) =>
+          mergedTagIds.includes(id) ? mainTagId : id
+        ));
+        p.categoryIds = Array.from(newCategoryIds);
+        updated = true;
+      }
+      
+      if (updated) {
+        p.lastUpdate = Date.now();
+        await txPapers.store.put(p);
+        papersUpdated++;
+      }
+    }
+    await txPapers.done;
+    
+    // Invalidate search caches to rebuild with merged tags
+    await this._invalidateCache('trie');
+    await this._invalidateCacheByItem();
+    
     return mainTag.id;
   }
 
