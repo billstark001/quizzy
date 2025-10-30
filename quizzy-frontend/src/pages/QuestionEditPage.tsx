@@ -12,6 +12,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import BookmarkIcon from "@/components/bookmark/BookmarkIcon";
 import { useDialog } from "@/utils/chakra";
+import ExportDialog from "@/dialogs/ExportDialog";
+import { useQuestions } from "@/data/questions";
 
 const RECORD_KEY = 'edit:question';
 
@@ -125,6 +127,10 @@ export const QuestionEditPage = (props: { question?: string }) => {
   // preview
 
   const dPreview = useDialog<Question | undefined, any>(QuestionPreviewDialog);
+  
+  // export
+  const [showExportDialog, setShowExportDialog] = useState(false);
+  const questions = useQuestions();
 
   // render
 
@@ -145,6 +151,7 @@ export const QuestionEditPage = (props: { question?: string }) => {
         <Button onClick={() => {
           dPreview.open(editorQuestion.fakeValue ?? editorQuestion.value);
         }}>{t('page.edit.btn.preview')}</Button>
+        <Button onClick={() => setShowExportDialog(true)}>{t('page.edit.btn.export')}</Button>
         <Box flex='1' p={1} />
         <BookmarkIcon
           itemId={editorQuestion.fakeValue?.id ?? editorQuestion.value?.id ?? ''}
@@ -160,5 +167,17 @@ export const QuestionEditPage = (props: { question?: string }) => {
     </VStack>
 
     <dPreview.Root />
+
+    <ExportDialog
+      open={showExportDialog}
+      entityType="question"
+      onExport={(format, options) => {
+        if (questionId) {
+          questions.exportQuestion(questionId, format, options);
+        }
+        setShowExportDialog(false);
+      }}
+      onCancel={() => setShowExportDialog(false)}
+    />
   </>;
 };

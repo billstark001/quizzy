@@ -19,6 +19,8 @@ import { defaultToaster } from "@/components/ui/toaster";
 import BaseQuestionPanelWithBookmark from "@/components/question-display/BaseQuestionPanelWithBookmark";
 import BookmarkIcon from "@/components/bookmark/BookmarkIcon";
 import { useDialog } from "@/utils/chakra";
+import ExportDialog from "@/dialogs/ExportDialog";
+import { usePapers } from "@/data/papers";
 
 
 type EditState = Readonly<{
@@ -262,6 +264,10 @@ export const PaperEditPage = (props: { paper?: string }) => {
   const dPreview = useDialog<Question | undefined, any>(QuestionPreviewDialog);
   const dSelect = useDialog();
 
+  // export
+  const [showExportDialog, setShowExportDialog] = useState(false);
+  const papers = usePapers();
+
   // question edit
   const questionMap = useRef<Record<number, ID>>({});
 
@@ -303,6 +309,7 @@ export const PaperEditPage = (props: { paper?: string }) => {
         <Button onClick={() => {
           dPreview.open(editorQuestion.fakeValue ?? editorQuestion.value);
         }}>{t('page.edit.btn.preview')}</Button>
+        <Button onClick={() => setShowExportDialog(true)}>{t('page.edit.btn.export')}</Button>
         <Box flex='1' p={1} />
         <BookmarkIcon
           itemId={editorPaper.fakeValue?.id ?? editorPaper.value?.id ?? ''}
@@ -351,6 +358,18 @@ export const PaperEditPage = (props: { paper?: string }) => {
     </QuestionSelectionDialog>
 
     <dPreview.Root />
+
+    <ExportDialog
+      open={showExportDialog}
+      entityType="paper"
+      onExport={(format, options) => {
+        if (paperId) {
+          papers.exportPaper(paperId, format, options);
+        }
+        setShowExportDialog(false);
+      }}
+      onCancel={() => setShowExportDialog(false)}
+    />
 
   </>;
 };

@@ -7,6 +7,7 @@ import { QuizResult } from "./quiz-result";
 import { Stat, StatBase } from "./stats";
 import { Tag, TagBase } from "./tag";
 import { ID, SearchResult, VersionConflictRecord } from "./technical";
+import { ExportOptions, PaperExportResult, QuestionExportResult, ImportCompleteOptions } from "./export-options";
 
 export type StartQuizOptions = {
   currentTime?: number;
@@ -50,6 +51,7 @@ export interface QuizzyController {
 
   importData(data: QuizzyData): Promise<void>;
   exportData(): Promise<QuizzyData>;
+  resetDatabase(): Promise<number>;
 
   // bookmark types
 
@@ -81,7 +83,7 @@ export interface QuizzyController {
 
   importQuestions(...questions: Question[]): Promise<ID[]>;
   importQuizPapers(...papers: QuizPaper[]): Promise<ID[]>;
-  importCompleteQuizPapers(...papers: CompleteQuizPaperDraft[]): Promise<ID[]>;
+  importCompleteQuizPapers(papers: CompleteQuizPaperDraft[], options?: ImportCompleteOptions): Promise<ID[]>;
 
   getQuizPaper(id: ID): Promise<QuizPaper | undefined>;
   getQuizPaperNames(...ids: ID[]): Promise<(string | undefined)[]>;
@@ -102,6 +104,10 @@ export interface QuizzyController {
   findQuizPaperByTags(query: string, count?: number, page?: number): Promise<SearchResult<QuizPaper>>;
   listQuestionByBookmark(id: ID): Promise<Question[]>;
   listQuizPaperByBookmark(id: ID): Promise<QuizPaper[]>;
+  
+  // export functions
+  exportQuizPaper(id: ID, options: ExportOptions): Promise<PaperExportResult>;
+  exportQuestion(id: ID, options: ExportOptions): Promise<QuestionExportResult>;
 
   // tags
 

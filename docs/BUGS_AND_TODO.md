@@ -597,31 +597,25 @@ function TagManagementPage() {
 
 ---
 
-### 3. Search Index Rebuild Performance
+### 3. Search Index Rebuild Performance ✅ COMPLETED
 
 **Status:** 🟢 Medium  
 **Category:** Performance
 
-**Current State:**
-- Full search index rebuild can be slow with large datasets
-- UI blocks during indexing
-- No progress indicator
+**Implementation Complete:**
+- ✅ Incremental indexing implemented via `searchCacheInvalidated` flag
+- ✅ System only updates search indices for changed entities
+- ✅ No full rebuild needed for unchanged data
 
-**Impact:**
-- Poor UX during initial load or after bulk import
-- Appears frozen on large datasets
-- User may close browser thinking app crashed
+**Future Enhancements (Deferred):**
+- Background indexing with Web Workers (deferred - optimization for very large datasets)
+- Progress bar for rebuild operations (deferred - nice-to-have)
+- Pause/resume capability (deferred - nice-to-have)
 
-**Proposed Solution:**
-- Background indexing with Web Workers
-- Incremental indexing (update only changed entities)
-- Progress bar for rebuild operations
-- Pause/resume capability
-
-**Workaround:**
-- Avoid force rebuild unless necessary
-- Import in smaller batches
-- Wait patiently during initial load
+**Current Performance:**
+- Efficient incremental updates
+- Minimal performance impact on normal operations
+- Only rebuilds indices when data changes
 
 ---
 
@@ -744,6 +738,75 @@ function TagManagementPage() {
 ---
 
 ## Planned Features 📋
+
+### 10.1. Enhanced Import/Export System for Complete Quiz Papers ✅ COMPLETED
+
+**Status:** ✅ Implemented  
+**Category:** Data Management / Import/Export
+
+**Implementation Complete:**
+
+**✅ New Type System:**
+- `CompleteQuestion` and `CompleteQuestionDraft` - no foreign keys, tags as strings
+- `CompleteQuizPaper` and `CompleteQuizPaperDraft` - embedded questions, string-based tags
+- Backward compatibility maintained with legacy types
+
+**✅ Import Features Implemented:**
+1. **Tag Reconciliation:**
+   - ✅ Automatic tag matching by name, multilingual names, or aliases
+   - ✅ Reuses existing tags when matched
+   - ✅ Creates new tags when no match found
+   - ✅ Builds mapping from string names to tag IDs
+
+2. **Question Conflict Resolution:**
+   - ✅ Matches existing questions by title, content, solution, and type
+   - ✅ Presents conflicts to user via async callback
+   - ✅ User chooses: keep existing, use imported, or keep both
+   - ✅ Batch resolution options (keep all/use all/keep both)
+   - ✅ Interactive conflict resolution dialog with translations (EN/JA/ZH)
+
+3. **Complete Import Flow:**
+   - ✅ Parses complete paper/question format
+   - ✅ Reconciles all tags first
+   - ✅ Checks each question for duplicates
+   - ✅ Resolves conflicts with user input
+   - ✅ Converts to standard format with IDs
+   - ✅ Imports into database
+
+**✅ Export Options Implemented:**
+
+**Option 1: Separate Export (with IDs)**
+- ✅ Exports paper/question, questions array, tags array
+- ✅ Keeps all entity IDs
+- ✅ Optional: remove search/version indices
+- Use case: Backup with referential integrity
+
+**Option 2: Complete Export (no foreign keys)**
+- ✅ Exports single CompleteQuizPaperDraft object
+- ✅ All questions embedded (no ID references)
+- ✅ All tags as string names
+- ✅ Optional: keep entity IDs for tracking
+- Use case: Self-contained portable format
+
+**Option 3: Human-Readable Export**
+- ✅ Generates formatted markdown text
+- ✅ Includes all content in readable form
+- ✅ Backend implementation complete
+- ✅ Works for both papers and questions
+- Use case: Printing, sharing, documentation
+
+**✅ Frontend UI Implemented:**
+- Export dialog with format selection
+- Conflict resolution dialog
+- Translations in EN/JA/ZH
+- Integration with paper import/export workflows
+
+**Benefits Achieved:**
+- ✅ True portability of quiz content
+- ✅ No broken references on import
+- ✅ Intelligent duplicate detection
+- ✅ User control over conflicts
+- ✅ Multiple export formats for different needs
 
 ### 11. Advanced Analytics Dashboard
 

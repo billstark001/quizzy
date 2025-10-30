@@ -8,3 +8,4 @@ export * from './stats';
 export * from './bookmark';
 export * from './tag';
 export * from './technical';
+export * from './export-options';
