@@ -1,6 +1,7 @@
 import {
   useBreakpointValue,
-  VStack
+  VStack,
+  Button
 } from "@chakra-ui/react";
 import { useCallback, useState } from "react";
 import { QuizzyRaw } from "@/data";
@@ -9,6 +10,9 @@ import { SearchResult } from "@quizzy/base/types";
 import Pagination from "@/components/Pagination";
 import { SearchBox } from "@/components/SearchBox";
 import QuestionCard from "@/components/item-brief/QuestionCard";
+import PageToolbar from "@/components/PageToolbar";
+import { useTranslation } from "react-i18next";
+import { useQuestions } from "@/data/questions";
 
 
 const fetchSearchResult = async (searchTerm?: string, page?: number): Promise<SearchResult<Question> | undefined> => {
@@ -26,6 +30,8 @@ const fetchSearchResult = async (searchTerm?: string, page?: number): Promise<Se
 export const QuestionPage = ({ preview }: { preview?: (q: Question | undefined) => undefined }) => {
   const [searchResultFrozen, setSearchResultFrozen] = useState<SearchResult<Question>>();
   const [currentPage, setCurrentPage] = useState(0);
+  const { t } = useTranslation();
+  const questions = useQuestions();
 
   const setPage = useCallback(async (page: number) => {
     setCurrentPage(page);
@@ -40,6 +46,12 @@ export const QuestionPage = ({ preview }: { preview?: (q: Question | undefined) 
 
   return <>
     <VStack alignItems='stretch'>
+      <PageToolbar>
+        <Button onClick={questions.importQuestion}>
+          {t('page.edit.btn.importQuestion')}
+        </Button>
+      </PageToolbar>
+      
       <SearchBox
         onFreezeResult={setSearchResultFrozen}
         onSelectItem={preview}

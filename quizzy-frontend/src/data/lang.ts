@@ -377,9 +377,13 @@ export const langRes: LanguageResource = {
         saveDraft: ["Save Draft", "下書きを保存", "保存草稿"],
         delete: ["Delete", "削除", "删除"],
         preview: ["Preview", "プレビュー", "预览"],
+        export: ["Export", "エクスポート", "导出"],
         
         create: ["New...", "新規作成", "新建"],
         upload: ["Upload", "アップロード", "上传"],
+        importPaper: ["Import Paper", "試卷をインポート", "导入试卷"],
+        importCompletePaper: ["Import Complete Paper", "完全な試卷をインポート", "导入完整试卷"],
+        importQuestion: ["Import Question", "問題をインポート", "导入问题"],
 
         searchByTags: ['Search by Tags', 'タグで検索', '按标签搜索'],
         searchByCategories: ['Search by Categories', '分類で検索', '按分类搜索'],

@@ -65,7 +65,7 @@ export const usePapers = () => {
       onConflict: async (conflicts) => {
         return new Promise<ConflictResolutionDecision[]>((resolve) => {
           setPendingConflicts(conflicts);
-          setConflictResolver(() => resolve);
+          setConflictResolver(() => (decisions: ConflictResolutionDecision[]) => resolve(decisions));
           setShowConflictDialog(true);
         });
       }
@@ -97,6 +97,15 @@ export const usePapers = () => {
     setPendingConflicts([]);
   };
   
+  // Import paper from JSON
+  const importPaper = withHandler(async () => {
+    const f = await uploadFile();
+    const text = await f.text();
+    const json = JSON.parse(text);
+    await QuizzyRaw.importQuizPapers(json);
+    await c.invalidateQueries({ queryKey: ['papers'] });
+  });
+
   // Export paper
   const exportPaper = async (
     paperId: string,
@@ -142,6 +151,7 @@ export const usePapers = () => {
     edit,
     create,
     upload,
+    importPaper,
     exportPaper,
     // Conflict resolution dialog state
     showConflictDialog,
