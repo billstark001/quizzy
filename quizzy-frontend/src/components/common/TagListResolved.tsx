@@ -36,10 +36,10 @@ export const TagListResolved = (props: TagListResolvedProps) => {
   // Wrap onClick to pass tagId instead of tag name
   const handleClick = useMemo(() => {
     if (!onClick) return undefined;
-    return (_e: any, tagName: string, index: number) => {
+    return (_e: any, _: string, index: number) => {
       const tagId = tagIds?.[index];
       if (tagId) {
-        onClick(tagId as any, tagName, index);
+        onClick(_e, tagId as any, index);
       }
     };
   }, [onClick, tagIds]);
