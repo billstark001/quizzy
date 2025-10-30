@@ -110,9 +110,20 @@ quizzy/
 
 Comprehensive documentation is available in the `docs/` directory:
 
-- **[ARCHITECTURE.md](docs/ARCHITECTURE.md)** - Detailed system architecture, data structures, and technical implementation for architects and maintainers
-- **[AUTHORING_GUIDE.md](docs/AUTHORING_GUIDE.md)** - Complete guide for creating questions and quiz papers for content authors
-- **[BUGS_AND_TODO.md](docs/BUGS_AND_TODO.md)** - Known issues, limitations, and planned improvements including the tag system migration plan
+### For All Users
+- **[README.md](docs/README.md)** - Documentation overview and navigation guide
+- **[AUTHORING_GUIDE.md](docs/AUTHORING_GUIDE.md)** - Complete guide for creating questions and quiz papers
+
+### For Developers & Contributors
+- **[ARCHITECTURE.md](docs/ARCHITECTURE.md)** - Detailed system architecture and technical implementation
+- **[BUGS_AND_TODO.md](docs/BUGS_AND_TODO.md)** - Known issues, limitations, and general roadmap
+- **[MOBILE_PWA_ROADMAP.md](docs/MOBILE_PWA_ROADMAP.md)** - Mobile web, PWA, and offline access roadmap
+- **[CLOUD_SYNC_DESIGN.md](docs/CLOUD_SYNC_DESIGN.md)** - Cloud synchronization architecture and design
+
+### Specialized Guides
+- **[TAG_SYSTEM_FEATURES.md](docs/TAG_SYSTEM_FEATURES.md)** - Tag management and features
+- **[TAG_MIGRATION_GUIDE.md](docs/TAG_MIGRATION_GUIDE.md)** - Tag system migration documentation
+- **[EXPORT_IMPORT_GUIDE.md](docs/EXPORT_IMPORT_GUIDE.md)** - Data export and import guide
 
 ## Usage
 
@@ -217,24 +228,34 @@ Contributions are welcome! Please:
 
 ## Roadmap
 
-See [BUGS_AND_TODO.md](docs/BUGS_AND_TODO.md) for detailed plans. Key items:
+See our comprehensive roadmap documents for detailed implementation plans:
 
-- **High Priority**: Migrate tag system from strings to IDs for better data integrity
-- **Planned**: Server-side synchronization for multi-device support
-- **Planned**: Mobile applications (React Native)
-- **Planned**: Advanced analytics dashboard
-- **Planned**: Collaborative authoring features
-- **Planned**: AI-assisted content generation
+- **[MOBILE_PWA_ROADMAP.md](docs/MOBILE_PWA_ROADMAP.md)** - Mobile web, PWA, and offline access implementation plan
+- **[CLOUD_SYNC_DESIGN.md](docs/CLOUD_SYNC_DESIGN.md)** - Cloud synchronization architecture and design
+- **[BUGS_AND_TODO.md](docs/BUGS_AND_TODO.md)** - Known issues and general roadmap
+
+### Completed Features ✅
+- ✅ Tag system migration (string-based → ID-based for better data integrity)
+- ✅ Enhanced import/export system with conflict resolution
+- ✅ Search index optimization with incremental updates
+
+### In Planning 📋
+- 📋 Mobile web optimization and responsive design
+- 📋 Progressive Web App (PWA) with offline capabilities
+- 📋 Cloud synchronization for multi-device support
+- 📋 Real-time collaboration features
+- 📋 Advanced analytics dashboard
+- 📋 AI-assisted content generation
 
 ## Known Limitations
 
-- **Local Storage Only**: No built-in cloud sync (manual import/export only)
-- **Single User**: No multi-user or collaboration features yet
-- **Tag System**: Tags currently stored as strings; ID-based system in development
+- **Local Storage Only**: No built-in cloud sync (manual import/export only) - *Cloud sync in design phase*
+- **Mobile Optimization**: Basic responsive design; mobile-first redesign planned
+- **No PWA**: Cannot be installed as app yet - *PWA implementation planned*
 - **No Attachments**: Only text and markdown; images via external URLs only
 - **Browser Storage Limits**: Subject to browser IndexedDB quotas
 
-See [BUGS_AND_TODO.md](docs/BUGS_AND_TODO.md) for complete list and mitigation strategies.
+See [BUGS_AND_TODO.md](docs/BUGS_AND_TODO.md) for complete list and [MOBILE_PWA_ROADMAP.md](docs/MOBILE_PWA_ROADMAP.md) and [CLOUD_SYNC_DESIGN.md](docs/CLOUD_SYNC_DESIGN.md) for planned improvements.
 
 ## License
 
