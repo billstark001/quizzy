@@ -27,12 +27,27 @@ Covers:
 - Detailed data structures for all entities
 - Database schema and IndexedDB operations
 - Search engine implementation (BM25 + Trie)
-- Version control system for data sync
+- **Independent version control module** for conflict resolution
 - State management and caching strategies
 - Performance considerations
 - Security and extensibility
 
 **Target Audience:** Software architects, developers, maintainers, technical contributors
+
+---
+
+🎨 **[UI_IMPROVEMENTS.md](UI_IMPROVEMENTS.md)** - UI/UX enhancements and patterns
+
+Documents:
+- Sidebar enhancements (GitHub link, user menu)
+- About page
+- Improved Records, Results, and Stats pages
+- Loading and empty states
+- Common UI patterns and styling conventions
+- Translation system usage
+- Future UI improvements
+
+**Target Audience:** Frontend developers, UI/UX designers, contributors
 
 ---
 
