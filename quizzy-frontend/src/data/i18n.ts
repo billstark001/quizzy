@@ -2,20 +2,20 @@ import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
 import LanguageDetector from 'i18next-browser-languagedetector';
 
-import langRes from "./lang";
+import { compiledLangRes } from "virtual:i18n-compiled";
 
 // the translations
 // (tip move them in a JSON file and import them,
 // or even better, manage them separated from your code: https://react.i18next.com/guides/multiple-translation-files)
 const resources = {
   en: {
-    translation: langRes.en,
+    translation: compiledLangRes.en,
   },
   ja: {
-    translation: langRes.ja,
+    translation: compiledLangRes.ja,
   },
   zh: {
-    translation: langRes.zh,
+    translation: compiledLangRes.zh,
   },
 } as const;
 
@@ -42,7 +42,7 @@ export const getSystemLanguage = () => {
   const languageDetector = new LanguageDetector();
   languageDetector.init(null, i18n.options.detection);
   const systemLanguage = languageDetector.detect();
-  return  Array.isArray(systemLanguage)
+  return Array.isArray(systemLanguage)
     ? systemLanguage[0]
     : systemLanguage || '';
 };

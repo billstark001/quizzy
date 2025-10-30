@@ -1,4 +1,4 @@
-import './data/lang-entry';
+import './data/i18n.ts';
 import './components/handler';
 
 import React from 'react';

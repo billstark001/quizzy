@@ -1,4 +1,4 @@
-import { LanguageResource, compileLanguageResource } from './lang-model';
+import type { LanguageResource } from './utils';
 
 export const langOrder = Object.freeze(['en', 'ja', 'zh']);
 export const langRes: LanguageResource = {
@@ -473,8 +473,8 @@ export const langRes: LanguageResource = {
             'これにより、問題、問題冊子、クイズ記録、結果、統計、ブックマーク、タグを含むすべてのデータが完全に削除されます。この操作は元に戻せません！本当によろしいですか？',
             '这将永久删除所有数据，包括问题、试卷、测验记录、结果、统计、书签和标签。此操作无法撤消！您确定吗？'
           ],
-          confirmText: ['Type "DELETE ALL" to confirm', '確認するには「すべて削除」と入力してください', '输入"DELETE ALL"以确认'],
-          confirmPlaceholder: ['Type "DELETE ALL"', 'すべて削除', 'DELETE ALL'],
+          confirmText: ['Type "DELETE ALL" to confirm', '確認するには「DELETE ALL」と入力してください', '输入"DELETE ALL"以确认'],
+          confirmPlaceholder: 'DELETE ALL',
         },
       },
       selectLanguage: ['Display Language: ', '表示言語：', '显示语言：'],
@@ -519,5 +519,3 @@ export const langRes: LanguageResource = {
     }
   },
 };
-
-export default compileLanguageResource(langRes, langOrder);

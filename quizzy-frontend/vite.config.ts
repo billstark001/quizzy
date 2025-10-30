@@ -3,6 +3,7 @@ import { resolve } from 'path';
 import react from '@vitejs/plugin-react-swc';
 import tsconfigPaths from 'vite-tsconfig-paths';
 import wasm from "vite-plugin-wasm";
+import i18nCompilePlugin from './lang/vite-plugin-i18n-compile';
 
 const mode = process.env.NODE_ENV;
 if (mode) {
@@ -17,6 +18,11 @@ export default defineConfig({
     // dts({ include: ['lib'] }),
     wasm(),
     tsconfigPaths(),
+    i18nCompilePlugin({
+      langFilePath: '/lang/source.ts',
+      virtualModuleId: 'virtual:i18n-compiled',
+      hmr: true,
+    }),
   ],
   optimizeDeps: {
     exclude: ['jieba-wasm'],
