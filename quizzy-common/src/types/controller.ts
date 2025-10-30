@@ -115,6 +115,19 @@ export interface QuizzyController {
   
   generateTagHint(query: string, count?: number, page?: number): Promise<TagSearchResult>;
   listTagsInPapersAndQuestions(): Promise<TempTagListResult>;
+  
+  // tag migration
+  isTagMigrationCompleted(): Promise<boolean>;
+  getMigrationStatus(): Promise<{
+    completed: boolean;
+    timestamp?: number;
+    result?: any;
+  }>;
+  migrateTagsToIds(): Promise<{
+    questionsUpdated: number;
+    papersUpdated: number;
+    tagsCreated: number;
+  }>;
 
   // records
 

@@ -268,11 +268,19 @@ export const langRes: LanguageResource = {
         deleteUnlinked: ['Delete Unlinked Questions', 'リンクされていない問題を削除', '删除未链接的问题'],
         deleteLogicallyDeleted: ['Delete Logically Deleted Records', '論理削除のデータを徹底的に削除', '删除仅逻辑删除的数据'],
         normalizeQuestions: ['Normalize Questions', '問題を標準化', '问题归一化'],
+        recordAllRecordableTags: ['Record All Tags', 'すべてのタグを記録', '记录所有标签'],
+        migrateTagsToIds: ['Migrate Tags to ID System', 'タグをIDシステムに移行', '将标签迁移到ID系统'],
         importData: ['Import Exported Data', 'エクスポートしたデータをインポート', '导入已导出的数据'],
         exportData: ['Export Data to JSON File', 'JSONファイルにエクスポート', '导出数据到JSON文件'],
       },
       switch: {
         forceRefresh: ['Force Refresh', '全てを更新', '强制更新所有索引'],
+      },
+      text: {
+        tagMigrationCompleted: ['Tag migration completed', 'タグの移行が完了しました', '标签迁移已完成'],
+        questionsUpdated: ['Questions updated', '問題を更新', '问题已更新'],
+        papersUpdated: ['Papers updated', '問題冊子を更新', '试卷已更新'],
+        tagsCreated: ['Tags created', 'タグを作成', '标签已创建'],
       },
       toast: {
         recordsUpdated: [
@@ -284,6 +292,11 @@ export const langRes: LanguageResource = {
           '{{count}} records deleted.',
           '{{count}} 件の削除をしました。', 
           '已删除 {{count}} 个记录。'
+        ],
+        tagMigrationCompleted: [
+          'Tag migration completed: {{questionsUpdated}} questions, {{papersUpdated}} papers updated, {{tagsCreated}} tags created.',
+          'タグの移行が完了しました：{{questionsUpdated}}個の問題、{{papersUpdated}}個の問題冊子を更新し、{{tagsCreated}}個のタグを作成しました。',
+          '标签迁移完成：已更新{{questionsUpdated}}个问题、{{papersUpdated}}个试卷，创建了{{tagsCreated}}个标签。'
         ],
       },
       selectLanguage: ['Display Language: ', '表示言語：', '显示语言：'],

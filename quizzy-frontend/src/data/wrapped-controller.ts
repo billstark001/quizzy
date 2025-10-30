@@ -65,6 +65,11 @@ const keys: Readonly<{[key in keyof QuizzyController]: undefined}> = Object.free
   'generateTagHint': undefined,
   'listTagsInPapersAndQuestions': undefined,
 
+  // tag migration
+  'isTagMigrationCompleted': undefined,
+  'getMigrationStatus': undefined,
+  'migrateTagsToIds': undefined,
+
   // records
 
   'importQuizRecords': undefined,

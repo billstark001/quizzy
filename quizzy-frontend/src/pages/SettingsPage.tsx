@@ -2,7 +2,7 @@ import { withHandler } from "@/components/handler";
 import { downloadFile, uploadFile } from "@/utils/html";
 import { QuizzyRaw } from "@/data";
 import { Box, Button, Separator, HStack, Switch, VStack, Wrap, NativeSelect } from "@chakra-ui/react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { useTranslation } from "react-i18next";
 import i18n, { getSystemLanguage } from "@/data/lang-entry";
@@ -44,6 +44,21 @@ const normalizeQuestions = withHandler(
   _u,
 );
 
+const migrateTagsToIds = withHandler(
+  QuizzyRaw.migrateTagsToIds.bind(QuizzyRaw),
+  {
+    async: true,
+    cache: false,
+    notifySuccess(result: { questionsUpdated: number; papersUpdated: number; tagsCreated: number }) {
+      return i18n.t('page.settings.toast.tagMigrationCompleted', {
+        questionsUpdated: result.questionsUpdated,
+        papersUpdated: result.papersUpdated,
+        tagsCreated: result.tagsCreated,
+      });
+    },
+  },
+);
+
 
 const exportData = withHandler(
   async () => {
@@ -71,6 +86,11 @@ export const SettingsPage = () => {
 
 
   const [force, setForce] = useState(false);
+  const [migrationStatus, setMigrationStatus] = useState<{
+    completed: boolean;
+    timestamp?: number;
+    result?: any;
+  }>({ completed: false });
 
   const langSelectRef = useRef<HTMLSelectElement>(null);
 
@@ -80,6 +100,11 @@ export const SettingsPage = () => {
     tags.recordAllRecordableTags,
     { cache: true }
   );
+
+  // Load migration status on mount
+  useEffect(() => {
+    QuizzyRaw.getMigrationStatus().then(setMigrationStatus);
+  }, []);
 
   return <VStack alignItems='stretch' width='100%'>
     <Wrap>
@@ -109,6 +134,25 @@ export const SettingsPage = () => {
       <Button onClick={recordAllRecordableTags}>
         {t('page.settings.btn.recordAllRecordableTags')}
       </Button>
+    </Wrap>
+    <Separator />
+    <Wrap>
+      <Button 
+        onClick={async () => {
+          await migrateTagsToIds();
+          const status = await QuizzyRaw.getMigrationStatus();
+          setMigrationStatus(status);
+        }}
+        disabled={migrationStatus.completed}
+      >
+        {t('page.settings.btn.migrateTagsToIds')}
+      </Button>
+      {migrationStatus.completed && (
+        <Box color="green.500">
+          {t('page.settings.text.tagMigrationCompleted')}
+          {migrationStatus.result && ` (${t('page.settings.text.questionsUpdated')}: ${migrationStatus.result.questionsUpdated}, ${t('page.settings.text.papersUpdated')}: ${migrationStatus.result.papersUpdated}, ${t('page.settings.text.tagsCreated')}: ${migrationStatus.result.tagsCreated})`}
+        </Box>
+      )}
     </Wrap>
     <Separator />
     <Wrap>
