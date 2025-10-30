@@ -9,7 +9,8 @@ import {
   defaultTag,
   BaseQuestion,
   ExportOptions, PaperExportResult, QuestionExportResult,
-  CompleteQuizPaper, CompleteQuestion, CompleteQuestionDraft
+  CompleteQuizPaper, CompleteQuestion, CompleteQuestionDraft,
+  ImportCompleteOptions, QuestionConflict, ConflictResolutionDecision
 } from "../types";
 import { IDBPDatabase, IDBPTransaction } from "idb";
 import { separatePaperAndQuestions, toCompleted, completeQuestionToQuestion, questionToCompleteQuestion } from "./paper-id";
@@ -1198,9 +1199,10 @@ export class IDBController extends IDBCore implements QuizzyController {
     return questionsToCommit.length;
   }
 
-  // Legacy function for backward compatibility
-  // TODO: Deprecate this in favor of importCompleteQuizPapersNew
-  async importCompleteQuizPapers(...papers: CompleteQuizPaperDraft[]): Promise<string[]> {
+  async importCompleteQuizPapers(
+    papers: CompleteQuizPaperDraft[], 
+    options?: ImportCompleteOptions
+  ): Promise<string[]> {
     const purePapers: QuizPaper[] = [];
     const hasPaperId = (id: ID) => this.db.get(STORE_KEY_PAPERS, id).then(x => x != null && !x.deleted);
     
@@ -1227,7 +1229,10 @@ export class IDBController extends IDBCore implements QuizzyController {
         }
       }
       
-      // Process each question
+      // Process each question and check for conflicts
+      const conflicts: QuestionConflict[] = [];
+      const questionMap = new Map<ID, Question>(); // Map imported question ID to Question
+      
       for (const cq of paper.questions) {
         const qTagIds: ID[] = [];
         const qCategoryIds: ID[] = [];
@@ -1246,7 +1251,81 @@ export class IDBController extends IDBCore implements QuizzyController {
         }
         
         const question = completeQuestionToQuestion(cq, qTagIds, qCategoryIds);
+        
+        // Check for conflicts if callback is provided
+        if (options?.onConflict) {
+          const existingQuestions = await this.listQuestions();
+          for (const existing of existingQuestions) {
+            const titleMatch = (question.title ?? '') === (existing.title ?? '');
+            const contentMatch = question.content === existing.content;
+            const solutionMatch = (question.solution ?? '') === (existing.solution ?? '');
+            const typeMatch = question.type === existing.type;
+            
+            // Consider it a conflict if title, content, solution, and type all match
+            if (titleMatch && contentMatch && solutionMatch && typeMatch) {
+              conflicts.push({
+                existing,
+                imported: cq,
+                matchFields: { titleMatch, contentMatch, solutionMatch, typeMatch }
+              });
+              questionMap.set(cq.id!, question);
+              break; // Only report first conflict per question
+            }
+          }
+        }
+        
         questions.push(question);
+        questionMap.set(cq.id!, question);
+      }
+      
+      // Resolve conflicts if any were found
+      if (conflicts.length > 0 && options?.onConflict) {
+        const decisions = await options.onConflict(conflicts);
+        
+        // Process decisions
+        const decisionsMap = new Map<ID, ConflictResolutionDecision>();
+        for (const decision of decisions) {
+          decisionsMap.set(decision.questionId, decision);
+        }
+        
+        // Apply decisions
+        const finalQuestions: Question[] = [];
+        for (const cq of paper.questions) {
+          const decision = decisionsMap.get(cq.id!);
+          const question = questionMap.get(cq.id!);
+          
+          if (decision) {
+            const conflict = conflicts.find(c => c.imported.id === cq.id);
+            if (conflict) {
+              if (decision.action === 'keep-existing') {
+                // Use existing question ID in the paper
+                const idx = questions.findIndex(q => q.id === question!.id);
+                if (idx >= 0) {
+                  questions[idx] = conflict.existing;
+                }
+              } else if (decision.action === 'use-imported') {
+                // Import the new question (already in questions array)
+                finalQuestions.push(question!);
+              } else if (decision.action === 'keep-both') {
+                // Keep both - existing stays, imported gets new ID
+                finalQuestions.push(question!);
+              }
+            }
+          } else {
+            // No decision for this question, import it
+            if (question) {
+              finalQuestions.push(question);
+            }
+          }
+        }
+        
+        // Update questions array with final decisions
+        for (let i = 0; i < questions.length; i++) {
+          const finalQ = finalQuestions.find(fq => fq.id === questions[i].id);
+          if (finalQ) {
+            questions[i] = finalQ;
+          }
+        }
       }
       
       // Create the pure paper with question IDs
@@ -1441,9 +1520,150 @@ export class IDBController extends IDBCore implements QuizzyController {
         format: 'complete',
         data: completePaper,
       };
+    } else if (options.format === 'text') {
+      // Export as human-readable text
+      const questions = await this.getQuestions(paper.questions);
+      const validQuestions = questions.filter(q => q !== undefined) as Question[];
+      
+      // Get tag names for display
+      const paperTags: string[] = [];
+      const paperCategories: string[] = [];
+      
+      if (paper.tagIds) {
+        for (const tid of paper.tagIds) {
+          const tag = await this.getTagById(tid);
+          if (tag) {
+            paperTags.push(tag.mainName);
+          }
+        }
+      }
+      
+      if (paper.categoryIds) {
+        for (const tid of paper.categoryIds) {
+          const tag = await this.getTagById(tid);
+          if (tag) {
+            paperCategories.push(tag.mainName);
+          }
+        }
+      }
+      
+      let text = `# ${paper.name}\n\n`;
+      
+      if (paper.desc) {
+        text += `${paper.desc}\n\n`;
+      }
+      
+      if (paperTags.length > 0) {
+        text += `**Tags:** ${paperTags.join(', ')}\n`;
+      }
+      
+      if (paperCategories.length > 0) {
+        text += `**Categories:** ${paperCategories.join(', ')}\n`;
+      }
+      
+      if (paper.duration) {
+        const minutes = Math.floor(paper.duration / 60000);
+        text += `**Duration:** ${minutes} minutes\n`;
+      }
+      
+      text += `\n---\n\n`;
+      
+      // Add each question
+      for (let i = 0; i < validQuestions.length; i++) {
+        const q = validQuestions[i];
+        text += await this._questionToText(q, i + 1);
+        text += `\n---\n\n`;
+      }
+      
+      return {
+        format: 'text',
+        data: text,
+      };
     } else {
-      throw new Error(`Export format '${options.format}' not supported in backend. Use frontend for text export.`);
+      throw new Error(`Export format '${options.format}' not supported.`);
     }
+  }
+
+  private async _questionToText(question: Question, index: number): Promise<string> {
+    let text = `## Question ${index}\n\n`;
+    
+    if (question.name) {
+      text += `**ID:** ${question.name}\n`;
+    }
+    
+    // Get tag names
+    const tags: string[] = [];
+    const categories: string[] = [];
+    
+    if (question.tagIds) {
+      for (const tid of question.tagIds) {
+        const tag = await this.getTagById(tid);
+        if (tag) {
+          tags.push(tag.mainName);
+        }
+      }
+    }
+    
+    if (question.categoryIds) {
+      for (const tid of question.categoryIds) {
+        const tag = await this.getTagById(tid);
+        if (tag) {
+          categories.push(tag.mainName);
+        }
+      }
+    }
+    
+    if (tags.length > 0) {
+      text += `**Tags:** ${tags.join(', ')}\n`;
+    }
+    
+    if (categories.length > 0) {
+      text += `**Categories:** ${categories.join(', ')}\n`;
+    }
+    
+    text += `\n`;
+    
+    if (question.title) {
+      text += `### ${question.title}\n\n`;
+    }
+    
+    text += `${question.content}\n\n`;
+    
+    // Add type-specific content
+    if (question.type === 'choice') {
+      const choiceQ = question as any;
+      text += `**Type:** ${choiceQ.multiple ? 'Multiple Choice' : 'Single Choice'}\n\n`;
+      text += `**Options:**\n`;
+      choiceQ.options?.forEach((opt: any, idx: number) => {
+        const marker = opt.shouldChoose ? '✓' : ' ';
+        text += `${idx + 1}. [${marker}] ${opt.content}\n`;
+      });
+      text += `\n`;
+    } else if (question.type === 'blank') {
+      const blankQ = question as any;
+      text += `**Type:** Fill in the Blank\n\n`;
+      text += `**Blanks:**\n`;
+      blankQ.blanks?.forEach((blank: any) => {
+        text += `- ${blank.key}: ${blank.answer || '(no answer provided)'}`;
+        if (blank.answerIsRegExp) {
+          text += ` (regex pattern)`;
+        }
+        text += `\n`;
+      });
+      text += `\n`;
+    } else if (question.type === 'text') {
+      const textQ = question as any;
+      text += `**Type:** Free Text\n\n`;
+      if (textQ.answer) {
+        text += `**Expected Answer:**\n${textQ.answer}\n\n`;
+      }
+    }
+    
+    if (question.solution) {
+      text += `**Solution:**\n${question.solution}\n\n`;
+    }
+    
+    return text;
   }
 
   async exportQuestion(id: ID, options: ExportOptions): Promise<QuestionExportResult> {
@@ -1493,8 +1713,15 @@ export class IDBController extends IDBCore implements QuizzyController {
         format: 'complete',
         data: completeQuestion,
       };
+    } else if (options.format === 'text') {
+      // Export as human-readable text
+      const text = await this._questionToText(question, 1);
+      return {
+        format: 'text',
+        data: text,
+      };
     } else {
-      throw new Error(`Export format '${options.format}' not supported in backend. Use frontend for text export.`);
+      throw new Error(`Export format '${options.format}' not supported.`);
     }
   }
 

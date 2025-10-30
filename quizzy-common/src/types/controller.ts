@@ -7,7 +7,7 @@ import { QuizResult } from "./quiz-result";
 import { Stat, StatBase } from "./stats";
 import { Tag, TagBase } from "./tag";
 import { ID, SearchResult, VersionConflictRecord } from "./technical";
-import { ExportOptions, PaperExportResult, QuestionExportResult } from "./export-options";
+import { ExportOptions, PaperExportResult, QuestionExportResult, ImportCompleteOptions } from "./export-options";
 
 export type StartQuizOptions = {
   currentTime?: number;
@@ -83,7 +83,7 @@ export interface QuizzyController {
 
   importQuestions(...questions: Question[]): Promise<ID[]>;
   importQuizPapers(...papers: QuizPaper[]): Promise<ID[]>;
-  importCompleteQuizPapers(...papers: CompleteQuizPaperDraft[]): Promise<ID[]>;
+  importCompleteQuizPapers(papers: CompleteQuizPaperDraft[], options?: ImportCompleteOptions): Promise<ID[]>;
 
   getQuizPaper(id: ID): Promise<QuizPaper | undefined>;
   getQuizPaperNames(...ids: ID[]): Promise<(string | undefined)[]>;

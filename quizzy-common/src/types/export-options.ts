@@ -62,8 +62,46 @@ export type SeparateQuestionExportResult = {
  */
 export type PaperExportResult = 
   | { format: 'separate'; data: SeparateExportResult }
-  | { format: 'complete'; data: CompleteQuizPaper | CompleteQuizPaperDraft };
+  | { format: 'complete'; data: CompleteQuizPaper | CompleteQuizPaperDraft }
+  | { format: 'text'; data: string };
 
 export type QuestionExportResult = 
   | { format: 'separate'; data: SeparateQuestionExportResult }
-  | { format: 'complete'; data: CompleteQuestion | CompleteQuestionDraft };
+  | { format: 'complete'; data: CompleteQuestion | CompleteQuestionDraft }
+  | { format: 'text'; data: string };
+
+/**
+ * Conflict resolution types for imports
+ */
+export type ConflictResolutionAction = 'keep-existing' | 'use-imported' | 'keep-both';
+
+export type QuestionConflict = {
+  existing: Question;
+  imported: CompleteQuestion;
+  matchFields: {
+    titleMatch: boolean;
+    contentMatch: boolean;
+    solutionMatch: boolean;
+    typeMatch: boolean;
+  };
+};
+
+export type ConflictResolutionDecision = {
+  questionId: ID; // ID of the imported question
+  action: ConflictResolutionAction;
+};
+
+export type ConflictResolutionCallback = (
+  conflicts: QuestionConflict[]
+) => Promise<ConflictResolutionDecision[]>;
+
+/**
+ * Options for importing complete quiz papers
+ */
+export type ImportCompleteOptions = {
+  /**
+   * Callback function to resolve conflicts when duplicate questions are found.
+   * If not provided, duplicates will be imported as new questions.
+   */
+  onConflict?: ConflictResolutionCallback;
+};

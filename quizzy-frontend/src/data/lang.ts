@@ -16,7 +16,9 @@ export const langRes: LanguageResource = {
   },
 
   meta: {
+    paper: ['Quiz Paper', '問題冊子', '试卷'],
     question: {
+      singular: ['Question', '問題', '问题'],
       type: {
         choice: ['Choice', '選択', '选择'],
         blank: ['Blank', '空欄', '填空'],
@@ -156,6 +158,130 @@ export const langRes: LanguageResource = {
       body: {
         
       }
+    },
+    export: {
+      title: [
+        'Export {{type}}',
+        '{{type}}をエクスポート',
+        '导出{{type}}',
+      ],
+      selectFormat: [
+        'Select export format:',
+        'エクスポート形式を選択：',
+        '选择导出格式：',
+      ],
+      format: {
+        separate: {
+          title: [
+            'Separate (with references)',
+            '分離形式（参照を含む）',
+            '分离格式（带引用）',
+          ],
+          description: [
+            'Export as separate arrays with IDs preserved',
+            'IDを保持して別々の配列としてエクスポート',
+            '保留ID作为单独的数组导出',
+          ],
+        },
+        complete: {
+          title: [
+            'Complete (self-contained)',
+            '完全形式（自己完結型）',
+            '完整格式（自包含）',
+          ],
+          description: [
+            'Export as single self-contained object without foreign keys',
+            '外部キーなしの単一の自己完結型オブジェクトとしてエクスポート',
+            '导出为无外键引用的单一自包含对象',
+          ],
+        },
+        text: {
+          title: [
+            'Human-readable text',
+            '人間が読める形式',
+            '人类可读文本',
+          ],
+          description: [
+            'Export as formatted markdown text',
+            'マークダウン形式のテキストとしてエクスポート',
+            '导出为格式化的markdown文本',
+          ],
+        },
+      },
+      options: {
+        keepIds: [
+          'Keep entity IDs',
+          'エンティティIDを保持',
+          '保留实体ID',
+        ],
+        removeIndices: [
+          'Remove database indices',
+          'データベースインデックスを削除',
+          '删除数据库索引',
+        ],
+        keepIdsInComplete: [
+          'Keep IDs in complete format',
+          '完全形式でIDを保持',
+          '在完整格式中保留ID',
+        ],
+      },
+      btnExport: [
+        'Export',
+        'エクスポート',
+        '导出',
+      ],
+    },
+    conflictResolution: {
+      title: [
+        'Resolve Import Conflicts',
+        'インポートの競合を解決',
+        '解决导入冲突',
+      ],
+      message: [
+        'Found {{count}} duplicate question(s). Please choose how to resolve each conflict:',
+        '{{count}}個の重複する問題が見つかりました。各競合の解決方法を選択してください：',
+        '发现{{count}}个重复问题。请选择如何解决每个冲突：',
+      ],
+      conflict: [
+        'Conflict',
+        '競合',
+        '冲突',
+      ],
+      content: [
+        'Content',
+        '内容',
+        '内容',
+      ],
+      keepExisting: [
+        'Keep existing question',
+        '既存の問題を保持',
+        '保留现有问题',
+      ],
+      useImported: [
+        'Use imported question',
+        'インポートした問題を使用',
+        '使用导入的问题',
+      ],
+      keepBoth: [
+        'Keep both questions',
+        '両方の問題を保持',
+        '保留两个问题',
+      ],
+      keepAllExisting: [
+        'Keep All Existing',
+        'すべて既存を保持',
+        '全部保留现有',
+      ],
+      useAllImported: [
+        'Use All Imported',
+        'すべてインポートを使用',
+        '全部使用导入',
+      ],
+      keepAllBoth: [
+        'Keep All Both',
+        'すべて両方を保持',
+        '全部保留两个',
+      ],
     },
   },
 
