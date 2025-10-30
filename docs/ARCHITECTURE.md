@@ -45,9 +45,11 @@ Quizzy is a web-based quiz management system designed for creating, organizing, 
 ### Package Structure
 
 #### 1. quizzy-common (`@quizzy/base`)
+
 Core library providing types, database operations, and utilities.
 
 **Responsibilities:**
+
 - Data structure definitions
 - IndexedDB wrapper and operations
 - Search functionality (BM25 algorithm, Trie-based tag search)
@@ -55,6 +57,7 @@ Core library providing types, database operations, and utilities.
 - Utility functions
 
 **Key Modules:**
+
 - `src/types/` - Type definitions
 - `src/db/` - Database controllers and operations
 - `src/search/` - Search algorithms and indexing
@@ -62,9 +65,11 @@ Core library providing types, database operations, and utilities.
 - `src/version/` - Version control system
 
 #### 2. quizzy-frontend (`@quizzy/frontend`)
+
 React-based web application for user interaction.
 
 **Responsibilities:**
+
 - User interface rendering
 - User interaction handling
 - State management (Jotai)
@@ -72,6 +77,7 @@ React-based web application for user interaction.
 - UI components (Chakra UI)
 
 **Key Modules:**
+
 - `src/pages/` - Page components
 - `src/components/` - Reusable UI components
 - `src/dialogs/` - Modal dialogs
@@ -84,6 +90,7 @@ React-based web application for user interaction.
 ### Core Entities
 
 #### 1. Question
+
 Represents an individual quiz question.
 
 ```typescript
@@ -142,6 +149,7 @@ type TextQuestion = {
 ```
 
 #### 2. QuizPaper
+
 A collection of questions forming a complete quiz.
 
 ```typescript
@@ -164,6 +172,7 @@ type QuizPaper = {
 ```
 
 #### 3. Tag
+
 Tags for organizing questions and papers by knowledge points.
 
 ```typescript
@@ -179,6 +188,7 @@ type Tag = {
 ```
 
 **Tag System (Database v6+):**
+
 - ✅ Questions and papers now reference tags by ID (`tagIds`, `categoryIds`)
 - ✅ Referential integrity maintained through Tag entities
 - ✅ Easy to rename or merge tags (changes apply everywhere)
@@ -187,6 +197,7 @@ type Tag = {
 - See `TAG_MIGRATION_GUIDE.md` for migration details
 
 #### 4. QuizRecord
+
 Tracks an ongoing quiz session.
 
 ```typescript
@@ -210,6 +221,7 @@ type QuizRecord = {
 ```
 
 #### 5. QuizResult
+
 Final result after quiz completion.
 
 ```typescript
@@ -231,6 +243,7 @@ type QuizResult = {
 ```
 
 #### 6. Stat
+
 Statistical analysis of quiz results.
 
 ```typescript
@@ -266,6 +279,7 @@ type Stat = StatBase & {
 ```
 
 #### 7. Bookmark
+
 User bookmarks for questions or papers.
 
 ```typescript
@@ -300,6 +314,7 @@ type BookmarkType = {
 ### Technical Structures
 
 #### DatabaseIndexed
+
 Common fields for database entities.
 
 ```typescript
@@ -311,6 +326,7 @@ type DatabaseIndexed = {
 ```
 
 #### VersionIndexed
+
 Version control fields for data synchronization.
 
 ```typescript
@@ -322,6 +338,7 @@ type VersionIndexed = {
 ```
 
 #### SearchIndexed
+
 Search cache for performance optimization.
 
 ```typescript
@@ -341,6 +358,7 @@ The system uses IndexedDB with the following object stores:
 **Database Version: 6** (Current)
 
 #### Version History
+
 - **v6**: Added `tagIds` and `categoryIds` indexes for ID-based tag system
 - **v5**: Added version conflict tracking
 - **v4**: Added general cache store
@@ -393,9 +411,11 @@ The system uses IndexedDB with the following object stores:
 ### Database Operations
 
 #### IDBController
+
 Main controller class implementing `QuizzyController` interface.
 
 **Key Responsibilities:**
+
 - CRUD operations for all entity types
 - Search functionality
 - Data import/export
@@ -405,6 +425,7 @@ Main controller class implementing `QuizzyController` interface.
 **Important Methods:**
 
 **Questions & Papers:**
+
 - `importQuestions(...questions)` - Bulk import with conflict resolution
 - `importQuizPapers(...papers)` - Bulk import quiz papers
 - `importCompleteQuizPapers(...papers)` - Import papers with embedded questions
@@ -417,6 +438,7 @@ Main controller class implementing `QuizzyController` interface.
 - `findQuestionByTags(query, count?, page?)` - Tag-based search
 
 **Tags:**
+
 - `getTag(payload)` - Get or create tag by name
 - `listTags()` - List all tags
 - `updateTag(id, tag)` - Update tag
@@ -426,6 +448,7 @@ Main controller class implementing `QuizzyController` interface.
 - `generateTagHint(query, limit?)` - Tag autocomplete
 
 **Quiz Sessions:**
+
 - `startQuiz(tactics, options?)` - Start new quiz
 - `updateQuiz(operation, options?)` - Update quiz state
 - `endQuiz(id)` - Complete quiz and generate result
@@ -433,17 +456,20 @@ Main controller class implementing `QuizzyController` interface.
 - `deleteQuizRecord(id)` - Delete record
 
 **Results & Stats:**
+
 - `generateStats(...resultIds)` - Generate statistics
 - `listStats()` - List all statistics
 - `getStat(id)` - Get specific statistic
 
 **Bookmarks:**
+
 - `putBookmarkTIC(payload)` - Create/update bookmark
 - `getBookmarkTIC(payload)` - Get bookmark by type+item+category
 - `deleteBookmarkTIC(payload)` - Delete bookmark
 - `listBookmarks(itemId, isQuestion)` - List bookmarks for item
 
 **Data Sync:**
+
 - `importData(data)` - Import full dataset
 - `exportData()` - Export full dataset
 - `evolveVersion()` - Update version hashes for all entities
@@ -455,12 +481,14 @@ Main controller class implementing `QuizzyController` interface.
 The system uses the BM25 algorithm for full-text search across questions and papers.
 
 **Key Features:**
+
 - Keyword extraction and tokenization
 - Language detection (Chinese/Japanese segmentation)
 - TF-IDF based relevance scoring
 - Search cache for performance
 
 **Process:**
+
 1. **Indexing Phase:**
    - Extract keywords from searchable fields
    - Calculate term frequencies
@@ -472,6 +500,7 @@ The system uses the BM25 algorithm for full-text search across questions and pap
    - Return sorted results
 
 **Searchable Fields:**
+
 - Questions: `name`, `tags`, `categories`, `title`, `content`, `solution`, `options`, `blanks`, `answer`
 - Papers: `name`, `desc`, `tags`, `categories`, `img`, `weights`, `duration`, `questions`
 
@@ -480,12 +509,14 @@ The system uses the BM25 algorithm for full-text search across questions and pap
 For tag and category searching, the system uses a Trie (prefix tree) structure.
 
 **Features:**
+
 - Fast prefix matching
 - Query expansion (find related tags)
 - Multiple language support
 - Cached for performance
 
 **Process:**
+
 1. Build Trie from all tags and categories
 2. For query: find matching tags by prefix
 3. Expand query to include similar tags
@@ -494,10 +525,13 @@ For tag and category searching, the system uses a Trie (prefix tree) structure.
 ## Version Control System
 
 ### Purpose
+
 Enable data synchronization between devices while handling conflicts.
 
 ### Version Hash
+
 Each entity has a `currentVersion` field containing a hash of its content:
+
 - Format: `<sequence>-<hash>`
 - Generated from specific fields (see `fieldsByStore2` in idb.ts)
 - Used to detect changes
@@ -505,6 +539,7 @@ Each entity has a `currentVersion` field containing a hash of its content:
 ### Conflict Resolution
 
 **Import Process:**
+
 1. Compare local and remote versions
 2. Determine import status:
    - `same` - Identical, no action
@@ -519,6 +554,7 @@ Each entity has a `currentVersion` field containing a hash of its content:
    - User can review and resolve later
 
 **Conflict Record:**
+
 ```typescript
 type VersionConflictRecord = {
   id: string;
@@ -533,7 +569,9 @@ type VersionConflictRecord = {
 ```
 
 ### Version Evolution
+
 Before import/export, the system can evolve entities to ensure they have version hashes:
+
 - `evolveVersion()` - Update all entities
 - `_evolve(storeId, options)` - Update entities in specific store
 
@@ -544,6 +582,7 @@ Before import/export, the system can evolve entities to ensure they have version
 The frontend uses Jotai for state management with atoms:
 
 **Global State:**
+
 - Database controller instance
 - Current user preferences
 - UI state (theme, language)
@@ -552,18 +591,21 @@ The frontend uses Jotai for state management with atoms:
 ### Cache Strategy
 
 **Hot Cache (in-memory):**
+
 - Recently accessed entities
 - Trie structures for tag search
 - BM25 global cache
 - LRU eviction (QuickLRU)
 
 **Persistent Cache (IndexedDB):**
+
 - Search indexes
 - Trie structures
 - BM25 statistics
 - Stored in `general` object store
 
 **Cache Invalidation:**
+
 - On entity update/delete
 - Manual refresh via `refreshSearchIndices()`
 - Cache keys: `bm25::{storeId}`, `trie::{cacheKey}`
@@ -575,11 +617,13 @@ The frontend uses Jotai for state management with atoms:
 The system supports weighted random selection:
 
 **Tactics:**
+
 1. **Random Paper** - Select questions from multiple papers with weights
 2. **Random Category** - Select from questions in categories
 3. **Random Tag** - Select from questions with tags
 
 **Algorithm:**
+
 - Weighted reservoir sampling
 - Maintains selection state in `RandomState`
 - Ensures no duplicate questions in session
@@ -587,9 +631,11 @@ The system supports weighted random selection:
 ## Bookmark System
 
 ### Purpose
+
 Allow users to mark questions/papers for various purposes.
 
 ### Features
+
 - Multiple bookmark types with colors
 - Reserved types: `default`, `reported`
 - Custom notes
@@ -597,6 +643,7 @@ Allow users to mark questions/papers for various purposes.
 - TIC (Type-Item-Category) unique constraint
 
 ### Use Cases
+
 - Mark difficult questions
 - Report issues
 - Create study lists
@@ -651,6 +698,7 @@ App
 ## Build & Deployment
 
 ### Build Tools
+
 - **Vite** - Frontend build tool
 - **TypeScript** - Type checking
 - **tsc + tsc-alias** - Common library compilation
@@ -676,11 +724,14 @@ pnpm dev
 ```
 
 ### Output
+
 - Common: `quizzy-common/dist/`
 - Frontend: `quizzy-frontend/dist/`
 
 ### Deployment
+
 The frontend is a static site that can be deployed to:
+
 - GitHub Pages
 - Netlify
 - Vercel
@@ -695,7 +746,9 @@ The frontend is a static site that can be deployed to:
 The system supports multiple export formats for questions and quiz papers to meet different use cases:
 
 #### 1. Separate Export Format
+
 Export entities as separate arrays with full referential integrity:
+
 - Paper/Question object (with ID)
 - Questions array (with IDs)
 - Tags array (with IDs)
@@ -712,7 +765,9 @@ const result = await exportQuizPaper(paperId, {
 ```
 
 #### 2. Complete Export Format (Self-Contained)
+
 Export as a single self-contained object without foreign keys:
+
 - All data embedded (questions, tags as string names)
 - No ID references (or optional ID retention)
 - Fully portable and self-describing
@@ -727,6 +782,7 @@ const result = await exportQuizPaper(paperId, {
 ```
 
 **CompleteQuizPaper Structure:**
+
 ```typescript
 type CompleteQuizPaper = {
   id?: ID;                    // Optional
@@ -747,7 +803,9 @@ type CompleteQuestion = {
 ```
 
 #### 3. Human-Readable Text Format
+
 Export as formatted text for reading/printing:
+
 - Markdown or plain text format
 - Suitable for documentation or review
 - Not designed for re-import
@@ -781,6 +839,7 @@ const paperIds = await importCompleteQuizPapers(completeData);
 ### Database Reset
 
 A database reset function is available for clearing all data:
+
 - Deletes all questions, papers, quiz records, results, statistics
 - Deletes all bookmarks and tags
 - Clears edit history and version conflicts
@@ -792,6 +851,7 @@ const recordsDeleted = await resetDatabase();
 ```
 
 **UI Implementation:**
+
 - Red warning button in settings page
 - Confirmation dialog with "DELETE ALL" text input requirement
 - Automatic page reload after reset
@@ -800,6 +860,7 @@ const recordsDeleted = await resetDatabase();
 ## Performance Considerations
 
 ### Search Performance
+
 - **Incremental indexing:** Only updates search indices for changed entities via `searchCacheInvalidated` flag
 - Search cache reduces repeated calculations
 - Trie cache speeds up tag lookup
@@ -808,12 +869,14 @@ const recordsDeleted = await resetDatabase();
 - **Future enhancements:** Web Workers for background indexing, progress indicators
 
 ### Database Performance
+
 - Indexes on frequently queried fields
 - Batch operations for bulk imports
 - Logical deletion to preserve references
 - Transaction batching
 
 ### UI Performance
+
 - React.memo for expensive components
 - Virtual scrolling for long lists (if implemented)
 - Debounced search input
@@ -822,16 +885,19 @@ const recordsDeleted = await resetDatabase();
 ## Security Considerations
 
 ### Data Privacy
+
 - All data stored locally in browser
 - No server communication by default
 - User owns their data completely
 
 ### Input Validation
+
 - Markdown content sanitization
 - RegExp validation for blank answers
 - ID uniqueness checks
 
 ### Data Integrity
+
 - Version control prevents data loss
 - Logical deletion preserves relationships
 - Referential integrity checks on deletion
@@ -839,12 +905,14 @@ const recordsDeleted = await resetDatabase();
 ## Extensibility
 
 ### Adding New Question Types
+
 1. Define type in `types/question.ts`
 2. Add validation in `db/question-id.ts`
 3. Implement UI components in frontend
 4. Update search fields if needed
 
 ### Adding New Entity Types
+
 1. Define type in `types/`
 2. Add object store in `db/idb.ts` updater
 3. Implement CRUD in `IDBController`
@@ -852,6 +920,7 @@ const recordsDeleted = await resetDatabase();
 5. Add frontend pages/components
 
 ### Custom Search Algorithms
+
 - Implement in `search/` directory
 - Update `IDBCore._search()` or add new method
 - Cache in `general` object store
@@ -868,6 +937,7 @@ const recordsDeleted = await resetDatabase();
 ## Future Architecture Considerations
 
 ### Potential Improvements
+
 1. **Tag Reference System**: Store tag IDs instead of strings
 2. **Server Backend**: Optional cloud sync
 3. **Real-Time Collaboration**: WebSocket support

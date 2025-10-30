@@ -25,6 +25,6 @@
       "@/*": ["*"]
     }
   },
-  "include": ["src", "plugins/lang-model.ts", "plugins/lang.ts"],
+  "include": ["src"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }
