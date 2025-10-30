@@ -33,6 +33,7 @@ export const langRes: LanguageResource = {
   },
 
   common: {
+    loading: ['Loading...', '読み込み中...', '加载中...'],
     ph: {
       new: ['<New>', '<新アイテム>', '<新建>'],
       empty: ['<Empty>', '<空白>', '<空白>'],
@@ -558,6 +559,62 @@ export const langRes: LanguageResource = {
         '得点：{{total}}点中{{score}}点 ({{percentage}}%)',
         '得分：{{total}}分中的{{score}}分 ({{percentage}}%)'
       ],
+    },
+    records: {
+      title: ['Quiz Records', 'クイズ記録', '测验记录'],
+      subtitle: ['Resume your unfinished quizzes', '未完了のクイズを再開', '继续未完成的测验'],
+      recordCount: ['records', '件', '条记录'],
+      empty: {
+        title: ['No Quiz Records', 'クイズ記録がありません', '没有测验记录'],
+        description: ['Start a new quiz to create a record', '新しいクイズを開始して記録を作成', '开始新测验以创建记录'],
+      },
+      table: {
+        paper: ['Paper', '試卷', '试卷'],
+        startTime: ['Start Time', '開始時刻', '开始时间'],
+        timeUsed: ['Time Used', '使用時間', '用时'],
+        progress: ['Progress', '進捗', '进度'],
+        actions: ['Actions', '操作', '操作'],
+      }
+    },
+    results: {
+      title: ['Quiz Results', 'クイズ結果', '测验结果'],
+      subtitle: ['View your completed quiz results', '完了したクイズの結果を表示', '查看已完成的测验结果'],
+      resultCount: ['results', '件', '条结果'],
+      selectedCount: ['{{count}} selected', '{{count}}件選択中', '已选择{{count}}个'],
+      statGenComplete: ['Statistics generation complete. View statistics?', '統計生成完了。統計を表示しますか？', '统计生成完成。查看统计数据吗？'],
+      empty: {
+        title: ['No Quiz Results', 'クイズ結果がありません', '没有测验结果'],
+        description: ['Complete a quiz to see results here', 'クイズを完了すると結果がここに表示されます', '完成测验后结果将显示在这里'],
+      },
+      btn: {
+        refreshStats: ['Refresh Statistics', '統計を更新', '刷新统计'],
+        createStats: ['Create Statistics', '統計を作成', '创建统计'],
+      },
+      table: {
+        select: ['Select', '選択', '选择'],
+        paper: ['Paper', '試卷', '试卷'],
+        startTime: ['Start Time', '開始時刻', '开始时间'],
+        timeUsed: ['Time Used', '使用時間', '用时'],
+        score: ['Score', '得点', '得分'],
+        percentage: ['Percentage', '正答率', '正确率'],
+        actions: ['Actions', '操作', '操作'],
+      }
+    },
+    stats: {
+      title: ['Statistics', '統計', '统计'],
+      subtitle: ['Analyze your quiz performance', 'クイズのパフォーマンスを分析', '分析您的测验表现'],
+      statCount: ['statistics', '件', '条统计'],
+      empty: {
+        title: ['No Statistics', '統計がありません', '没有统计数据'],
+        description: ['Generate statistics from your quiz results', 'クイズ結果から統計を生成', '从测验结果生成统计数据'],
+      },
+      table: {
+        time: ['Time', '時刻', '时间'],
+        count: ['Count', '件数', '数量'],
+        score: ['Score', '得点', '得分'],
+        percentage: ['Percentage', '正答率', '正确率'],
+        actions: ['Actions', '操作', '操作'],
+      }
     }
   },
 };
