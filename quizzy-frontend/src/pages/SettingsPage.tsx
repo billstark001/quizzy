@@ -1,7 +1,7 @@
 import { withHandler } from "@/components/handler";
 import { downloadFile, uploadFile } from "@/utils/html";
 import { QuizzyRaw } from "@/data";
-import { Box, Button, Separator, HStack, Switch, VStack, Wrap, NativeSelect } from "@chakra-ui/react";
+import { Box, Button, Separator, HStack, Switch, VStack, Wrap, NativeSelect, Input, DialogRoot, DialogBackdrop, DialogContent, DialogHeader, DialogTitle, DialogBody, DialogFooter, DialogActionTrigger } from "@chakra-ui/react";
 import { useEffect, useRef, useState } from "react";
 
 import { useTranslation } from "react-i18next";
@@ -93,6 +93,17 @@ const importData = withHandler(
   { async: true, cache: false }
 );
 
+const resetDatabase = withHandler(
+  QuizzyRaw.resetDatabase.bind(QuizzyRaw),
+  {
+    async: true,
+    cache: false,
+    notifySuccess(count: number) {
+      return i18n.t('page.settings.toast.databaseReset', { count });
+    },
+  },
+);
+
 export const SettingsPage = () => {
 
   const { t, i18n } = useTranslation();
@@ -104,6 +115,8 @@ export const SettingsPage = () => {
     timestamp?: number;
     result?: any;
   }>({ completed: false });
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [resetConfirmText, setResetConfirmText] = useState('');
 
   const langSelectRef = useRef<HTMLSelectElement>(null);
 
@@ -206,6 +219,66 @@ export const SettingsPage = () => {
         }
       }}>{t('page.settings.autoDetect')}</Button>
     </HStack>
+    <Separator />
+    <Box>
+      <Button 
+        onClick={() => {
+          setShowResetConfirm(true);
+          setResetConfirmText('');
+        }}
+        colorPalette="red"
+      >
+        {t('page.settings.btn.resetDatabase')}
+      </Button>
+    </Box>
+
+    <DialogRoot 
+      open={showResetConfirm} 
+      onOpenChange={(e) => setShowResetConfirm(e.open)}
+      size="lg"
+    >
+      <DialogBackdrop />
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{t('page.settings.dialog.resetDatabase.title')}</DialogTitle>
+        </DialogHeader>
+        <DialogBody>
+          <VStack alignItems="stretch" gap={4}>
+            <Box color="red.500">
+              {t('page.settings.dialog.resetDatabase.message')}
+            </Box>
+            <Box>
+              <Box mb={2}>{t('page.settings.dialog.resetDatabase.confirmText')}</Box>
+              <Input 
+                value={resetConfirmText}
+                onChange={(e) => setResetConfirmText(e.target.value)}
+                placeholder={t('page.settings.dialog.resetDatabase.confirmPlaceholder')}
+              />
+            </Box>
+          </VStack>
+        </DialogBody>
+        <DialogFooter>
+          <DialogActionTrigger asChild>
+            <Button variant="outline">{t('common.btn.cancel')}</Button>
+          </DialogActionTrigger>
+          <Button
+            colorPalette="red"
+            disabled={resetConfirmText !== 'DELETE ALL'}
+            onClick={async () => {
+              if (resetConfirmText === 'DELETE ALL') {
+                await resetDatabase();
+                setShowResetConfirm(false);
+                setResetConfirmText('');
+                // Reload the page after reset
+                window.location.reload();
+              }
+            }}
+          >
+            {t('page.settings.btn.resetDatabase')}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </DialogRoot>
   </VStack>;
 };
 

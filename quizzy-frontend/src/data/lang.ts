@@ -297,6 +297,7 @@ export const langRes: LanguageResource = {
         removeLegacyTagFields: ['Remove Legacy Tag Fields', '旧タグフィールドを削除', '删除旧标签字段'],
         importData: ['Import Exported Data', 'エクスポートしたデータをインポート', '导入已导出的数据'],
         exportData: ['Export Data to JSON File', 'JSONファイルにエクスポート', '导出数据到JSON文件'],
+        resetDatabase: ['⚠️ Reset Database', '⚠️ データベースを初期化', '⚠️ 重置数据库'],
       },
       switch: {
         forceRefresh: ['Force Refresh', '全てを更新', '强制更新所有索引'],
@@ -328,6 +329,23 @@ export const langRes: LanguageResource = {
           '旧タグフィールドを削除しました：{{questionsUpdated}}個の問題、{{papersUpdated}}個の問題冊子を更新しました。',
           '已删除旧标签字段：已更新{{questionsUpdated}}个问题、{{papersUpdated}}个试卷。'
         ],
+        databaseReset: [
+          'Database has been reset. {{count}} records deleted.',
+          'データベースを初期化しました。{{count}} 件を削除しました。',
+          '数据库已重置。已删除 {{count}} 个记录。'
+        ],
+      },
+      dialog: {
+        resetDatabase: {
+          title: ['⚠️ Confirm Database Reset', '⚠️ データベース初期化の確認', '⚠️ 确认重置数据库'],
+          message: [
+            'This will permanently delete ALL data including questions, papers, quiz records, results, statistics, bookmarks, and tags. This action CANNOT be undone! Are you absolutely sure?',
+            'これにより、問題、問題冊子、クイズ記録、結果、統計、ブックマーク、タグを含むすべてのデータが完全に削除されます。この操作は元に戻せません！本当によろしいですか？',
+            '这将永久删除所有数据，包括问题、试卷、测验记录、结果、统计、书签和标签。此操作无法撤消！您确定吗？'
+          ],
+          confirmText: ['Type "DELETE ALL" to confirm', '確認するには「すべて削除」と入力してください', '输入"DELETE ALL"以确认'],
+          confirmPlaceholder: ['Type "DELETE ALL"', 'すべて削除', 'DELETE ALL'],
+        },
       },
       selectLanguage: ['Display Language: ', '表示言語：', '显示语言：'],
       autoDetect: ['Auto Detect', '自動検出', '自动检测']
