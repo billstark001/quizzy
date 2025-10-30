@@ -688,13 +688,124 @@ The frontend is a static site that can be deployed to:
 
 **Note:** All data is stored locally in browser IndexedDB.
 
+## Export and Import System
+
+### Export Formats
+
+The system supports multiple export formats for questions and quiz papers to meet different use cases:
+
+#### 1. Separate Export Format
+Export entities as separate arrays with full referential integrity:
+- Paper/Question object (with ID)
+- Questions array (with IDs)
+- Tags array (with IDs)
+- Optional: Remove search and database indices for cleaner output
+- **Use case:** Backup with referential integrity, partial data sharing
+
+```typescript
+const result = await exportQuizPaper(paperId, {
+  format: 'separate',
+  keepIds: true,
+  removeIndices: true,
+});
+// Result: { paper: QuizPaper, questions: Question[], tags: Tag[] }
+```
+
+#### 2. Complete Export Format (Self-Contained)
+Export as a single self-contained object without foreign keys:
+- All data embedded (questions, tags as string names)
+- No ID references (or optional ID retention)
+- Fully portable and self-describing
+- **Use case:** Sharing content, importing to other systems, archival
+
+```typescript
+const result = await exportQuizPaper(paperId, {
+  format: 'complete',
+  keepIdsInComplete: false,
+});
+// Result: CompleteQuizPaper with embedded questions and string tags
+```
+
+**CompleteQuizPaper Structure:**
+```typescript
+type CompleteQuizPaper = {
+  id?: ID;                    // Optional
+  name: string;
+  tags?: string[];            // Direct tag names, not IDs
+  categories?: string[];      // Direct category names, not IDs
+  questions: CompleteQuestion[]; // Embedded questions
+  // ... other fields
+};
+
+type CompleteQuestion = {
+  id?: ID;                    // Optional
+  tags?: string[];            // Direct tag names
+  categories?: string[];      // Direct category names
+  content: string;
+  // ... type-specific fields
+};
+```
+
+#### 3. Human-Readable Text Format
+Export as formatted text for reading/printing:
+- Markdown or plain text format
+- Suitable for documentation or review
+- Not designed for re-import
+- **Use case:** Printing, documentation, manual review
+- **Note:** Implementation deferred to frontend
+
+### Import with Tag Reconciliation
+
+When importing CompleteQuizPaper/CompleteQuestion formats, the system automatically:
+
+1. **Tag Reconciliation:**
+   - For each tag name in the imported data
+   - Check if a tag exists with matching:
+     - Main name
+     - Multilingual names (mainNames)
+     - Aliases (alternatives)
+   - If match found: Reuse existing tag ID
+   - If no match: Create new tag entity
+   - Build mapping from string names to tag IDs
+
+2. **Data Conversion:**
+   - Convert CompleteQuestion to Question (with tag IDs)
+   - Convert CompleteQuizPaper to QuizPaper (with question IDs)
+   - Maintain data integrity throughout conversion
+
+```typescript
+// Import automatically handles tag reconciliation
+const paperIds = await importCompleteQuizPapers(completeData);
+```
+
+### Database Reset
+
+A database reset function is available for clearing all data:
+- Deletes all questions, papers, quiz records, results, statistics
+- Deletes all bookmarks and tags
+- Clears edit history and version conflicts
+- Re-initializes reserved bookmark types
+- **Warning:** This operation is irreversible
+
+```typescript
+const recordsDeleted = await resetDatabase();
+```
+
+**UI Implementation:**
+- Red warning button in settings page
+- Confirmation dialog with "DELETE ALL" text input requirement
+- Automatic page reload after reset
+- Available in EN/JA/ZH languages
+
 ## Performance Considerations
 
 ### Search Performance
+- **Incremental indexing:** Only updates search indices for changed entities via `searchCacheInvalidated` flag
 - Search cache reduces repeated calculations
 - Trie cache speeds up tag lookup
 - Query cache prevents duplicate searches in session
 - Lazy loading of search results
+- **Future enhancements:** Web Workers for background indexing, progress indicators
 
 ### Database Performance
 - Indexes on frequently queried fields
