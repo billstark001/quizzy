@@ -1,13 +1,13 @@
 import PageToolbar from "@/components/PageToolbar";
 import { PaperCard } from "@/components/item-brief/PaperCard";
-import { usePapers } from "@/data/papers";
+import { useQuizPapers } from "@/hooks/useQuizPapers";
 import { Button, VStack, Wrap } from "@chakra-ui/react";
 import { useTranslation } from "react-i18next";
 import ConflictResolutionDialog from "@/dialogs/ConflictResolutionDialog";
 
 export const PaperSelectionPage = () => {
 
-  const papers = usePapers();
+  const papers = useQuizPapers();
   const { t } = useTranslation();
 
   return <>

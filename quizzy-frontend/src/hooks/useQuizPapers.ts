@@ -3,12 +3,12 @@ import { withHandler } from "@/components/handler";
 import { uploadFile, downloadFile } from "@/utils/html";
 import { uuidV4B64 } from "@quizzy/base/utils";
 import { useNavigate } from "react-router-dom";
-import { QuizzyWrapped, Quizzy } from ".";
+import { QuizzyWrapped, Quizzy } from "../data";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 
 
-export const usePapers = () => {
+export const useQuizPapers = () => {
   
   const { data: value } = useQuery({
     queryKey: ['papers'],
@@ -161,4 +161,4 @@ export const usePapers = () => {
   };
 };
 
-export default usePapers;
+export default useQuizPapers;

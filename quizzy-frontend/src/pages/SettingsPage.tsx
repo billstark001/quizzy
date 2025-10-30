@@ -7,7 +7,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { useTranslation } from "react-i18next";
 import i18n, { getSystemLanguage } from "@/data/lang-entry";
-import useTags from "@/data/tags";
+import useTags from "@/hooks/useTags";
 
 const _u = {
   async: true,

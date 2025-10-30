@@ -6,7 +6,7 @@ import {
 } from "@chakra-ui/react";
 
 import { MenuContent, MenuItem, MenuRoot } from "../ui/menu";
-import { useBookmarks } from "@/data/bookmarks";
+import { useBookmarks } from "@/hooks/useBookmarks";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useRef } from "react";
 import BookmarkDispIcon from "./BookmarkDispIcon";

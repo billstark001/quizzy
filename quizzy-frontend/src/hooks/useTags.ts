@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { QuizzyWrapped, Quizzy } from ".";
+import { QuizzyWrapped, Quizzy } from "../data";
 import { Tag, TempTagListResult } from "@quizzy/base/types";
 import { useCallback, useMemo } from "react";
 import { useCallbackRef } from "@chakra-ui/react";
@@ -31,7 +31,7 @@ const _tt = (
   }
 
   return {
-    tagMap, 
+    tagMap,
     mainNameSet,
     alternativeSet,
   };
@@ -40,7 +40,7 @@ const _tt = (
 type _T = {
   tagsWithNoReference: string[];
   tagsRecordedInAlternative: {
-      [k: string]: [string, string];
+    [k: string]: [string, string];
   };
   tagsCanBuildRecord: string[];
   categoriesCanBuildRecord: string[];

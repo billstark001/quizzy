@@ -41,7 +41,7 @@ export const useTagResolver = (
   // Combine resolved tags with string tags (for backward compatibility)
   const displayTags = useMemo(() => {
     const result: (string | Tag)[] = [];
-    
+
     // Add resolved tag objects (preferred)
     if (resolvedTags && resolvedTags.length > 0) {
       resolvedTags.forEach(tag => {
@@ -50,18 +50,18 @@ export const useTagResolver = (
         }
       });
     }
-    
+
     // Add string tags (fallback for legacy data or during migration)
     if (tags && tags.length > 0 && (!tagIds || tagIds.length === 0)) {
       result.push(...tags);
     }
-    
+
     return result;
   }, [tags, tagIds, resolvedTags]);
 
   const displayCategories = useMemo(() => {
     const result: (string | Tag)[] = [];
-    
+
     // Add resolved category objects (preferred)
     if (resolvedCategories && resolvedCategories.length > 0) {
       resolvedCategories.forEach(cat => {
@@ -70,20 +70,20 @@ export const useTagResolver = (
         }
       });
     }
-    
+
     // Add string categories (fallback for legacy data or during migration)
     if (categories && categories.length > 0 && (!categoryIds || categoryIds.length === 0)) {
       result.push(...categories);
     }
-    
+
     return result;
   }, [categories, categoryIds, resolvedCategories]);
 
   return {
     displayTags,
     displayCategories,
-    isLoading: (tagIds && tagIds.length > 0 && !resolvedTags) || 
-               (categoryIds && categoryIds.length > 0 && !resolvedCategories),
+    isLoading: (tagIds && tagIds.length > 0 && !resolvedTags) ||
+      (categoryIds && categoryIds.length > 0 && !resolvedCategories),
   };
 };
 

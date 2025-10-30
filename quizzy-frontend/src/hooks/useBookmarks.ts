@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { QuizzyWrapped } from ".";
+import { QuizzyWrapped } from "../data";
 import { BOOKMARK_DEFAULT_CSS_COLOR, BookmarkBase, BookmarkType, defaultBookmarkType, ID } from "@quizzy/base/types";
 import { useCallback } from "react";
 

@@ -13,7 +13,7 @@ import { useTranslation } from "react-i18next";
 import BookmarkIcon from "@/components/bookmark/BookmarkIcon";
 import { useDialog } from "@/utils/chakra";
 import ExportDialog from "@/dialogs/ExportDialog";
-import { useQuestions } from "@/data/questions";
+import { useQuestions } from "@/hooks/useQuestions";
 
 const RECORD_KEY = 'edit:question';
 

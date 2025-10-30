@@ -2,7 +2,7 @@ import PageToolbar from "@/components/PageToolbar";
 import { PaperCard } from "@/components/item-brief/PaperCard";
 import QuestionCard, { QuestionCardProps } from "@/components/item-brief/QuestionCard";
 import { QuizzyWrapped, Quizzy } from "@/data";
-import { useBookmarks } from "@/data/bookmarks";
+import { useBookmarks } from "@/hooks/useBookmarks";
 import { BookmarkEditDialog } from "@/dialogs/BookmarkEditDialog";
 import { useDialog } from "@/utils/chakra";
 import { Box, Button, Collapsible, HStack, Loader, Separator, VStack, Wrap } from "@chakra-ui/react";

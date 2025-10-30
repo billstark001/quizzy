@@ -12,7 +12,7 @@ import { SearchBox } from "@/components/SearchBox";
 import QuestionCard from "@/components/item-brief/QuestionCard";
 import PageToolbar from "@/components/PageToolbar";
 import { useTranslation } from "react-i18next";
-import { useQuestions } from "@/data/questions";
+import { useQuestions } from "@/hooks/useQuestions";
 
 
 const fetchSearchResult = async (searchTerm?: string, page?: number): Promise<SearchResult<Question> | undefined> => {

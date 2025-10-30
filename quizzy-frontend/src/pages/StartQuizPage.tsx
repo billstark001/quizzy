@@ -1,7 +1,7 @@
 import { PaperCard } from "@/components/item-brief/PaperCard";
 import { useSelection } from "@/utils/react";
 import { QuizzyWrapped } from "@/data";
-import { usePapers } from "@/data/papers";
+import { useQuizPapers } from "@/hooks/useQuizPapers";
 import {
   Button,
   Tabs,
@@ -32,7 +32,7 @@ export const StartQuizPage = () => {
     selectionByTab[i]?.setSelectedRecord({});
   });
 
-  const { value: papers, start, startRandom, navigate } = usePapers();
+  const { value: papers, start, startRandom, navigate } = useQuizPapers();
 
   const startRandom2 = async (ids: string[], isTag?: boolean) => {
     const ids2 = Object.fromEntries(ids.map(x => [x, 1]));

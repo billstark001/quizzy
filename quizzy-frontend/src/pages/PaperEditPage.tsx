@@ -20,7 +20,7 @@ import BaseQuestionPanelWithBookmark from "@/components/question-display/BaseQue
 import BookmarkIcon from "@/components/bookmark/BookmarkIcon";
 import { useDialog } from "@/utils/chakra";
 import ExportDialog from "@/dialogs/ExportDialog";
-import { usePapers } from "@/data/papers";
+import { useQuizPapers } from "@/hooks/useQuizPapers";
 
 
 type EditState = Readonly<{
@@ -266,7 +266,7 @@ export const PaperEditPage = (props: { paper?: string }) => {
 
   // export
   const [showExportDialog, setShowExportDialog] = useState(false);
-  const papers = usePapers();
+  const papers = useQuizPapers();
 
   // question edit
   const questionMap = useRef<Record<number, ID>>({});

@@ -1,6 +1,6 @@
 import PageToolbar from "@/components/PageToolbar";
 import TagSelector from "@/components/TagSelector";
-import useTags from "@/data/tags";
+import useTags from "@/hooks/useTags";
 import SearchByTagDialog, { SearchByTagDialogData } from "@/dialogs/SearchByTagDialog";
 import { useDialog } from "@/utils/chakra";
 import { useSelection } from "@/utils/react";
