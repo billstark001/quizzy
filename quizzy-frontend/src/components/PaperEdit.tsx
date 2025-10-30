@@ -8,7 +8,8 @@ import {
 import { useTranslation } from "react-i18next";
 import { useEditorContext } from "@/utils/react-patch";
 import { Textarea2 } from "./question-edit/QuestionEdit";
-import TagList, { TagButton } from "./common/TagList";
+import { TagButton } from "./common/TagList";
+import TagListResolved from "./common/TagListResolved";
 import TagSelectDialog, { TagSelectState } from "./TagSelectDialog";
 import { useDialog } from "@/utils/chakra";
 
@@ -44,22 +45,22 @@ export const PaperEdit = () => {
 
     <DataList.Item >
       <DataList.ItemLabel>{t('page.edit.tags')}</DataList.ItemLabel>
-      <TagList tags={paper.tags}
+      <TagListResolved tagIds={paper.tagIds}
         onDoubleClick={(_, __, i) => open(i)}
       >
         <TagButton onClick={() => open()} children={<IoAddOutline />} />
-      </TagList>
+      </TagListResolved>
     </DataList.Item>
 
     <DataList.Item >
       <DataList.ItemLabel>{t('page.edit.categories')}</DataList.ItemLabel>
-      <TagList tags={paper.categories}
+      <TagListResolved tagIds={paper.categoryIds}
         onDoubleClick={(_, __, i) =>
           open(i, true)}
       >
         <TagButton onClick={() =>
           open(undefined, true)} children={<IoAddOutline />} />
-      </TagList>
+      </TagListResolved>
     </DataList.Item>
 
     <DataList.Item >

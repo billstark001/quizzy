@@ -21,8 +21,8 @@ export const toCompleted = async (
     throw new Error('Quiz Paper ID Conflict');
   }
   // sanitize paper
-  paper.tags = paper.tags ?? [];
-  paper.categories = paper.categories ?? [];
+  paper.tagIds = paper.tagIds ?? [];
+  paper.categoryIds = paper.categoryIds ?? [];
 
   // ensure question IDs
   const questionIds = new Set<ID>();

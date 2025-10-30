@@ -270,6 +270,7 @@ export const langRes: LanguageResource = {
         normalizeQuestions: ['Normalize Questions', '問題を標準化', '问题归一化'],
         recordAllRecordableTags: ['Record All Tags', 'すべてのタグを記録', '记录所有标签'],
         migrateTagsToIds: ['Migrate Tags to ID System', 'タグをIDシステムに移行', '将标签迁移到ID系统'],
+        removeLegacyTagFields: ['Remove Legacy Tag Fields', '旧タグフィールドを削除', '删除旧标签字段'],
         importData: ['Import Exported Data', 'エクスポートしたデータをインポート', '导入已导出的数据'],
         exportData: ['Export Data to JSON File', 'JSONファイルにエクスポート', '导出数据到JSON文件'],
       },
@@ -297,6 +298,11 @@ export const langRes: LanguageResource = {
           'Tag migration completed: {{questionsUpdated}} questions, {{papersUpdated}} papers updated, {{tagsCreated}} tags created.',
           'タグの移行が完了しました：{{questionsUpdated}}個の問題、{{papersUpdated}}個の問題冊子を更新し、{{tagsCreated}}個のタグを作成しました。',
           '标签迁移完成：已更新{{questionsUpdated}}个问题、{{papersUpdated}}个试卷，创建了{{tagsCreated}}个标签。'
+        ],
+        legacyFieldsRemoved: [
+          'Legacy tag fields removed: {{questionsUpdated}} questions, {{papersUpdated}} papers updated.',
+          '旧タグフィールドを削除しました：{{questionsUpdated}}個の問題、{{papersUpdated}}個の問題冊子を更新しました。',
+          '已删除旧标签字段：已更新{{questionsUpdated}}个问题、{{papersUpdated}}个试卷。'
         ],
       },
       selectLanguage: ['Display Language: ', '表示言語：', '显示语言：'],

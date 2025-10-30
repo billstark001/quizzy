@@ -17,8 +17,6 @@ import { DialogRootNoChildrenProps, UseDialogYieldedRootProps } from "@/utils/ch
 
 export type TagSelectState = {
   object: Readonly<{
-    tags?: string[];
-    categories?: string[];
     tagIds?: string[];
     categoryIds?: string[];
   }>;
@@ -51,15 +49,26 @@ export const TagSelectDialog = (
     if (!open) {
       return;
     }
-    // Use tagIds if available, otherwise fall back to string tags
     const origArr = isCategory 
-      ? (object?.categoryIds ?? object?.categories ?? [])
-      : (object?.tagIds ?? object?.tags ?? []);
+      ? (object?.categoryIds ?? [])
+      : (object?.tagIds ?? []);
     setOrigArr(origArr ?? []);
-    const orig = (tagIndex == null ? undefined : origArr?.[tagIndex]) ?? '';
-    setCurrentTag(orig);
+    
+    // If editing an existing tag, resolve the ID to name
+    const origId = (tagIndex == null ? undefined : origArr?.[tagIndex]) ?? '';
+    if (origId) {
+      Quizzy.getTagById(origId).then(tag => {
+        if (tag) {
+          setCurrentTag(tag.mainName);
+        } else {
+          setCurrentTag('');
+        }
+      });
+    } else {
+      setCurrentTag('');
+    }
     setListExpanded(false);
-  }, [open]);
+  }, [open, object, tagIndex, isCategory]);
 
   const submitTag = useCallback(async () => {
     // Create or get tag entity

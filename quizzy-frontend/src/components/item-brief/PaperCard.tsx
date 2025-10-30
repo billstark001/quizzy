@@ -38,9 +38,9 @@ export const PaperCard = (props: PaperCardProps) => {
   
   // Resolve tag IDs to Tag objects
   const { displayTags, displayCategories } = useTagResolver(
-    paper.tags,
+    undefined, // no legacy tags field
     paper.tagIds,
-    paper.categories,
+    undefined, // no legacy categories field
     paper.categoryIds
   );
 

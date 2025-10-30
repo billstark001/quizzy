@@ -71,6 +71,7 @@ const keys: Readonly<{[key in keyof QuizzyController]: undefined}> = Object.free
   'isTagMigrationCompleted': undefined,
   'getMigrationStatus': undefined,
   'migrateTagsToIds': undefined,
+  'removeLegacyTagFields': undefined,
 
   // records
 

@@ -130,6 +130,10 @@ export interface QuizzyController {
     papersUpdated: number;
     tagsCreated: number;
   }>;
+  removeLegacyTagFields(): Promise<{
+    questionsUpdated: number;
+    papersUpdated: number;
+  }>;
 
   // records
 

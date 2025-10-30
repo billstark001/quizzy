@@ -26,9 +26,9 @@ export const QuestionCard = (props: QuestionCardProps) => {
   
   // Resolve tag IDs to Tag objects
   const { displayTags, displayCategories } = useTagResolver(
-    question?.tags,
+    undefined, // no legacy tags field
     question?.tagIds,
-    question?.categories,
+    undefined, // no legacy categories field
     question?.categoryIds
   );
 

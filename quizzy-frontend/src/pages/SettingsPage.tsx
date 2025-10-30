@@ -59,6 +59,19 @@ const migrateTagsToIds = withHandler(
   },
 );
 
+const removeLegacyTagFields = withHandler(
+  QuizzyRaw.removeLegacyTagFields.bind(QuizzyRaw),
+  {
+    async: true,
+    cache: false,
+    notifySuccess(result: { questionsUpdated: number; papersUpdated: number }) {
+      return i18n.t('page.settings.toast.legacyFieldsRemoved', {
+        questionsUpdated: result.questionsUpdated,
+        papersUpdated: result.papersUpdated,
+      });
+    },
+  },
+);
 
 const exportData = withHandler(
   async () => {
@@ -153,6 +166,13 @@ export const SettingsPage = () => {
           {migrationStatus.result && ` (${t('page.settings.text.questionsUpdated')}: ${migrationStatus.result.questionsUpdated}, ${t('page.settings.text.papersUpdated')}: ${migrationStatus.result.papersUpdated}, ${t('page.settings.text.tagsCreated')}: ${migrationStatus.result.tagsCreated})`}
         </Box>
       )}
+      <Button 
+        onClick={removeLegacyTagFields}
+        disabled={!migrationStatus.completed}
+        colorPalette="orange"
+      >
+        {t('page.settings.btn.removeLegacyTagFields')}
+      </Button>
     </Wrap>
     <Separator />
     <Wrap>

@@ -11,7 +11,8 @@ import { MdAdd } from "react-icons/md";
 import { ChoiceQuestionOptionsEdit } from "./ChoiceQuestionOptionsEdit";
 import { normalizeOptionOrBlankArray } from "@quizzy/base/db/question-id";
 import { BlankQuestionBlanksEdit } from "./BlankQuestionBlankEdit";
-import TagList, { TagButton } from "../common/TagList";
+import { TagButton } from "../common/TagList";
+import TagListResolved from "../common/TagListResolved";
 import { IoAddOutline } from "react-icons/io5";
 import TagSelectDialog, { TagSelectState } from "../TagSelectDialog";
 import { useDialog } from "@/utils/chakra";
@@ -83,22 +84,22 @@ export const QuestionEdit = () => {
 
     <DataList.Item >
       <DataList.ItemLabel>{t('page.edit.tags')}</DataList.ItemLabel>
-      <TagList tags={question.tags}
+      <TagListResolved tagIds={question.tagIds}
         onDoubleClick={(_, __, i) => open(i)}
       >
         <TagButton onClick={() => open()}><IoAddOutline /></TagButton>
-      </TagList>
+      </TagListResolved>
     </DataList.Item>
 
     <DataList.Item >
       <DataList.ItemLabel>{t('page.edit.categories')}</DataList.ItemLabel>
-      <TagList tags={question.categories}
+      <TagListResolved tagIds={question.categoryIds}
         onDoubleClick={(_, __, i) =>
           open(i, true)}
       >
         <TagButton onClick={() =>
           open(undefined, true)}><IoAddOutline /></TagButton>
-      </TagList>
+      </TagListResolved>
     </DataList.Item>
 
     <DataList.Item >

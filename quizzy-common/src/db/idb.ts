@@ -52,12 +52,12 @@ const tcIndices: readonly ((keyof BookmarkBase) & TICIndex)[] = ['typeId', 'cate
 const fieldsByStore = Object.freeze({
   [STORE_KEY_PAPERS]: [
     'name', 'desc', 'tags', 'categories', 'tagIds', 'categoryIds'
-  ], // satisfies readonly (keyof QuizPaper)[],
+  ] as any, // 'tags' and 'categories' kept for migration, not in type
   [STORE_KEY_QUESTIONS]: [
     'name', 'tags', 'categories', 'tagIds', 'categoryIds',
     'title', 'content', 'solution', 
     'options', 'blanks', 'answer'
-  ], // satisfies (keyof Question)[],
+  ] as any, // 'tags' and 'categories' kept for migration, not in type
 });
 
 const fieldsByStore2 = Object.freeze({
@@ -65,12 +65,12 @@ const fieldsByStore2 = Object.freeze({
     'deleted',
     ...fieldsByStore[STORE_KEY_PAPERS] as any[],
     'img', 'weights', 'duration', 'questions',
-  ] satisfies readonly (keyof QuizPaper)[],
+  ] as any, // Contains legacy fields for migration
   [STORE_KEY_QUESTIONS]: [
     'deleted',
     ...fieldsByStore[STORE_KEY_QUESTIONS],
     'type', 'multiple',
-  ] as readonly (keyof Question)[],
+  ] as any, // Contains legacy fields for migration
   [STORE_KEY_RECORDS]: [
     'deleted',
     'startTime', 'timeUsed', 'answers', 'lastQuestion',
@@ -727,13 +727,13 @@ export class IDBController extends IDBCore implements QuizzyController {
     const papers = await this._list<QuizPaper>(STORE_KEY_PAPERS);
     
     for (const q of questions) {
-      q.tags?.forEach(t => allTagStrings.add(t));
-      q.categories?.forEach(c => allTagStrings.add(c));
+      (q as any).tags?.forEach((t: string) => allTagStrings.add(t));
+      (q as any).categories?.forEach((c: string) => allTagStrings.add(c));
     }
     
     for (const p of papers) {
-      p.tags?.forEach(t => allTagStrings.add(t));
-      p.categories?.forEach(c => allTagStrings.add(c));
+      (p as any).tags?.forEach((t: string) => allTagStrings.add(t));
+      (p as any).categories?.forEach((c: string) => allTagStrings.add(c));
     }
     
     // Step 2: Create or get tag entities for each unique string
@@ -765,12 +765,12 @@ export class IDBController extends IDBCore implements QuizzyController {
         continue;
       }
       
-      const tagIds = (q.tags ?? [])
-        .map(t => tagMap.get(t))
-        .filter((id): id is ID => !!id);
-      const categoryIds = (q.categories ?? [])
-        .map(c => tagMap.get(c))
-        .filter((id): id is ID => !!id);
+      const tagIds = ((q as any).tags ?? [])
+        .map((t: string) => tagMap.get(t))
+        .filter((id: any): id is ID => !!id);
+      const categoryIds = ((q as any).categories ?? [])
+        .map((c: string) => tagMap.get(c))
+        .filter((id: any): id is ID => !!id);
       
       if (tagIds.length > 0 || categoryIds.length > 0) {
         q.tagIds = tagIds;
@@ -791,12 +791,12 @@ export class IDBController extends IDBCore implements QuizzyController {
         continue;
       }
       
-      const tagIds = (p.tags ?? [])
-        .map(t => tagMap.get(t))
-        .filter((id): id is ID => !!id);
-      const categoryIds = (p.categories ?? [])
-        .map(c => tagMap.get(c))
-        .filter((id): id is ID => !!id);
+      const tagIds = ((p as any).tags ?? [])
+        .map((t: string) => tagMap.get(t))
+        .filter((id: any): id is ID => !!id);
+      const categoryIds = ((p as any).categories ?? [])
+        .map((c: string) => tagMap.get(c))
+        .filter((id: any): id is ID => !!id);
       
       if (tagIds.length > 0 || categoryIds.length > 0) {
         p.tagIds = tagIds;
@@ -815,6 +815,53 @@ export class IDBController extends IDBCore implements QuizzyController {
       questionsUpdated,
       papersUpdated,
       tagsCreated,
+    };
+  }
+
+  /**
+   * Remove legacy tags and categories fields from all questions and papers
+   * This should only be called after migration is complete
+   * @returns object with counts of items updated
+   */
+  async removeLegacyTagFields(): Promise<{
+    questionsUpdated: number;
+    papersUpdated: number;
+  }> {
+    let questionsUpdated = 0;
+    let papersUpdated = 0;
+    
+    // Update all questions
+    const txQuestions = this.db.transaction(STORE_KEY_QUESTIONS, 'readwrite');
+    const questions = await txQuestions.store.getAll();
+    for (const q of questions) {
+      if ((q as any).tags || (q as any).categories) {
+        delete (q as any).tags;
+        delete (q as any).categories;
+        await txQuestions.store.put(q);
+        questionsUpdated++;
+      }
+    }
+    await txQuestions.done;
+    
+    // Update all papers
+    const txPapers = this.db.transaction(STORE_KEY_PAPERS, 'readwrite');
+    const papers = await txPapers.store.getAll();
+    for (const p of papers) {
+      if ((p as any).tags || (p as any).categories) {
+        delete (p as any).tags;
+        delete (p as any).categories;
+        await txPapers.store.put(p);
+        papersUpdated++;
+      }
+    }
+    await txPapers.done;
+    
+    // Invalidate caches to rebuild without legacy fields
+    await this._invalidateCacheByItem();
+    
+    return {
+      questionsUpdated,
+      papersUpdated,
     };
   }
 
@@ -1062,8 +1109,8 @@ export class IDBController extends IDBCore implements QuizzyController {
       (x: QuizPaper & BaseQuestion) => {
         // Include both old string-based tags and new ID-based tags
         return [
-          ...x.categories ?? [],
-          ...x.tags ?? [],
+          ...(x as any).categories ?? [],
+          ...(x as any).tags ?? [],
           ...x.categoryIds ?? [],
           ...x.tagIds ?? [],
         ];
