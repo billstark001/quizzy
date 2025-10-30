@@ -338,7 +338,49 @@ export const langRes: LanguageResource = {
     }
   },
 
+  layout: {
+    sidebar: {
+      user: ['Quizzy User', 'Quizzy ユーザー', 'Quizzy 用户'],
+      role: ['Admin', '管理者', '管理员'],
+      githubTooltip: ['View Source on GitHub', 'GitHubでソースを表示', '在GitHub上查看源码'],
+      menu: {
+        profile: ['Profile', 'プロフィール', '个人资料'],
+        settings: ['Settings', '設定', '设置'],
+        about: ['About', 'このアプリについて', '关于'],
+        signout: ['Sign out', 'ログアウト', '登出'],
+      }
+    }
+  },
+
   page: {
+    about: {
+      title: ['About Quizzy', 'Quizzy について', '关于 Quizzy'],
+      subtitle: ['A Modern Quiz Management System', 'モダンなクイズ管理システム', '现代化的测验管理系统'],
+      description: {
+        title: ['Description', '説明', '说明'],
+        content: [
+          'Quizzy is a comprehensive quiz management system that helps you create, organize, and practice with questions and papers. All your data is stored locally in your browser for privacy and offline access.',
+          'Quizzyは、問題と試卷を作成、整理、練習するのに役立つ包括的なクイズ管理システムです。すべてのデータはプライバシーとオフラインアクセスのためにブラウザにローカルに保存されます。',
+          'Quizzy 是一个全面的测验管理系统，帮助您创建、组织和练习问题和试卷。所有数据都本地存储在您的浏览器中，以保护隐私并支持离线访问。'
+        ]
+      },
+      features: {
+        title: ['Key Features', '主な機能', '主要功能'],
+        item1: ['Create and manage questions with multiple choice, fill-in-the-blank, and text answer types', '選択問題、空欄補充問題、テキスト回答問題を作成・管理', '创建和管理多选题、填空题和文本答题等多种题型'],
+        item2: ['Organize questions into papers and start timed quizzes', '問題を試卷に整理し、時間制限付きクイズを開始', '将问题组织成试卷并开始计时测验'],
+        item3: ['Tag-based organization and advanced search capabilities', 'タグベースの整理と高度な検索機能', '基于标签的组织和高级搜索功能'],
+        item4: ['Track your quiz results and statistics over time', 'クイズの結果と統計を時系列で追跡', '跟踪您的测验结果和统计数据'],
+        item5: ['Export and import data in multiple formats', '複数の形式でデータをエクスポート・インポート', '以多种格式导出和导入数据'],
+      },
+      links: {
+        title: ['Links', 'リンク', '链接'],
+        github: ['GitHub Repository', 'GitHubリポジトリ', 'GitHub 仓库'],
+        documentation: ['Documentation', 'ドキュメント', '文档'],
+        license: ['License', 'ライセンス', '许可证'],
+      },
+      version: ['Version', 'バージョン', '版本'],
+      copyright: ['© 2024 Quizzy. All rights reserved.', '© 2024 Quizzy. 全著作権所有。', '© 2024 Quizzy. 保留所有权利。'],
+    },
 
     edit: {
       
