@@ -4,6 +4,7 @@ import BookmarkIcon from "../bookmark/BookmarkIcon";
 import { useTranslation } from "react-i18next";
 import TagDisplay from "./TagDisplay";
 import { useNavigate } from "react-router-dom";
+import { useTagResolver } from "@/hooks/useTagResolver";
 
 export type QuestionCardProps = {
   question?: Question;
@@ -22,6 +23,14 @@ export const QuestionCard = (props: QuestionCardProps) => {
   const { question, preview, ...rest } = props;
   const { t } = useTranslation();
   const navigate = useNavigate();
+  
+  // Resolve tag IDs to Tag objects
+  const { displayTags, displayCategories } = useTagResolver(
+    question?.tags,
+    question?.tagIds,
+    question?.categories,
+    question?.categoryIds
+  );
 
   const nav = () => {
     const params = new URLSearchParams({ question: question?.id ?? '' }).toString();
@@ -45,8 +54,8 @@ export const QuestionCard = (props: QuestionCardProps) => {
       <Text fontSize='sm'>{dispId}</Text>
       <Text fontSize='xl'>{question?.title ?? dispId}</Text>
       <Wrap>
-        <TagDisplay tags={question?.categories} isCategory />
-        <TagDisplay tags={question?.tags} />
+        <TagDisplay tags={displayCategories} isCategory />
+        <TagDisplay tags={displayTags} />
       </Wrap>
       <Text>
         {truncate(question?.content || '<EMPTY>')}

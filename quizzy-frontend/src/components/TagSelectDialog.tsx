@@ -19,6 +19,8 @@ export type TagSelectState = {
   object: Readonly<{
     tags?: string[];
     categories?: string[];
+    tagIds?: string[];
+    categoryIds?: string[];
   }>;
   tagIndex?: number,
   isCategory?: boolean,
@@ -41,7 +43,6 @@ export const TagSelectDialog = (
   const { object, tagIndex, isCategory } = data ?? {};
 
   const { t } = useTranslation();
-  // const tags = useTags();
 
   const [currentTag, setCurrentTag] = useState('');
   const [origArr, setOrigArr] = useState<readonly string[]>([]);
@@ -50,7 +51,10 @@ export const TagSelectDialog = (
     if (!open) {
       return;
     }
-    const origArr = (isCategory ? object?.categories : object?.tags) ?? [];
+    // Use tagIds if available, otherwise fall back to string tags
+    const origArr = isCategory 
+      ? (object?.categoryIds ?? object?.categories ?? [])
+      : (object?.tagIds ?? object?.tags ?? []);
     setOrigArr(origArr ?? []);
     const orig = (tagIndex == null ? undefined : origArr?.[tagIndex]) ?? '';
     setCurrentTag(orig);
@@ -58,10 +62,15 @@ export const TagSelectDialog = (
   }, [open]);
 
   const submitTag = useCallback(async () => {
+    // Create or get tag entity
+    const tag = await Quizzy.getTag(currentTag);
+    const tagId = tag.id;
+    
+    // Update using tag IDs (new system)
     const resultObject = {
-      [isCategory ? 'categories' : 'tags']: tagIndex == null
-        ? [...origArr, currentTag]
-        : getChangedArray(origArr, tagIndex, currentTag)
+      [isCategory ? 'categoryIds' : 'tagIds']: tagIndex == null
+        ? [...origArr, tagId]
+        : getChangedArray(origArr, tagIndex, tagId)
     };
     submit(resultObject);
   }, [submit, currentTag, isCategory, tagIndex, origArr]);

@@ -572,6 +572,14 @@ export class IDBController extends IDBCore implements QuizzyController {
     return this._list<Tag>(STORE_KEY_TAGS);
   }
 
+  async getTagById(id: ID): Promise<Tag | undefined> {
+    return await this._get<Tag>(STORE_KEY_TAGS, id);
+  }
+
+  async getTagsByIds(ids: ID[]): Promise<(Tag | undefined)[]> {
+    return await Promise.all(ids.map(id => this.getTagById(id)));
+  }
+
   async updateTag(id: ID, tag: Patch<Tag>) {
     await this._invalidateCache('trie');
     return await this._update(STORE_KEY_TAGS, id, tag);
@@ -822,19 +830,33 @@ export class IDBController extends IDBCore implements QuizzyController {
   }
 
   async listTagsInPapersAndQuestions(): Promise<TempTagListResult> {
+    // Get both old string-based tags and new ID-based tags
+    const [
+      questionCategories,
+      questionTags,
+      paperCategories,
+      paperTags,
+      questionCategoryIds,
+      questionTagIds,
+      paperCategoryIds,
+      paperTagIds,
+    ] = await Promise.all([
+      getAllMultiEntryValues(this.db, STORE_KEY_QUESTIONS, 'categories'),
+      getAllMultiEntryValues(this.db, STORE_KEY_QUESTIONS, 'tags'),
+      getAllMultiEntryValues(this.db, STORE_KEY_PAPERS, 'categories'),
+      getAllMultiEntryValues(this.db, STORE_KEY_PAPERS, 'tags'),
+      getAllMultiEntryValues(this.db, STORE_KEY_QUESTIONS, 'categoryIds'),
+      getAllMultiEntryValues(this.db, STORE_KEY_QUESTIONS, 'tagIds'),
+      getAllMultiEntryValues(this.db, STORE_KEY_PAPERS, 'categoryIds'),
+      getAllMultiEntryValues(this.db, STORE_KEY_PAPERS, 'tagIds'),
+    ]);
+
+    // Combine string tags and ID tags (convert IDs to strings for backward compatibility)
     return {
-      questionCategories: await getAllMultiEntryValues(
-        this.db, STORE_KEY_QUESTIONS, 'categories',
-      ) as string[],
-      questionTags: await getAllMultiEntryValues(
-        this.db, STORE_KEY_QUESTIONS, 'tags',
-      ) as string[],
-      paperCategories: await getAllMultiEntryValues(
-        this.db, STORE_KEY_PAPERS, 'categories',
-      ) as string[],
-      paperTags: await getAllMultiEntryValues(
-        this.db, STORE_KEY_PAPERS, 'tags',
-      ) as string[],
+      questionCategories: [...new Set([...questionCategories as string[], ...questionCategoryIds as string[]])],
+      questionTags: [...new Set([...questionTags as string[], ...questionTagIds as string[]])],
+      paperCategories: [...new Set([...paperCategories as string[], ...paperCategoryIds as string[]])],
+      paperTags: [...new Set([...paperTags as string[], ...paperTagIds as string[]])],
     };
   }
 
@@ -1038,9 +1060,12 @@ export class IDBController extends IDBCore implements QuizzyController {
       'tags-categories',
       [STORE_KEY_PAPERS, STORE_KEY_QUESTIONS],
       (x: QuizPaper & BaseQuestion) => {
+        // Include both old string-based tags and new ID-based tags
         return [
           ...x.categories ?? [],
           ...x.tags ?? [],
+          ...x.categoryIds ?? [],
+          ...x.tagIds ?? [],
         ];
       },
       forceReindexing,

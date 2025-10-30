@@ -302,6 +302,24 @@ export const langRes: LanguageResource = {
       selectLanguage: ['Display Language: ', '表示言語：', '显示语言：'],
       autoDetect: ['Auto Detect', '自動検出', '自动检测']
     },
+    tagManagement: {
+      title: ['Tag Management', 'タグ管理', '标签管理'],
+      searchPlaceholder: ['Search tags...', 'タグを検索...', '搜索标签...'],
+      confirmDelete: ['Are you sure you want to delete this tag?', 'このタグを削除してもよろしいですか？', '确定要删除此标签吗？'],
+      noResults: ['No tags found matching your search.', '検索条件に一致するタグが見つかりません。', '未找到匹配的标签。'],
+      noTags: ['No tags available. Create tags by adding them to questions or papers.', 'タグがありません。問題または試卷にタグを追加して作成してください。', '没有可用的标签。通过向问题或试卷添加标签来创建它们。'],
+      totalTags: ['Total: {{count}} tags', '合計：{{count}}個のタグ', '总计：{{count}}个标签'],
+      btn: {
+        merge: ['Merge Tags', 'タグをマージ', '合并标签'],
+      },
+      table: {
+        select: ['Select', '選択', '选择'],
+        name: ['Name', '名前', '名称'],
+        alternatives: ['Alternatives', '別名', '别名'],
+        id: ['ID', 'ID', 'ID'],
+        actions: ['Actions', '操作', '操作'],
+      }
+    },
     result: {
       dialog: {
         question: {
