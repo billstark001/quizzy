@@ -54,8 +54,6 @@ The tag system has been successfully migrated from string-based to ID-based refe
 
 The tag system previously stored tags as plain strings in questions and papers:
 
-The tag system currently stores tags as plain strings in questions and papers:
-
 ```typescript
 type Question = {
   // ...
