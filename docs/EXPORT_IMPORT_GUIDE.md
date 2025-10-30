@@ -118,7 +118,7 @@ This format will export data as formatted text suitable for reading and printing
 - Manual review and editing
 - Sharing for non-technical users
 
-**Note:** This format is planned for frontend implementation.
+**Note:** This format is planned for frontend implementation. See BUGS_AND_TODO.md for current status and timeline.
 
 ## Import with Tag Reconciliation
 
@@ -180,6 +180,8 @@ For future versions, the system will support conflict detection:
   - Use imported question
   - Keep both questions
 - Batch conflict resolution UI
+
+**Timeline:** This feature is deferred pending UI design and implementation. See BUGS_AND_TODO.md for current status.
 
 **Example API (Planned):**
 ```typescript
@@ -393,8 +395,10 @@ There is no recovery after reset. Always:
 **Questions Duplicating:**
 - Currently no automatic conflict resolution
 - Manually check for duplicates after import
-- Use question IDs to identify duplicates
+- Compare questions by title and content to identify duplicates
+- For complete format imports (without IDs), use content-based comparison
 - Delete unwanted duplicates via UI
+- Consider exporting with IDs if you need to track duplicates
 
 **IDs Conflicting:**
 - Use `keepIdsInComplete: false` for imports
