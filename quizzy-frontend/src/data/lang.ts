@@ -114,8 +114,11 @@ export const langRes: LanguageResource = {
       header: ['Edit Tag', 'タグを編集', '编辑标签'],
       mainName: ['Main Name', 'メイン名', '主名称'],
       mainNamePlaceholder: ['Enter tag name', 'タグ名を入力', '输入标签名称'],
-      alternatives: ['Alternatives (comma-separated)', '別名（カンマ区切り）', '别名（逗号分隔）'],
+      multilingualNames: ['Multilingual Names', '多言語名', '多语言名称'],
+      alternatives: ['Alternatives', '別名', '别名'],
       alternativesPlaceholder: ['e.g., js, JS, javascript', '例：js, JS, javascript', '例如：js, JS, javascript'],
+      addAlternativePlaceholder: ['Add alternative name', '別名を追加', '添加别名'],
+      alternativesHint: ['Press Enter or click + to add', 'Enterまたは+をクリックして追加', '按回车或点击+添加'],
     },
     tagInContext: {
       headerNew: ['Create New Tag', '新しいタグを作成', '创建新标签'],
@@ -336,6 +339,7 @@ export const langRes: LanguageResource = {
       noResults: ['No tags found matching your search.', '検索条件に一致するタグが見つかりません。', '未找到匹配的标签。'],
       noTags: ['No tags available. Create tags by adding them to questions or papers.', 'タグがありません。問題または試卷にタグを追加して作成してください。', '没有可用的标签。通过向问题或试卷添加标签来创建它们。'],
       totalTags: ['Total: {{count}} tags', '合計：{{count}}個のタグ', '总计：{{count}}个标签'],
+      showing: ['Showing {{start}}-{{end}} of {{total}}', '{{start}}-{{end}} / {{total}}を表示中', '显示{{start}}-{{end}} / {{total}}'],
       btn: {
         merge: ['Merge Tags', 'タグをマージ', '合并标签'],
       },

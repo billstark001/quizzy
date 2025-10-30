@@ -1,6 +1,7 @@
-import { Button, Input, VStack, Text, Box } from "@chakra-ui/react";
+import { Button, Input, VStack, Text, Box, HStack, IconButton } from "@chakra-ui/react";
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
+import { IoAddOutline, IoCloseOutline } from "react-icons/io5";
 import {
   DialogRoot, DialogBody, DialogCloseTrigger,
   DialogContent, DialogFooter, DialogHeader
@@ -29,30 +30,37 @@ export const TagInContextDialog = (
 
   const isNewTag = !tag;
   const [mainName, setMainName] = useState('');
-  const [alternativesText, setAlternativesText] = useState('');
+  const [alternatives, setAlternatives] = useState<string[]>([]);
+  const [newAlternative, setNewAlternative] = useState('');
 
   useEffect(() => {
     if (tag) {
       setMainName(tag.mainName);
-      // Join alternatives with comma, filtering out the mainName
+      // Filter out the mainName from alternatives
       const alts = tag.alternatives.filter(alt => alt !== tag.mainName);
-      setAlternativesText(alts.join(', '));
+      setAlternatives(alts);
     } else if (initialName) {
       setMainName(initialName);
-      setAlternativesText('');
+      setAlternatives([]);
     }
   }, [tag, initialName]);
+
+  const handleAddAlternative = () => {
+    const trimmed = newAlternative.trim();
+    if (trimmed && !alternatives.includes(trimmed)) {
+      setAlternatives([...alternatives, trimmed]);
+      setNewAlternative('');
+    }
+  };
+
+  const handleRemoveAlternative = (index: number) => {
+    setAlternatives(alternatives.filter((_, i) => i !== index));
+  };
 
   const handleAdd = () => {
     if (!mainName.trim()) {
       return;
     }
-    
-    // Parse alternatives from comma-separated text
-    const alternatives = alternativesText
-      .split(',')
-      .map(alt => alt.trim())
-      .filter(alt => alt.length > 0);
     
     submit({ action: 'add', mainName: mainName.trim(), alternatives });
   };
@@ -92,25 +100,67 @@ export const TagInContextDialog = (
               disabled={!isNewTag} // Can't edit name of existing tag here
             />
           </VStack>
-          {isNewTag && (
-            <VStack alignItems="flex-start" gap={2}>
-              <label htmlFor="tag-alternatives">{t('dialog.tagEdit.alternatives')}</label>
-              <Input
-                id="tag-alternatives"
-                value={alternativesText}
-                onChange={(e) => setAlternativesText(e.target.value)}
-                placeholder={t('dialog.tagEdit.alternativesPlaceholder')}
-              />
-            </VStack>
-          )}
-          {!isNewTag && (
-            <VStack alignItems="flex-start" gap={2}>
-              <Text fontSize="sm" fontWeight="bold">{t('dialog.tagEdit.alternatives')}</Text>
+          {/* Alternatives */}
+          <VStack alignItems="flex-start" gap={2}>
+            <Text fontWeight="bold">{t('dialog.tagEdit.alternatives')}</Text>
+            
+            {!isNewTag && alternatives.length === 0 && (
               <Text fontSize="sm" color="gray.600">
-                {tag?.alternatives.filter(alt => alt !== tag?.mainName).join(', ') || t('dialog.tagInContext.noAlternatives')}
+                {t('dialog.tagInContext.noAlternatives')}
               </Text>
-            </VStack>
-          )}
+            )}
+
+            {/* Alternative list */}
+            {alternatives.length > 0 && (
+              <VStack alignItems="stretch" width="100%" gap={1}>
+                {alternatives.map((alt, index) => (
+                  <HStack key={index} p={2} bg="gray.50" borderRadius="md">
+                    <Text flex="1">{alt}</Text>
+                    {isNewTag && (
+                      <IconButton
+                        aria-label="Remove alternative"
+                        size="sm"
+                        variant="ghost"
+                        colorPalette="red"
+                        onClick={() => handleRemoveAlternative(index)}
+                      >
+                        <IoCloseOutline />
+                      </IconButton>
+                    )}
+                  </HStack>
+                ))}
+              </VStack>
+            )}
+
+            {/* Add new alternative (only for new tags) */}
+            {isNewTag && (
+              <>
+                <HStack width="100%">
+                  <Input
+                    value={newAlternative}
+                    onChange={(e) => setNewAlternative(e.target.value)}
+                    placeholder={t('dialog.tagEdit.addAlternativePlaceholder')}
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter') {
+                        handleAddAlternative();
+                      }
+                    }}
+                  />
+                  <IconButton
+                    aria-label="Add alternative"
+                    onClick={handleAddAlternative}
+                    colorPalette="purple"
+                    disabled={!newAlternative.trim()}
+                  >
+                    <IoAddOutline />
+                  </IconButton>
+                </HStack>
+                <Text fontSize="xs" color="gray.600">
+                  {t('dialog.tagEdit.alternativesHint')}
+                </Text>
+              </>
+            )}
+          </VStack>
         </DialogBody>
         <DialogFooter justifyContent="space-between">
           <Button colorPalette="red" onClick={handleCancel}>

@@ -46,7 +46,7 @@ export const PaperEdit = () => {
       contextType: 'paper',
     });
 
-    if (result.action === 'remove') {
+    if (result && result.action === 'remove') {
       // Remove tag from paper
       const fieldName = isCategory ? 'categoryIds' : 'tagIds';
       const currentIds = paper[fieldName] ?? [];

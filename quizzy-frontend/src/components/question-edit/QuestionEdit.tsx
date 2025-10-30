@@ -73,7 +73,7 @@ export const QuestionEdit = () => {
       contextType: 'question',
     });
 
-    if (result.action === 'remove') {
+    if (result && result.action === 'remove') {
       // Remove tag from question
       const fieldName = isCategory ? 'categoryIds' : 'tagIds';
       const currentIds = question[fieldName] ?? [];

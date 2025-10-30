@@ -9,6 +9,7 @@ import PageToolbar from "@/components/PageToolbar";
 import { useSelection } from "@/utils/react";
 import { useDialog } from "@/utils/chakra";
 import TagEditDialog, { TagEditDialogData, TagEditDialogResult } from "@/dialogs/TagEditDialog";
+import Pagination from "@/components/Pagination";
 
 const mergeSelectedTags = withHandler(
   async (ids: string[]) => {
@@ -36,7 +37,7 @@ const deleteTag = withHandler(
 );
 
 const updateTag = withHandler(
-  async (id: string, updates: { mainName: string; alternatives: string[] }) => {
+  async (id: string, updates: { mainName: string; mainNames: Record<string, string | undefined>; alternatives: string[] }) => {
     return await Quizzy.updateTag(id, updates);
   },
   {
@@ -46,6 +47,8 @@ const updateTag = withHandler(
   }
 );
 
+const ITEMS_PER_PAGE = 20;
+
 export const TagManagementPage = () => {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
@@ -53,6 +56,7 @@ export const TagManagementPage = () => {
   const editDialog = useDialog<TagEditDialogData, TagEditDialogResult>(TagEditDialog);
   
   const [searchQuery, setSearchQuery] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
 
   // Fetch all tags
   const { data: tags = [], refetch } = useQuery({
@@ -69,6 +73,19 @@ export const TagManagementPage = () => {
       tag.alternatives.some(alt => alt.toLowerCase().includes(query))
     );
   }, [tags, searchQuery]);
+
+  // Pagination
+  const totalPages = Math.max(1, Math.ceil(filteredTags.length / ITEMS_PER_PAGE));
+  const paginatedTags = useMemo(() => {
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    const end = start + ITEMS_PER_PAGE;
+    return filteredTags.slice(start, end);
+  }, [filteredTags, currentPage]);
+
+  // Reset to page 1 when search changes
+  useMemo(() => {
+    setCurrentPage(1);
+  }, [searchQuery]);
 
   const selectedIds = selection.getAllSelected();
   const selectedCount = selectedIds.length;
@@ -145,7 +162,7 @@ export const TagManagementPage = () => {
           </Table.Row>
         </Table.Header>
         <Table.Body>
-          {filteredTags.map((tag) => (
+          {paginatedTags.map((tag) => (
             <Table.Row key={tag.id}>
               <Table.Cell>
                 <input
@@ -194,6 +211,24 @@ export const TagManagementPage = () => {
             : t('page.tagManagement.noTags')
           }
         </Box>
+      )}
+
+      {/* Pagination */}
+      {filteredTags.length > ITEMS_PER_PAGE && (
+        <VStack gap={2}>
+          <Text fontSize="sm" color="gray.600">
+            {t('page.tagManagement.showing', {
+              start: (currentPage - 1) * ITEMS_PER_PAGE + 1,
+              end: Math.min(currentPage * ITEMS_PER_PAGE, filteredTags.length),
+              total: filteredTags.length
+            })}
+          </Text>
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            setPage={setCurrentPage}
+          />
+        </VStack>
       )}
 
       <Box fontSize="sm" color="gray.600">
