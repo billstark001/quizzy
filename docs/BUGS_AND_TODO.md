@@ -23,7 +23,17 @@ No critical issues have been reported. If you encounter a critical bug that caus
 
 ## High Priority Issues 🟡
 
-### 1. Tag System Architectural Issue ✅ COMPLETED
+### 1. ~~Tag System Architectural Issue~~ ✅ COMPLETED
+
+**Status:** ✅ Completed
+**Category:** Architecture
+
+The tag system has been successfully migrated from string-based to ID-based architecture in database v6. This provides:
+- Centralized tag management
+- Easy tag renaming across all content
+- Tag merging capabilities
+- Multilingual support
+- Referential integrity
 
 ## Medium Priority Issues 🟢
 
@@ -58,7 +68,12 @@ No critical issues have been reported. If you encounter a critical bug that caus
 
 ---
 
-### 3. Search Index Rebuild Performance ✅ COMPLETED
+### 3. ~~Search Index Rebuild Performance~~ ✅ COMPLETED
+
+**Status:** ✅ Completed
+**Category:** Performance
+
+The search index rebuild performance has been optimized with incremental indexing. Search indices are only updated for entities with the `searchCacheInvalidated` flag, significantly improving performance.
 
 ### 4. No Attachment Support
 
@@ -178,78 +193,68 @@ No critical issues have been reported. If you encounter a critical bug that caus
 
 ---
 
+## Future Roadmaps 📋
+
+For comprehensive implementation plans, see dedicated roadmap documents:
+
+### Mobile Web, PWA, and Offline Access
+**Document:** [MOBILE_PWA_ROADMAP.md](MOBILE_PWA_ROADMAP.md)
+
+**Overview:** Transform Quizzy into a mobile-first Progressive Web App with enhanced offline capabilities.
+
+**Key Features:**
+- Mobile-optimized responsive design
+- PWA with install capabilities and service worker
+- Touch gestures and mobile-specific UI
+- Offline-first architecture
+- Performance optimization for mobile networks
+- Native mobile capabilities (share, clipboard, etc.)
+
+**Timeline:** 5.5-7 months (22-28 weeks)
+
+**Status:** Planning Phase
+
+---
+
+### Cloud Synchronization
+**Document:** [CLOUD_SYNC_DESIGN.md](CLOUD_SYNC_DESIGN.md)
+
+**Overview:** Add optional cloud synchronization for multi-device support while maintaining offline-first design.
+
+**Key Features:**
+- Multi-device sync with conflict resolution
+- Hono-based backend (simple and extensible)
+- JWT authentication
+- Optional end-to-end encryption
+- WebSocket for real-time updates
+- Self-hosting support
+
+**Timeline:** 6-9 months (25-36 weeks)
+
+**Status:** Design Phase
+
+---
+
 ## Planned Features 📋
 
-### 10.1. Enhanced Import/Export System for Complete Quiz Papers ✅ COMPLETED
+### 10.1. ~~Enhanced Import/Export System for Complete Quiz Papers~~ ✅ COMPLETED
 
-**Status:** ✅ Implemented  
+**Status:** ✅ Completed
 **Category:** Data Management / Import/Export
 
-**Implementation Complete:**
+A comprehensive import/export system has been implemented with:
+- Multiple export formats (separate, complete, human-readable)
+- Automatic tag reconciliation on import
+- Question conflict resolution with user interaction
+- Batch operations and translations (EN/JA/ZH)
+- Full portability and backward compatibility
 
-**✅ New Type System:**
-- `CompleteQuestion` and `CompleteQuestionDraft` - no foreign keys, tags as strings
-- `CompleteQuizPaper` and `CompleteQuizPaperDraft` - embedded questions, string-based tags
-- Backward compatibility maintained with legacy types
-
-**✅ Import Features Implemented:**
-1. **Tag Reconciliation:**
-   - ✅ Automatic tag matching by name, multilingual names, or aliases
-   - ✅ Reuses existing tags when matched
-   - ✅ Creates new tags when no match found
-   - ✅ Builds mapping from string names to tag IDs
-
-2. **Question Conflict Resolution:**
-   - ✅ Matches existing questions by title, content, solution, and type
-   - ✅ Presents conflicts to user via async callback
-   - ✅ User chooses: keep existing, use imported, or keep both
-   - ✅ Batch resolution options (keep all/use all/keep both)
-   - ✅ Interactive conflict resolution dialog with translations (EN/JA/ZH)
-
-3. **Complete Import Flow:**
-   - ✅ Parses complete paper/question format
-   - ✅ Reconciles all tags first
-   - ✅ Checks each question for duplicates
-   - ✅ Resolves conflicts with user input
-   - ✅ Converts to standard format with IDs
-   - ✅ Imports into database
-
-**✅ Export Options Implemented:**
-
-**Option 1: Separate Export (with IDs)**
-- ✅ Exports paper/question, questions array, tags array
-- ✅ Keeps all entity IDs
-- ✅ Optional: remove search/version indices
-- Use case: Backup with referential integrity
-
-**Option 2: Complete Export (no foreign keys)**
-- ✅ Exports single CompleteQuizPaperDraft object
-- ✅ All questions embedded (no ID references)
-- ✅ All tags as string names
-- ✅ Optional: keep entity IDs for tracking
-- Use case: Self-contained portable format
-
-**Option 3: Human-Readable Export**
-- ✅ Generates formatted markdown text
-- ✅ Includes all content in readable form
-- ✅ Backend implementation complete
-- ✅ Works for both papers and questions
-- Use case: Printing, sharing, documentation
-
-**✅ Frontend UI Implemented:**
-- Export dialog with format selection
-- Conflict resolution dialog
-- Translations in EN/JA/ZH
-- Integration with paper import/export workflows
-
-**Benefits Achieved:**
-- ✅ True portability of quiz content
-- ✅ No broken references on import
-- ✅ Intelligent duplicate detection
-- ✅ User control over conflicts
-- ✅ Multiple export formats for different needs
+See [EXPORT_IMPORT_GUIDE.md](EXPORT_IMPORT_GUIDE.md) for complete documentation.
 
 ### 11. Advanced Analytics Dashboard
+
+**Status:** 📋 Planned  
+**Category:** Features / Analytics
 
 **Description:** Comprehensive analytics with charts and insights.
 
@@ -258,10 +263,14 @@ No critical issues have been reported. If you encounter a critical bug that caus
 - Knowledge gap identification
 - Question difficulty calibration
 - Predictive analytics
+- Visual charts and graphs
 
 ---
 
 ### 12. Collaborative Authoring
+
+**Status:** 📋 Planned  
+**Category:** Features / Collaboration
 
 **Description:** Multi-user content creation.
 
@@ -270,10 +279,16 @@ No critical issues have been reported. If you encounter a critical bug that caus
 - Comment and review system
 - Change tracking
 - Role-based permissions
+- Shared question banks
+
+**Note:** Depends on cloud sync implementation (see [CLOUD_SYNC_DESIGN.md](CLOUD_SYNC_DESIGN.md))
 
 ---
 
 ### 13. Question Bank Management
+
+**Status:** 📋 Planned  
+**Category:** Features / Organization
 
 **Description:** Large-scale question organization.
 
@@ -282,22 +297,32 @@ No critical issues have been reported. If you encounter a critical bug that caus
 - Bulk operations
 - Import from standard formats (QTI, Moodle XML)
 - Version control with branching
+- Advanced filtering and search
 
 ---
 
-### 14. Mobile Applications
+### 14. Native Mobile Applications
 
-**Description:** Native mobile apps.
+**Status:** 📋 Planned (Low Priority)  
+**Category:** Platform / Mobile
 
-**Features:**
+**Description:** Native mobile apps (after PWA implementation).
+
+**Note:** PWA implementation should be prioritized first (see [MOBILE_PWA_ROADMAP.md](MOBILE_PWA_ROADMAP.md)). Native apps may be considered later if PWA limitations are encountered.
+
+**Potential Features:**
 - React Native apps for iOS/Android
-- Offline-first architecture
-- Touch-optimized interface
-- Mobile-specific features (camera for image questions)
+- Native performance optimization
+- Deep OS integration
+- Camera for image questions
+- Advanced offline capabilities
 
 ---
 
 ### 15. AI-Assisted Authoring
+
+**Status:** 📋 Planned  
+**Category:** Features / AI
 
 **Description:** AI tools for content creation.
 
@@ -307,6 +332,7 @@ No critical issues have been reported. If you encounter a critical bug that caus
 - Difficulty estimation
 - Tag suggestion
 - Grammar and clarity checking
+- Translation support
 
 ---
 

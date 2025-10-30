@@ -37,17 +37,50 @@ Covers:
 ---
 
 ### For Contributors and Maintainers
-🐛 **[BUGS_AND_TODO.md](BUGS_AND_TODO.md)** - Known issues and roadmap
+
+🐛 **[BUGS_AND_TODO.md](BUGS_AND_TODO.md)** - Known issues and general roadmap
 
 Contains:
 - Critical, high, medium, and low priority issues
-- Detailed analysis of the tag system migration (from strings to IDs)
-- Complete implementation plan with phases and checklists
+- Completed features and their status
 - Planned features and enhancements
 - Bug report template
 - Contributing guidelines
 
 **Target Audience:** Contributors, project maintainers, QA testers
+
+---
+
+📱 **[MOBILE_PWA_ROADMAP.md](MOBILE_PWA_ROADMAP.md)** - Mobile web, PWA, and offline access roadmap
+
+Comprehensive implementation plan for:
+- Mobile-first responsive design
+- Progressive Web App capabilities
+- Service worker and offline functionality
+- Touch interactions and mobile UX
+- Performance optimization
+- Native mobile features
+
+**Target Audience:** Frontend developers, mobile developers, product managers
+
+**Timeline:** 5.5-7 months | **Status:** Planning Phase
+
+---
+
+☁️ **[CLOUD_SYNC_DESIGN.md](CLOUD_SYNC_DESIGN.md)** - Cloud synchronization architecture
+
+Complete design document for:
+- Multi-device synchronization
+- Hono-based backend architecture
+- Conflict resolution strategies
+- Authentication and security
+- Database schema and adapters
+- Deployment options
+- Real-time sync with WebSocket
+
+**Target Audience:** Backend developers, system architects, DevOps engineers
+
+**Timeline:** 6-9 months | **Status:** Design Phase
 
 ---
 
@@ -61,6 +94,12 @@ Contains:
 **...understand how the system works**
 → Read [ARCHITECTURE.md](ARCHITECTURE.md)
 
+**...contribute to mobile/PWA features**
+→ Read [MOBILE_PWA_ROADMAP.md](MOBILE_PWA_ROADMAP.md)
+
+**...contribute to backend/sync features**
+→ Read [CLOUD_SYNC_DESIGN.md](CLOUD_SYNC_DESIGN.md)
+
 **...contribute code or fix bugs**
 → Read [BUGS_AND_TODO.md](BUGS_AND_TODO.md), then [ARCHITECTURE.md](ARCHITECTURE.md)
 
@@ -71,13 +110,13 @@ Contains:
 → Check [BUGS_AND_TODO.md](BUGS_AND_TODO.md) first, then follow the bug report template
 
 **...request a feature**
-→ Check [BUGS_AND_TODO.md](BUGS_AND_TODO.md) to see if it's already planned
+→ Check [BUGS_AND_TODO.md](BUGS_AND_TODO.md) and roadmap documents to see if it's already planned
 
 **...understand the data model**
 → See "Data Structures" section in [ARCHITECTURE.md](ARCHITECTURE.md)
 
-**...learn about the tag system issue**
-→ Read "Tag System Architectural Issue" in [BUGS_AND_TODO.md](BUGS_AND_TODO.md)
+**...learn about the tag system**
+→ Read [TAG_SYSTEM_FEATURES.md](TAG_SYSTEM_FEATURES.md) and [TAG_MIGRATION_GUIDE.md](TAG_MIGRATION_GUIDE.md)
 
 ---
 
