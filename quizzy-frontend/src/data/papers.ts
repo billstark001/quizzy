@@ -61,7 +61,7 @@ export const usePapers = () => {
     const text = await f.text();
     const json = JSON.parse(text);
     
-    await QuizzyRaw.importCompleteQuizPapers(json, {
+    await QuizzyRaw.importCompleteQuizPapers([json], {
       onConflict: async (conflicts) => {
         return new Promise<ConflictResolutionDecision[]>((resolve) => {
           setPendingConflicts(conflicts);
