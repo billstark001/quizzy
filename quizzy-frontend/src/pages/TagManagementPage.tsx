@@ -7,6 +7,8 @@ import { Quizzy } from "@/data";
 import { withHandler } from "@/components/handler";
 import PageToolbar from "@/components/PageToolbar";
 import { useSelection } from "@/utils/react";
+import { useDialog } from "@/utils/chakra";
+import TagEditDialog, { TagEditDialogData, TagEditDialogResult } from "@/dialogs/TagEditDialog";
 
 const mergeSelectedTags = withHandler(
   async (ids: string[]) => {
@@ -33,9 +35,9 @@ const deleteTag = withHandler(
   }
 );
 
-const updateTagName = withHandler(
-  async (id: string, newName: string) => {
-    return await Quizzy.updateTag(id, { mainName: newName });
+const updateTag = withHandler(
+  async (id: string, updates: { mainName: string; alternatives: string[] }) => {
+    return await Quizzy.updateTag(id, updates);
   },
   {
     async: true,
@@ -48,10 +50,9 @@ export const TagManagementPage = () => {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const selection = useSelection();
+  const editDialog = useDialog<TagEditDialogData, TagEditDialogResult>(TagEditDialog);
   
   const [searchQuery, setSearchQuery] = useState('');
-  const [editingTagId, setEditingTagId] = useState<string | null>(null);
-  const [editingName, setEditingName] = useState('');
 
   // Fetch all tags
   const { data: tags = [], refetch } = useQuery({
@@ -89,24 +90,13 @@ export const TagManagementPage = () => {
     }
   };
 
-  const startEditing = (tag: Tag) => {
-    setEditingTagId(tag.id);
-    setEditingName(tag.mainName);
-  };
-
-  const saveEditing = async () => {
-    if (editingTagId && editingName.trim()) {
-      await updateTagName(editingTagId, editingName.trim());
-      setEditingTagId(null);
-      setEditingName('');
+  const handleEdit = async (tag: Tag) => {
+    const result = await editDialog.open({ tag });
+    if (result) {
+      await updateTag(tag.id, result);
       refetch();
       queryClient.invalidateQueries({ queryKey: ['tag-list'] });
     }
-  };
-
-  const cancelEditing = () => {
-    setEditingTagId(null);
-    setEditingName('');
   };
 
   return (
@@ -165,16 +155,7 @@ export const TagManagementPage = () => {
                 />
               </Table.Cell>
               <Table.Cell>
-                {editingTagId === tag.id ? (
-                  <Input
-                    value={editingName}
-                    onChange={(e) => setEditingName(e.target.value)}
-                    size="sm"
-                    autoFocus
-                  />
-                ) : (
-                  <Text fontWeight="bold">{tag.mainName}</Text>
-                )}
+                <Text fontWeight="bold">{tag.mainName}</Text>
               </Table.Cell>
               <Table.Cell>
                 <Text fontSize="sm" color="gray.600">
@@ -188,30 +169,17 @@ export const TagManagementPage = () => {
               </Table.Cell>
               <Table.Cell>
                 <HStack gap={2}>
-                  {editingTagId === tag.id ? (
-                    <>
-                      <Button size="sm" colorPalette="green" onClick={saveEditing}>
-                        {t('common.btn.save')}
-                      </Button>
-                      <Button size="sm" variant="outline" onClick={cancelEditing}>
-                        {t('common.btn.cancel')}
-                      </Button>
-                    </>
-                  ) : (
-                    <>
-                      <Button size="sm" variant="outline" onClick={() => startEditing(tag)}>
-                        {t('common.btn.edit')}
-                      </Button>
-                      <Button
-                        size="sm"
-                        colorPalette="red"
-                        variant="outline"
-                        onClick={() => handleDelete(tag.id)}
-                      >
-                        {t('common.btn.delete')}
-                      </Button>
-                    </>
-                  )}
+                  <Button size="sm" variant="outline" onClick={() => handleEdit(tag)}>
+                    {t('common.btn.edit')}
+                  </Button>
+                  <Button
+                    size="sm"
+                    colorPalette="red"
+                    variant="outline"
+                    onClick={() => handleDelete(tag.id)}
+                  >
+                    {t('common.btn.delete')}
+                  </Button>
                 </HStack>
               </Table.Cell>
             </Table.Row>
@@ -231,6 +199,8 @@ export const TagManagementPage = () => {
       <Box fontSize="sm" color="gray.600">
         {t('page.tagManagement.totalTags', { count: tags.length })}
       </Box>
+
+      <editDialog.Root />
     </VStack>
   );
 };

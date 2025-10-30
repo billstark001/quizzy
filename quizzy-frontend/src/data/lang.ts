@@ -110,6 +110,13 @@ export const langRes: LanguageResource = {
     tagSelect: {
       header: ['Select Tag', 'タグを選択', '选择标签'],
     },
+    tagEdit: {
+      header: ['Edit Tag', 'タグを編集', '编辑标签'],
+      mainName: ['Main Name', 'メイン名', '主名称'],
+      mainNamePlaceholder: ['Enter tag name', 'タグ名を入力', '输入标签名称'],
+      alternatives: ['Alternatives (comma-separated)', '別名（カンマ区切り）', '别名（逗号分隔）'],
+      alternativesPlaceholder: ['e.g., js, JS, javascript', '例：js, JS, javascript', '例如：js, JS, javascript'],
+    },
     bookmarkEdit: {
       header: [
         'Bookmark Edit: {{bmName}}',

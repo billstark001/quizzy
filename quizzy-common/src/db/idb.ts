@@ -532,6 +532,10 @@ export class IDBController extends IDBCore implements QuizzyController {
     if (!hasTx) {
       await tx.done;
     }
+    // Filter out soft-deleted tags to avoid uniqueness constraint conflicts
+    if (ret && ret.deleted) {
+      return undefined;
+    }
     return ret;
   }
 
