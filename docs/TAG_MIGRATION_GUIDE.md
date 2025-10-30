@@ -106,11 +106,27 @@ Results: Questions/papers with matching tag IDs or legacy string tags
 
 #### Tag Management
 
-Use the Tags page to:
-- View all tags
-- Merge duplicate tags
-- Rename tags (changes apply to all questions/papers)
-- Split tags into separate entities
+**Tag Management Page:**
+
+Navigate to Settings or the dedicated Tag Management page to manage your tags:
+
+**Features:**
+- **View All Tags**: Browse all tags with their IDs and alternatives
+- **Search Tags**: Filter tags by name or alternative names
+- **Rename Tags**: Edit tag names inline - changes apply to all questions/papers automatically
+- **Merge Tags**: Select multiple tags and merge them into one
+  - Select 2 or more tags using checkboxes
+  - Click "Merge Tags" button
+  - The first selected tag becomes the primary tag
+  - All questions/papers using merged tags are automatically updated
+- **Delete Tags**: Remove unused tags with confirmation
+- **View Alternatives**: See all alternative names (aliases) for each tag
+
+**In Question/Paper Editor:**
+- Click on tags to add/edit them
+- Tags are automatically created if they don't exist
+- Tag suggestions appear as you type
+- Tags are saved as IDs, not strings
 
 ### For Developers
 
@@ -137,8 +153,14 @@ const tag = await controller.getTag("javascript");
 #### Accessing Tags
 
 ```typescript
+// Get tag by name (creates if doesn't exist)
+const tag = await controller.getTag("javascript");
+
 // Get tag by ID
-const tag = await controller.getTag(tagId);
+const tag = await controller.getTagById(tagId);
+
+// Get multiple tags by IDs
+const tags = await controller.getTagsByIds([id1, id2, id3]);
 
 // List all tags
 const tags = await controller.listTags();
@@ -146,6 +168,31 @@ const tags = await controller.listTags();
 // Get tag name for display
 const tagName = tag.mainName;
 const localizedName = tag.mainNames[currentLanguage] || tag.mainName;
+```
+
+#### Resolving Tag IDs in UI Components
+
+Use the `useTagResolver` hook to automatically resolve tag IDs to Tag objects:
+
+```typescript
+import { useTagResolver } from "@/hooks/useTagResolver";
+
+const MyComponent = ({ question }) => {
+  // Automatically resolves tagIds to Tag objects
+  const { displayTags, displayCategories, isLoading } = useTagResolver(
+    question.tags,      // fallback string tags
+    question.tagIds,    // new ID-based tags
+    question.categories,
+    question.categoryIds
+  );
+
+  return (
+    <div>
+      <TagDisplay tags={displayCategories} isCategory />
+      <TagDisplay tags={displayTags} />
+    </div>
+  );
+};
 ```
 
 #### Search Functions
@@ -381,6 +428,22 @@ Get existing tag or create new one.
 const tag: Tag = await controller.getTag("javascript");
 ```
 
+#### `getTagById(id)`
+
+Get a tag by its ID.
+
+```typescript
+const tag: Tag | undefined = await controller.getTagById(tagId);
+```
+
+#### `getTagsByIds(ids)`
+
+Get multiple tags by their IDs.
+
+```typescript
+const tags: (Tag | undefined)[] = await controller.getTagsByIds([id1, id2, id3]);
+```
+
 #### `listTags()`
 
 List all tags.
@@ -391,7 +454,7 @@ const tags: Tag[] = await controller.listTags();
 
 #### `updateTag(id, patch)`
 
-Update tag properties.
+Update tag properties. Changes apply to all questions/papers using this tag.
 
 ```typescript
 await controller.updateTag(tagId, {
@@ -400,12 +463,21 @@ await controller.updateTag(tagId, {
 });
 ```
 
-#### `mergeTags(ids)`
+#### `deleteTag(id)`
 
-Merge multiple tags into one.
+Delete a tag (soft delete).
 
 ```typescript
-const mergedId = await controller.mergeTags([id1, id2, id3]);
+const success: boolean = await controller.deleteTag(tagId);
+```
+
+#### `mergeTags(ids)`
+
+Merge multiple tags into one. All questions/papers using merged tags are automatically updated to use the first tag ID.
+
+```typescript
+const mergedId: ID | undefined = await controller.mergeTags([id1, id2, id3]);
+// Returns the ID of the resulting merged tag (the first ID in the array)
 ```
 
 ---
@@ -436,6 +508,37 @@ const mergedId = await controller.mergeTags([id1, id2, id3]);
 
 **A:** When you import data with string-based tags, the system will automatically create tag entities and migrate them to ID-based tags.
 
+### Q: How do I merge duplicate tags?
+
+**A:** Use the Tag Management page:
+1. Navigate to Tag Management (or Settings page)
+2. Select 2 or more tags you want to merge using checkboxes
+3. Click the "Merge Tags" button
+4. All questions and papers using the merged tags will automatically be updated
+
+### Q: Can I rename a tag after it's been created?
+
+**A:** Yes! Use the Tag Management page:
+1. Find the tag you want to rename
+2. Click the "Edit" button
+3. Change the name
+4. Click "Save"
+5. All questions and papers using this tag will automatically show the new name
+
+### Q: What happens to questions/papers when I delete a tag?
+
+**A:** When you delete a tag, it's soft-deleted (marked as deleted but not removed). Questions and papers will still reference the tag ID, but it won't appear in tag lists. To completely remove tag references, you would need to manually edit the affected questions/papers.
+
+### Q: How does tag search work with the new system?
+
+**A:** Tag search works seamlessly with both string-based (legacy) and ID-based tags. The system builds a Trie cache that includes:
+- Tag IDs
+- Tag names (mainName)
+- Alternative names (aliases)
+- Legacy string tags
+
+When you search, the system finds matching tags and returns all questions/papers that use those tags.
+
 ---
 
 ## Support
@@ -450,5 +553,5 @@ For issues or questions about the tag migration:
 ---
 
 **Last Updated:** 2025  
-**Document Version:** 1.0  
+**Document Version:** 1.1 (Updated with tag management features)  
 **Database Version:** 6
