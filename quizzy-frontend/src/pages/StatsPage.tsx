@@ -66,9 +66,7 @@ export const StatsPage = () => {
         </Box>
         <Center py={16}>
           <VStack gap={4}>
-            <Icon fontSize="6xl" color="gray.300">
-              <FiBarChart2 />
-            </Icon>
+            <Icon as={FiBarChart2} fontSize="6xl" color="gray.300" />
             <Heading size="md" color="gray.600">{t('page.stats.empty.title')}</Heading>
             <Text color="gray.500">{t('page.stats.empty.description')}</Text>
           </VStack>

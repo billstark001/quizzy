@@ -107,9 +107,7 @@ export const RecordsPage = () => {
         </Box>
         <Center py={16}>
           <VStack gap={4}>
-            <Icon fontSize="6xl" color="gray.300">
-              <FiFileText />
-            </Icon>
+            <Icon as={FiFileText} fontSize="6xl" color="gray.300" />
             <Heading size="md" color="gray.600">{t('page.records.empty.title')}</Heading>
             <Text color="gray.500">{t('page.records.empty.description')}</Text>
           </VStack>

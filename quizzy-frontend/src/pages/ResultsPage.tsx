@@ -120,9 +120,7 @@ export const ResultsPage = () => {
         </Box>
         <Center py={16}>
           <VStack gap={4}>
-            <Icon fontSize="6xl" color="gray.300">
-              <FiCheckCircle />
-            </Icon>
+            <Icon as={FiCheckCircle} fontSize="6xl" color="gray.300" />
             <Heading size="md" color="gray.600">{t('page.results.empty.title')}</Heading>
             <Text color="gray.500">{t('page.results.empty.description')}</Text>
           </VStack>
@@ -190,12 +188,16 @@ export const ResultsPage = () => {
       <Column 
         field='score' 
         header={t('page.results.table.score')}
-        render={(score, item) => `${score} / ${item.totalScore}`}
+        render={(score, item) => `${score ?? 0} / ${item.totalScore ?? 0}`}
       />
       <Column 
         field='totalScore' 
         header={t('page.results.table.percentage')}
-        render={(total, item) => `${((item.score / total) * 100).toFixed(1)}%`}
+        render={(total, item) => {
+          const score = item.score ?? 0;
+          const totalScore = total ?? 0;
+          return totalScore > 0 ? `${((score / totalScore) * 100).toFixed(1)}%` : '0.0%';
+        }}
       />
       <Column header={t('page.results.table.actions')}>
         <GotoButton refresh={() => c.invalidateQueries({ queryKey: ['results'] })} />

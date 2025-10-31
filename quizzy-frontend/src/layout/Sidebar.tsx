@@ -269,10 +269,7 @@ const HeaderNavBar = ({ logo, onOpen, ...rest }: MobileProps) => {
               bg={useColorModeValue('white', 'gray.900')}
               borderColor={useColorModeValue('gray.200', 'gray.700')}
             >
-              <MenuItem value="profile" onClick={() => {
-                // User system not yet implemented
-                console.warn('User profile not yet implemented');
-              }}>
+              <MenuItem value="profile" disabled>
                 {t('layout.sidebar.menu.profile')}
               </MenuItem>
               <MenuItem value="settings" onClick={() => navigate('/settings')}>
@@ -282,10 +279,7 @@ const HeaderNavBar = ({ logo, onOpen, ...rest }: MobileProps) => {
                 {t('layout.sidebar.menu.about')}
               </MenuItem>
               <MenuSeparator />
-              <MenuItem value="signout" onClick={() => {
-                // User system not yet implemented
-                console.warn('User sign out not yet implemented');
-              }}>
+              <MenuItem value="signout" disabled>
                 {t('layout.sidebar.menu.signout')}
               </MenuItem>
             </MenuContent>
