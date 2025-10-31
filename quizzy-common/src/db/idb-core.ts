@@ -11,7 +11,7 @@ import QuickLRU from "quick-lru";
 import { Bm25GlobalCache, buildBm25Cache, BuildBm25CacheOptions, buildBm25QueryScore, BuildBm25QueryScoreParameters, defaultBm25GlobalCache } from "@/search/bm25";
 import { extractFields, Nullable, uuidV4B64, uuidV4B64WithRetry } from "@/utils";
 import { buildTrieTreeIterative, expandQuery, LoadedTrieTree, loadTrieTree } from "@/search/trie";
-import { checkImport, evolveVersionBeforeSync, ImportStatus } from "@/version";
+import { evolveVersionBeforeSync, decideImportAction, createConflictDescriptor } from "@/version-manager";
 
 
 type _TX = IDBPTransaction<unknown, ArrayLike<string>, 'readwrite'>;
@@ -183,57 +183,66 @@ export class IDBCore {
     // logic of single import
     const _i = async (remote: T) => {
       const local = await tx.store.get(remote.id);
-      if (local) {
-        if (local.deleted) {
-          await tx.store.put(remote);
-          res.newlyImported.push(remote.id);
-          return;
-        }
-        // apply strategy
-        const importStatus: ImportStatus = isStoreVersionIndexed
-          ? checkImport(local, remote)
-          : 'conflict-remote';
-        if (importStatus === 'same' || importStatus === 'local') {
-          // do nothing
-          return;
-        } else if (importStatus === 'remote') {
-          // remote override
-          await tx.store.put(remote);
-          return;
-        }
-        // default to true
-        const preserveLocal = importStatus !== 'conflict-remote';
+      
+      // Use version-manager's import decision logic
+      const decision = decideImportAction(local, remote, {
+        isStoreVersionIndexed,
+        isLocalDeleted: local?.deleted,
+      });
 
-        // create patch
-        const _local = hashFields
-          ? extractFields(local, hashFields)
-          : local;
-        const _remote = hashFields
-          ? extractFields(remote, hashFields)
-          : remote;
-        const patch = preserveLocal
-          ? getPatch(_local, _remote)
-          : getPatch(_remote, _local);
-
-        if (!preserveLocal) {
+      switch (decision.action) {
+        case 'skip':
+          // Keep local version, do nothing
+          return;
+          
+        case 'replace':
+          // Replace with remote version
           await tx.store.put(remote);
+          if (local) {
+            // Existing record updated
+            return;
+          } else {
+            // New record imported
+            res.newlyImported.push(remote.id);
+            return;
+          }
+          
+        case 'conflict': {
+          // Handle conflict
+          const preserveLocal = decision.preserveLocal!;
+          
+          // Create patch for conflict record
+          const _local = hashFields
+            ? extractFields(local, hashFields)
+            : local;
+          const _remote = hashFields
+            ? extractFields(remote, hashFields)
+            : remote;
+          const patch = preserveLocal
+            ? getPatch(_local, _remote)
+            : getPatch(_remote, _local);
+
+          // If preserving remote, update database
+          if (!preserveLocal) {
+            await tx.store.put(remote);
+          }
+          
+          // Create conflict record using version-manager logic
+          const descriptor = createConflictDescriptor(local, remote, preserveLocal);
+          const record: VersionConflictRecord = {
+            id: '',
+            storeId,
+            itemId: descriptor.itemId,
+            importTime: now,
+            localVersion: descriptor.localVersion,
+            remoteVersion: descriptor.remoteVersion,
+            preserved: descriptor.preserved,
+            patch,
+          };
+          res.conflict.push(record);
+          return;
         }
-        const record = {
-          id: '',
-          storeId,
-          itemId: local.id,
-          importTime: now,
-          localVersion: (local as VersionIndexed).currentVersion ?? 'initial',
-          remoteVersion: (remote as VersionIndexed).currentVersion ?? 'initial',
-          preserved: preserveLocal ? 'local' : 'remote',
-          patch,
-        } satisfies VersionConflictRecord;
-        res.conflict.push(record);
-        return;
       }
-      // new record
-      await tx.store.add(remote);
-      res.newlyImported.push(remote.id);
     };
 
     // execute import on all objects

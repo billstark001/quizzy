@@ -39,14 +39,16 @@ export const useTagResolver = (
   });
 
   // Combine resolved tags with string tags (for backward compatibility)
-  const displayTags = useMemo(() => {
+  const [displayTags, displayTagsMap] = useMemo(() => {
     const result: (string | Tag)[] = [];
+    const resultMap: Record<string, Tag> = {};
 
     // Add resolved tag objects (preferred)
     if (resolvedTags && resolvedTags.length > 0) {
       resolvedTags.forEach(tag => {
         if (tag) {
           result.push(tag);
+          resultMap[tag.id] = tag;
         }
       });
     }
@@ -56,17 +58,19 @@ export const useTagResolver = (
       result.push(...tags);
     }
 
-    return result;
+    return [result, resultMap];
   }, [tags, tagIds, resolvedTags]);
 
-  const displayCategories = useMemo(() => {
+  const [displayCategories, displayCategoriesMap] = useMemo(() => {
     const result: (string | Tag)[] = [];
+    const resultMap: Record<string, Tag> = {};
 
     // Add resolved category objects (preferred)
     if (resolvedCategories && resolvedCategories.length > 0) {
       resolvedCategories.forEach(cat => {
         if (cat) {
           result.push(cat);
+          resultMap[cat.id] = cat;
         }
       });
     }
@@ -76,12 +80,14 @@ export const useTagResolver = (
       result.push(...categories);
     }
 
-    return result;
+    return [result, resultMap];
   }, [categories, categoryIds, resolvedCategories]);
 
   return {
     displayTags,
     displayCategories,
+    displayTagsMap,
+    displayCategoriesMap,
     isLoading: (tagIds && tagIds.length > 0 && !resolvedTags) ||
       (categoryIds && categoryIds.length > 0 && !resolvedCategories),
   };

@@ -3,7 +3,7 @@ import Sheet, { withSheetRow, Column } from "@/components/common/Sheet";
 import { QuizResult, Stat } from "@quizzy/base/types";
 import { dispDuration } from "@/utils/time";
 import { QuizzyWrapped } from "@/data";
-import { Button, Separator, HStack, VStack, Checkbox } from "@chakra-ui/react";
+import { Button, Separator, HStack, VStack, Checkbox, Heading, Text, Spinner, Box, Center, Icon } from "@chakra-ui/react";
 import { DateTime } from "luxon";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
@@ -11,6 +11,7 @@ import { useSelection } from "@/utils/react";
 import { useCallback } from "react";
 import { openDialog } from "@/components/handler";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { FiCheckCircle } from "react-icons/fi";
 
 type _K = {
   refresh: () => void | Promise<void>,
@@ -62,8 +63,9 @@ const Selector = withSheetRow<QuizResult, Omit<Checkbox.RootProps, 'checked' | '
 });
 
 export const ResultsPage = () => {
+  const { t } = useTranslation();
 
-  const { data: results } = useQuery({
+  const { data: results, isLoading } = useQuery({
     queryKey: ['results'],
     queryFn: () => QuizzyWrapped.listQuizResults(),
     initialData: [],
@@ -91,31 +93,113 @@ export const ResultsPage = () => {
     }
     if ((ret as Stat).id) {
       const doNavigate = await openDialog(
-        <>stat generation complete. goto?</>,
+        <>{t('page.results.statGenComplete')}</>,
         'ok-cancel', 'stat-gen'
       );
       if (doNavigate) {
         navigate(`/stat/${(ret as Stat).id}`);
       }
     }
-  }, [navigate]);
+  }, [navigate, t]);
 
-  return <VStack alignItems='stretch'>
-    <HStack>
-      <Button disabled={!s.isAnySelected} onClick={() => refreshStats(s.getAllSelected())}>refresh stat</Button>
-      <Button disabled={!s.isAnySelected} onClick={() => generateStats(s.getAllSelected())}>create stat</Button>
+  if (isLoading) {
+    return (
+      <VStack h="400px" justifyContent="center" alignItems="center">
+        <Spinner size="xl" color="purple.500" />
+        <Text color="gray.500">{t('common.loading')}</Text>
+      </VStack>
+    );
+  }
+
+  if (!results || results.length === 0) {
+    return (
+      <VStack alignItems="stretch" gap={4}>
+        <Box>
+          <Heading size="lg" mb={2}>{t('page.results.title')}</Heading>
+          <Text color="gray.600">{t('page.results.subtitle')}</Text>
+        </Box>
+        <Center py={16}>
+          <VStack gap={4}>
+            <Icon as={FiCheckCircle} fontSize="6xl" color="gray.300" />
+            <Heading size="md" color="gray.600">{t('page.results.empty.title')}</Heading>
+            <Text color="gray.500">{t('page.results.empty.description')}</Text>
+          </VStack>
+        </Center>
+      </VStack>
+    );
+  }
+
+  return <VStack alignItems='stretch' gap={4}>
+    <Box>
+      <Heading size="lg" mb={2}>{t('page.results.title')}</Heading>
+      <Text color="gray.600">
+        {t('page.results.subtitle')} ({results.length} {t('page.results.resultCount')})
+      </Text>
+    </Box>
+    <HStack wrap="wrap">
+      <Button 
+        disabled={!s.isAnySelected} 
+        onClick={() => refreshStats(s.getAllSelected())}
+        colorPalette="purple"
+        variant="outline"
+        size="sm"
+      >
+        {t('page.results.btn.refreshStats')}
+      </Button>
+      <Button 
+        disabled={!s.isAnySelected} 
+        onClick={() => generateStats(s.getAllSelected())}
+        colorPalette="purple"
+        size="sm"
+      >
+        {t('page.results.btn.createStats')}
+      </Button>
+      {s.isAnySelected && (
+        <Text fontSize="sm" color="gray.600">
+          {t('page.results.selectedCount', { count: s.getAllSelected().length })}
+        </Text>
+      )}
     </HStack>
     <Separator />
-    <Sheet data={results}>
-      <Column>
+    <Sheet 
+      data={results}
+      striped
+      interactive
+      stickyHeader
+    >
+      <Column header={t('page.results.table.select')}>
         <Selector setSelected={s.setSelected} isSelected={s.isSelected} />
       </Column>
-      <Column field='paperName' />
-      <Column field='startTime' render={(x: number) => DateTime.fromMillis(x || 0).toISO()} />
-      <Column field='timeUsed' render={dispDuration} />
-      <Column field='score' />
-      <Column field='totalScore' />
-      <Column>
+      <Column 
+        field='paperName' 
+        header={t('page.results.table.paper')}
+        mainField
+      />
+      <Column 
+        field='startTime' 
+        header={t('page.results.table.startTime')}
+        render={(x: number) => DateTime.fromMillis(x || 0).toLocaleString(DateTime.DATETIME_MED)} 
+      />
+      <Column 
+        field='timeUsed' 
+        header={t('page.results.table.timeUsed')}
+        render={dispDuration} 
+      />
+      <Column 
+        field='score' 
+        header={t('page.results.table.score')}
+        render={(score, item) => `${score ?? 0} / ${item.totalScore ?? 0}`}
+      />
+      <Column 
+        field='totalScore' 
+        header={t('page.results.table.percentage')}
+        render={(total, item) => {
+          const score = item.score ?? 0;
+          const totalScore = total ?? 0;
+          return totalScore > 0 ? `${((score / totalScore) * 100).toFixed(1)}%` : '0.0%';
+        }}
+      />
+      <Column header={t('page.results.table.actions')}>
         <GotoButton refresh={() => c.invalidateQueries({ queryKey: ['results'] })} />
       </Column>
     </Sheet>

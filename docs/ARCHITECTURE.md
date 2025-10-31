@@ -62,7 +62,8 @@ Core library providing types, database operations, and utilities.
 - `src/db/` - Database controllers and operations
 - `src/search/` - Search algorithms and indexing
 - `src/utils/` - Utility functions
-- `src/version/` - Version control system
+- `src/version-manager/` - **Independent version control and conflict resolution system**
+- `src/version/` - Legacy version module (re-exports from version-manager)
 
 #### 2. quizzy-frontend (`@quizzy/frontend`)
 
@@ -524,34 +525,87 @@ For tag and category searching, the system uses a Trie (prefix tree) structure.
 
 ## Version Control System
 
+### Overview
+
+The version control system has been extracted into an **independent module** (`src/version-manager/`) that is completely decoupled from IndexedDB and can be used in any context.
+
+### Module Structure
+
+**`src/version-manager/`** - Database-independent version management
+
+- `types.ts` - Core version types (VersionIndexed, ImportStatus, etc.)
+- `utils.ts` - Hash and utility functions (objectHash, padHexString, extractFields)
+- `version-core.ts` - Version evolution and conflict detection (evolveVersionBeforeSync, checkImport)
+- `import-handler.ts` - Import conflict resolution logic (decideImportAction, createConflictDescriptor)
+
+**`src/version/`** - Legacy compatibility layer (re-exports from version-manager)
+
 ### Purpose
 
-Enable data synchronization between devices while handling conflicts.
+Enable data synchronization between devices while handling conflicts, with a design that is independent of any specific storage backend.
 
 ### Version Hash
 
 Each entity has a `currentVersion` field containing a hash of its content:
 
-- Format: `<sequence>-<hash>`
-- Generated from specific fields (see `fieldsByStore2` in idb.ts)
+- Format: `<day:4>-<hash:12>` (e.g., `1a2b-3c4d5e6f7g8h`)
+- Day: Hex-encoded day number since epoch (1970-01-01)
+- Hash: 12-character hash of the content
+- Generated from specific fields (configurable per store)
 - Used to detect changes
 
 ### Conflict Resolution
 
-**Import Process:**
+The version-manager module provides a three-stage conflict resolution process:
 
-1. Compare local and remote versions
-2. Determine import status:
-   - `same` - Identical, no action
-   - `local` - Local is newer, keep local
-   - `remote` - Remote is newer, import remote
-   - `conflict-local` - Conflict, preserve local
-   - `conflict-remote` - Conflict, preserve remote
+**Stage 1: Import Decision (Database-Independent)**
 
-3. For conflicts:
-   - Create `VersionConflictRecord` with patch
-   - Store in `version` object store
-   - User can review and resolve later
+```typescript
+// Decide what action to take for an import
+const decision = decideImportAction(local, remote, {
+  isStoreVersionIndexed: true,
+  isLocalDeleted: local?.deleted
+});
+
+// decision.action can be:
+// - 'skip': Keep local version (local is same or newer)
+// - 'replace': Use remote version (remote is newer or no local exists)
+// - 'conflict': Conflict detected, needs resolution
+```
+
+**Stage 2: Conflict Detection**
+
+When conflicts are detected, the system determines which version to preserve:
+
+- `conflict-local`: Preserve local version (localVersion >= remoteVersion)
+- `conflict-remote`: Preserve remote version (remoteVersion > localVersion)
+
+**Import Status Types:**
+
+- `same` - Identical versions, no action needed
+- `local` - Local is in remote's history, keep local
+- `remote` - Remote is in local's history, import remote
+- `conflict-local` - Diverged history, preserve local
+- `conflict-remote` - Diverged history, preserve remote
+
+**Stage 3: Conflict Recording (Database-Specific)**
+
+```typescript
+// Create conflict descriptor (database-independent)
+const descriptor = createConflictDescriptor(local, remote, preserveLocal);
+
+// Then create database-specific conflict record
+const record: VersionConflictRecord = {
+  id: generateId(),
+  storeId: 'papers',
+  itemId: descriptor.itemId,
+  importTime: Date.now(),
+  localVersion: descriptor.localVersion,
+  remoteVersion: descriptor.remoteVersion,
+  preserved: descriptor.preserved,
+  patch: getPatch(descriptor.localData, descriptor.remoteData)
+};
+```
 
 **Conflict Record:**
 
@@ -572,8 +626,21 @@ type VersionConflictRecord = {
 
 Before import/export, the system can evolve entities to ensure they have version hashes:
 
-- `evolveVersion()` - Update all entities
-- `_evolve(storeId, options)` - Update entities in specific store
+```typescript
+// Evolve a single object (returns undefined if no evolution needed)
+const evolved = evolveVersionBeforeSync(object, ['field1', 'field2']);
+
+// In database layer:
+// - `evolveVersion()` - Update all entities
+// - `_evolve(storeId, options)` - Update entities in specific store
+```
+
+### Design Benefits
+
+1. **Independence**: Version logic can be tested and used without any database
+2. **Reusability**: Can be used with different storage backends (IndexedDB, localStorage, server)
+3. **Testability**: Pure functions make unit testing straightforward
+4. **Clarity**: Clear separation between conflict detection and storage operations
 
 ## State Management
 

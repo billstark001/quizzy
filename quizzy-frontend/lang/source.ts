@@ -33,6 +33,7 @@ export const langRes: LanguageResource = {
   },
 
   common: {
+    loading: ['Loading...', '読み込み中...', '加载中...'],
     ph: {
       new: ['<New>', '<新アイテム>', '<新建>'],
       empty: ['<Empty>', '<空白>', '<空白>'],
@@ -338,7 +339,49 @@ export const langRes: LanguageResource = {
     }
   },
 
+  layout: {
+    sidebar: {
+      user: ['Quizzy User', 'Quizzy ユーザー', 'Quizzy 用户'],
+      role: ['Admin', '管理者', '管理员'],
+      githubTooltip: ['View Source on GitHub', 'GitHubでソースを表示', '在GitHub上查看源码'],
+      menu: {
+        profile: ['Profile', 'プロフィール', '个人资料'],
+        settings: ['Settings', '設定', '设置'],
+        about: ['About', 'このアプリについて', '关于'],
+        signout: ['Sign out', 'ログアウト', '登出'],
+      }
+    }
+  },
+
   page: {
+    about: {
+      title: ['About Quizzy', 'Quizzy について', '关于 Quizzy'],
+      subtitle: ['A Modern Quiz Management System', 'モダンなクイズ管理システム', '现代化的测验管理系统'],
+      description: {
+        title: ['Description', '説明', '说明'],
+        content: [
+          'Quizzy is a comprehensive quiz management system that helps you create, organize, and practice with questions and papers. All your data is stored locally in your browser for privacy and offline access.',
+          'Quizzyは、問題と試卷を作成、整理、練習するのに役立つ包括的なクイズ管理システムです。すべてのデータはプライバシーとオフラインアクセスのためにブラウザにローカルに保存されます。',
+          'Quizzy 是一个全面的测验管理系统，帮助您创建、组织和练习问题和试卷。所有数据都本地存储在您的浏览器中，以保护隐私并支持离线访问。'
+        ]
+      },
+      features: {
+        title: ['Key Features', '主な機能', '主要功能'],
+        item1: ['Create and manage questions with multiple choice, fill-in-the-blank, and text answer types', '選択問題、空欄補充問題、テキスト回答問題を作成・管理', '创建和管理多选题、填空题和文本答题等多种题型'],
+        item2: ['Organize questions into papers and start timed quizzes', '問題を試卷に整理し、時間制限付きクイズを開始', '将问题组织成试卷并开始计时测验'],
+        item3: ['Tag-based organization and advanced search capabilities', 'タグベースの整理と高度な検索機能', '基于标签的组织和高级搜索功能'],
+        item4: ['Track your quiz results and statistics over time', 'クイズの結果と統計を時系列で追跡', '跟踪您的测验结果和统计数据'],
+        item5: ['Export and import data in multiple formats', '複数の形式でデータをエクスポート・インポート', '以多种格式导出和导入数据'],
+      },
+      links: {
+        title: ['Links', 'リンク', '链接'],
+        github: ['GitHub Repository', 'GitHubリポジトリ', 'GitHub 仓库'],
+        documentation: ['Documentation', 'ドキュメント', '文档'],
+        license: ['License', 'ライセンス', '许可证'],
+      },
+      version: ['Version', 'バージョン', '版本'],
+      copyright: ['© 2024 Quizzy. All rights reserved.', '© 2024 Quizzy. 全著作権所有。', '© 2024 Quizzy. 保留所有权利。'],
+    },
 
     edit: {
       
@@ -500,10 +543,38 @@ export const langRes: LanguageResource = {
       }
     },
     result: {
+      title: ['Quiz Result', 'クイズ結果', '测验结果'],
+      subtitle: ['Detailed result for this quiz', 'このクイズの詳細結果', '此测验的详细结果'],
+      loading: ['Loading result...', '結果を読み込み中...', '加载结果中...'],
+      notFound: ['Result not found', '結果が見つかりません', '未找到结果'],
       dialog: {
         question: {
           header: ['Question Detail', '問題詳細', '问题详情']
         }
+      },
+      summary: {
+        title: ['Summary', '概要', '概要'],
+        paper: ['Paper', '試卷', '试卷'],
+        startTime: ['Start Time', '開始時刻', '开始时间'],
+        timeUsed: ['Time Used', '所要時間', '用时'],
+        score: ['Score', '得点', '得分'],
+        percentage: ['Percentage', '正答率', '正确率'],
+      },
+      table: {
+        title: ['Question Results', '問題結果', '问题结果'],
+        question: ['Question', '問題', '问题'],
+        answer: ['Your Answer', '回答', '你的答案'],
+        correct: ['Correct', '正解', '正确'],
+        status: ['Status', 'ステータス', '状态'],
+        score: ['Score', '得点', '得分'],
+        actions: ['Actions', '操作', '操作'],
+      },
+      btn: {
+        detail: ['View Details', '詳細を表示', '查看详情'],
+      },
+      statistics: {
+        title: ['Statistics by Tag/Category', 'タグ・カテゴリー別統計', '按标签/分类统计'],
+        noStats: ['No statistics available', '統計がありません', '无可用统计'],
       },
       paperName: ['Quiz Paper: {{paperName}}', 'テスト：{{paperName}}', '试卷：{{paperName}}'],
       times: [
@@ -516,6 +587,82 @@ export const langRes: LanguageResource = {
         '得点：{{total}}点中{{score}}点 ({{percentage}}%)',
         '得分：{{total}}分中的{{score}}分 ({{percentage}}%)'
       ],
+    },
+    stat: {
+      title: ['Statistics Details', '統計詳細', '统计详情'],
+      subtitle: ['Analysis of your quiz performance', 'クイズのパフォーマンス分析', '测验表现分析'],
+      loading: ['Loading statistics...', '統計を読み込み中...', '加载统计中...'],
+      notFound: ['Statistics not found', '統計が見つかりません', '未找到统计'],
+      overview: {
+        title: ['Overview', '概要', '概要'],
+        time: ['Generation Time', '生成時刻', '生成时间'],
+        results: ['Results Included', '含まれる結果', '包含的结果'],
+        questions: ['Total Questions', '総問題数', '总问题数'],
+      },
+      charts: {
+        byTag: ['Performance by Tag', 'タグ別パフォーマンス', '按标签分析'],
+        byCategory: ['Performance by Category', 'カテゴリー別パフォーマンス', '按分类分析'],
+        countByTag: ['Question Count by Tag', 'タグ別問題数', '按标签的问题数'],
+        scoreByTag: ['Score by Tag', 'タグ別得点', '按标签的得分'],
+        countByCategory: ['Question Count by Category', 'カテゴリー別問題数', '按分类的问题数'],
+        scoreByCategory: ['Score by Category', 'カテゴリー別得点', '按分类的得分'],
+      },
+    },
+    records: {
+      title: ['Quiz Records', 'クイズ記録', '测验记录'],
+      subtitle: ['Resume your unfinished quizzes', '未完了のクイズを再開', '继续未完成的测验'],
+      recordCount: ['records', '件', '条记录'],
+      empty: {
+        title: ['No Quiz Records', 'クイズ記録がありません', '没有测验记录'],
+        description: ['Start a new quiz to create a record', '新しいクイズを開始して記録を作成', '开始新测验以创建记录'],
+      },
+      table: {
+        paper: ['Paper', '試卷', '试卷'],
+        startTime: ['Start Time', '開始時刻', '开始时间'],
+        timeUsed: ['Time Used', '使用時間', '用时'],
+        progress: ['Progress', '進捗', '进度'],
+        actions: ['Actions', '操作', '操作'],
+      }
+    },
+    results: {
+      title: ['Quiz Results', 'クイズ結果', '测验结果'],
+      subtitle: ['View your completed quiz results', '完了したクイズの結果を表示', '查看已完成的测验结果'],
+      resultCount: ['results', '件', '条结果'],
+      selectedCount: ['{{count}} selected', '{{count}}件選択中', '已选择{{count}}个'],
+      statGenComplete: ['Statistics generation complete. View statistics?', '統計生成完了。統計を表示しますか？', '统计生成完成。查看统计数据吗？'],
+      empty: {
+        title: ['No Quiz Results', 'クイズ結果がありません', '没有测验结果'],
+        description: ['Complete a quiz to see results here', 'クイズを完了すると結果がここに表示されます', '完成测验后结果将显示在这里'],
+      },
+      btn: {
+        refreshStats: ['Refresh Statistics', '統計を更新', '刷新统计'],
+        createStats: ['Create Statistics', '統計を作成', '创建统计'],
+      },
+      table: {
+        select: ['Select', '選択', '选择'],
+        paper: ['Paper', '試卷', '试卷'],
+        startTime: ['Start Time', '開始時刻', '开始时间'],
+        timeUsed: ['Time Used', '使用時間', '用时'],
+        score: ['Score', '得点', '得分'],
+        percentage: ['Percentage', '正答率', '正确率'],
+        actions: ['Actions', '操作', '操作'],
+      }
+    },
+    stats: {
+      title: ['Statistics', '統計', '统计'],
+      subtitle: ['Analyze your quiz performance', 'クイズのパフォーマンスを分析', '分析您的测验表现'],
+      statCount: ['statistics', '件', '条统计'],
+      empty: {
+        title: ['No Statistics', '統計がありません', '没有统计数据'],
+        description: ['Generate statistics from your quiz results', 'クイズ結果から統計を生成', '从测验结果生成统计数据'],
+      },
+      table: {
+        time: ['Time', '時刻', '时间'],
+        count: ['Count', '件数', '数量'],
+        score: ['Score', '得点', '得分'],
+        percentage: ['Percentage', '正答率', '正确率'],
+        actions: ['Actions', '操作', '操作'],
+      }
     }
   },
 };

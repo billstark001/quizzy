@@ -1,5 +1,6 @@
 import { type SearchKeywordCache } from "@/search/keywords";
 import { Patch } from "@/utils";
+import { clearVersionIndices } from "@/version-manager";
 
 export type ID = string;
 export type MarkdownString = string;
@@ -29,23 +30,16 @@ export const clearSearchIndices = <T extends SearchIndexed>(
   return ret;
 };
 
-// version indexed
+// version indexed - re-exported from version-manager module
+export { 
+  MAX_HISTORY_VERSION,
+  reservedVersionWords,
+  type ReservedVersionWords,
+  type VersionIndexed,
+  clearVersionIndices,
+} from "@/version-manager";
 
-export const MAX_HISTORY_VERSION = 64;
-export const reservedVersionWords = [
-  'default', 'initial'
-] as const;
-
-export type ReservedVersionWords = (typeof reservedVersionWords)[number];
-
-export type VersionIndexed = {
-  currentVersion?: string;
-  // first -> last: older -> younger
-  // does not include the current one
-  historyVersions?: string[]; 
-  lastVersionUpdate?: number;
-};
-
+// VersionConflictRecord with Patch type for database usage
 export type VersionConflictRecord = {
   id: string;
   storeId: string;
@@ -56,17 +50,6 @@ export type VersionConflictRecord = {
   preserved: 'local' | 'remote';
   patch: Patch<any>;
 };
-
-export const clearVersionIndices = <T extends VersionIndexed>(
-  object: T,
-  inPlace: boolean = false,
-) => {
-  const ret: any = inPlace ? object : { ...object };
-  delete ret.currentVersion;
-  delete ret.historyVersions;
-  delete ret.lastVersionUpdate;
-  return ret;
-}
 
 // tool functions
 
