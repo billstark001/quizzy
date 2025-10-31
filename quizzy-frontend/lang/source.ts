@@ -543,10 +543,38 @@ export const langRes: LanguageResource = {
       }
     },
     result: {
+      title: ['Quiz Result', 'クイズ結果', '测验结果'],
+      subtitle: ['Detailed result for this quiz', 'このクイズの詳細結果', '此测验的详细结果'],
+      loading: ['Loading result...', '結果を読み込み中...', '加载结果中...'],
+      notFound: ['Result not found', '結果が見つかりません', '未找到结果'],
       dialog: {
         question: {
           header: ['Question Detail', '問題詳細', '问题详情']
         }
+      },
+      summary: {
+        title: ['Summary', '概要', '概要'],
+        paper: ['Paper', '試卷', '试卷'],
+        startTime: ['Start Time', '開始時刻', '开始时间'],
+        timeUsed: ['Time Used', '所要時間', '用时'],
+        score: ['Score', '得点', '得分'],
+        percentage: ['Percentage', '正答率', '正确率'],
+      },
+      table: {
+        title: ['Question Results', '問題結果', '问题结果'],
+        question: ['Question', '問題', '问题'],
+        answer: ['Your Answer', '回答', '你的答案'],
+        correct: ['Correct', '正解', '正确'],
+        status: ['Status', 'ステータス', '状态'],
+        score: ['Score', '得点', '得分'],
+        actions: ['Actions', '操作', '操作'],
+      },
+      btn: {
+        detail: ['View Details', '詳細を表示', '查看详情'],
+      },
+      statistics: {
+        title: ['Statistics by Tag/Category', 'タグ・カテゴリー別統計', '按标签/分类统计'],
+        noStats: ['No statistics available', '統計がありません', '无可用统计'],
       },
       paperName: ['Quiz Paper: {{paperName}}', 'テスト：{{paperName}}', '试卷：{{paperName}}'],
       times: [
@@ -559,6 +587,26 @@ export const langRes: LanguageResource = {
         '得点：{{total}}点中{{score}}点 ({{percentage}}%)',
         '得分：{{total}}分中的{{score}}分 ({{percentage}}%)'
       ],
+    },
+    stat: {
+      title: ['Statistics Details', '統計詳細', '统计详情'],
+      subtitle: ['Analysis of your quiz performance', 'クイズのパフォーマンス分析', '测验表现分析'],
+      loading: ['Loading statistics...', '統計を読み込み中...', '加载统计中...'],
+      notFound: ['Statistics not found', '統計が見つかりません', '未找到统计'],
+      overview: {
+        title: ['Overview', '概要', '概要'],
+        time: ['Generation Time', '生成時刻', '生成时间'],
+        results: ['Results Included', '含まれる結果', '包含的结果'],
+        questions: ['Total Questions', '総問題数', '总问题数'],
+      },
+      charts: {
+        byTag: ['Performance by Tag', 'タグ別パフォーマンス', '按标签分析'],
+        byCategory: ['Performance by Category', 'カテゴリー別パフォーマンス', '按分类分析'],
+        countByTag: ['Question Count by Tag', 'タグ別問題数', '按标签的问题数'],
+        scoreByTag: ['Score by Tag', 'タグ別得点', '按标签的得分'],
+        countByCategory: ['Question Count by Category', 'カテゴリー別問題数', '按分类的问题数'],
+        scoreByCategory: ['Score by Category', 'カテゴリー別得点', '按分类的得分'],
+      },
     },
     records: {
       title: ['Quiz Records', 'クイズ記録', '测验记录'],
